@@ -580,8 +580,8 @@ def _render_short(
     if not hook_lines:
         hook_lines = ["FOFOCA DO MOMENTO"]
 
-    # Render hook as a single text block (top) with max width constraint
-    hook_text_content = " ".join(hook_lines[:3])  # Join in single line, let FFmpeg wrap
+    # Render hook text - use manual line breaking for compatibility
+    hook_text_content = "\\n".join(hook_lines[:3])
     hook_text_file = overlay_dir / "hook_block.txt"
     hook_text_file.write_text(_sanitize_overlay_text(hook_text_content) + "\n", encoding="utf-8")
     hook_text_escaped = _ffmpeg_escape(str(hook_text_file.resolve()))
@@ -590,21 +590,24 @@ def _render_short(
         f"drawtext=textfile='{hook_text_escaped}':fontfile='{font}':"
         "fontcolor=white:fontsize=68:line_spacing=15:fix_bounds=1:"
         f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=20:"
-        "text_w=950:"  # Max width for auto line wrapping
         "x=(w-text_w)/2:y=420,"
     )
 
-    # Render main headline as a single text block with proper line wrapping
-    main_text_content = " ".join(main_lines[:8])  # Join in single line, let FFmpeg wrap
+    # Render main headline - break lines manually for better compatibility
+    # Split long headline into multiple lines (max ~40 chars per line)
+    import textwrap
+    wrapped_lines = []
+    for line in main_lines[:8]:
+        wrapped_lines.extend(textwrap.wrap(line, width=40, break_long_words=False))
+    
+    main_text_content = "\\n".join(wrapped_lines[:6])  # Max 6 lines
     main_text_file = overlay_dir / "main_block.txt"
     main_text_file.write_text(_sanitize_overlay_text(main_text_content) + "\n", encoding="utf-8")
     main_text_escaped = _ffmpeg_escape(str(main_text_file.resolve()))
     
-    # Use text_w constraint for dynamic wrapping and centering
     main_draw = (
         f"drawtext=textfile='{main_text_escaped}':fontfile='{font}':"
         "fontcolor=white:fontsize=56:line_spacing=15:fix_bounds=1:"
-        "text_w=980:"  # Max width for auto line wrapping
         "x=(w-text_w)/2:y=1150,"
     )
 

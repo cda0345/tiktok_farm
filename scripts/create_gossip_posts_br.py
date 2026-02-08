@@ -341,29 +341,62 @@ def main() -> None:
     today_str = datetime.now().strftime("%Y%m%d")
 
     # Try multiple items per feed if needed to get to unique posts
-    for skip in range(5): 
-        if count >= max_tests:
-            break
+    errors = []
+    skip = 0
+    max_attempts = max_tests * 3  # Try up to 3x the desired count to account for duplicates/errors
+    attempts = 0
+    
+    while count < max_tests and attempts < max_attempts:
         for source, feed_url in target_feeds:
             if count >= max_tests:
+                print(f"\n✅ Meta atingida: {count}/{max_tests} posts criados!")
                 break
+                
+            attempts += 1
             try:
+                print(f"🔍 [{count+1}/{max_tests}] Buscando de {source} (tentativa {attempts}/{max_attempts})...")
                 item = _fetch_from_feed(cgp, source, feed_url, skip_count=skip)
+                
                 if item.link in used_links:
+                    print(f"  ⏭️  Notícia já usada, pulando...")
                     continue
+                    
                 used_links.add(item.link)
+                print(f"  ✓ Nova notícia: {item.title[:60]}...")
 
                 slug = _make_slug(item.title)
                 folder_name = f"post_{today_str}_{item.source}_{slug}"
                 post_dir = out_root / folder_name
                 
+                # Skip if folder already exists (post already created)
+                if post_dir.exists():
+                    print(f"  ⏭️  Pasta já existe, pulando...")
+                    continue
+                
+                print(f"  🎬 Gerando vídeo...")
                 video = _build_post(cgp, root, post_dir, item)
                 count += 1
                 created.append((post_dir, item.source, _clean_text(item.title), video))
-            except Exception:
+                print(f"  ✅ [{count}/{max_tests}] Vídeo criado!")
+                
+            except Exception as e:
+                error_msg = f"{source}: {type(e).__name__}: {str(e)}"
+                errors.append(error_msg)
+                print(f"  ❌ Erro: {error_msg}")
                 continue
+        
+        # Increment skip for next round of feeds
+        if count < max_tests:
+            skip += 1
 
     if not created:
+        print("\n" + "=" * 64)
+        print("❌ NENHUM POST FOI CRIADO")
+        print("=" * 64)
+        print("\nErros encontrados:")
+        for err in errors:
+            print(f"  • {err}")
+        print("=" * 64)
         raise RuntimeError("No BR gossip posts were created.")
 
     print("=" * 64)
