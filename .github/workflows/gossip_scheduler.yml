@@ -49,7 +49,16 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          python scripts/create_gossip_posts_br.py --count 3
+          echo "=== Starting gossip generation ==="
+          echo "Python version: $(python --version)"
+          echo "FFmpeg version: $(ffmpeg -version | head -1)"
+          echo "Current directory: $(pwd)"
+          echo "Files in gossip_post/: $(ls -la gossip_post/)"
+          python scripts/create_gossip_posts_br.py --count 3 || {
+            echo "❌ Script failed with exit code $?"
+            exit 1
+          }
+          echo "=== Script completed successfully ==="
 
       - name: Upload generated videos as artifact
         if: always()
@@ -59,11 +68,12 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
           path: |
-            gossip_posts_br/**/output/*.mp4
-            gossip_post/output/*.mp4
+            gossip_posts_br/**/*.mp4
+            gossip_post/**/*.mp4
 
       - name: Cleanup generated videos (keep repo small)
         if: always()
         run: |
-          rm -rf gossip_posts_br/**/output || true
-          rm -rf gossip_post/output || true
+          rm -rf gossip_posts_br/**/*.mp4 || true
+          rm -rf gossip_post/**/*.mp4 || true
+          echo "Cleanup completed"
