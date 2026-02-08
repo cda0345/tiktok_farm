@@ -816,6 +816,9 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         if len(words) > 21:
             headline_text_clean = " ".join(words[:21]) + "..."
         
+        # Força caixa alta no corpo/headline
+        headline_text_clean = headline_text_clean.upper()
+        
         # Hook: 20 chars por linha, máximo 2 linhas
         hook_wrapped = _wrap_for_overlay(hook_clean, max_chars=20, max_lines=2, upper=True)
         

@@ -114,6 +114,9 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     if len(words) > 21:
         headline_text = " ".join(words[:21]) + "..."
 
+    # Força caixa alta no corpo/headline
+    headline_text = headline_text.upper()
+
     sanitize = getattr(cgp, "_sanitize_overlay_text", _clean_text)
 
     hook_file = post_dir / "hook.txt"
