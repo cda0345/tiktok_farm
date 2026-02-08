@@ -581,7 +581,7 @@ def _render_short(
         hook_lines = ["FOFOCA DO MOMENTO"]
 
     # Render hook text - use manual line breaking for compatibility
-    hook_text_content = "\\n".join(hook_lines[:3])
+    hook_text_content = "\n".join(hook_lines[:3])
     hook_text_file = overlay_dir / "hook_block.txt"
     hook_text_file.write_text(_sanitize_overlay_text(hook_text_content) + "\n", encoding="utf-8")
     hook_text_escaped = _ffmpeg_escape(str(hook_text_file.resolve()))
@@ -590,17 +590,18 @@ def _render_short(
         f"drawtext=textfile='{hook_text_escaped}':fontfile='{font}':"
         "fontcolor=white:fontsize=68:line_spacing=15:fix_bounds=1:"
         f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=20:"
-        "x=(w-text_w)/2:y=420,"
+        "x=(w-tw)/2:y=420,"
     )
 
     # Render main headline - break lines manually for better compatibility
-    # Split long headline into multiple lines (max ~40 chars per line)
+    # Split long headline into multiple lines (max ~35 chars per line for better fit)
     import textwrap
     wrapped_lines = []
     for line in main_lines[:8]:
-        wrapped_lines.extend(textwrap.wrap(line, width=40, break_long_words=False))
+        # Wrap each line to max 35 characters, preserving word boundaries
+        wrapped_lines.extend(textwrap.wrap(line, width=35, break_long_words=False, break_on_hyphens=False))
     
-    main_text_content = "\\n".join(wrapped_lines[:6])  # Max 6 lines
+    main_text_content = "\n".join(wrapped_lines[:6])  # Max 6 lines
     main_text_file = overlay_dir / "main_block.txt"
     main_text_file.write_text(_sanitize_overlay_text(main_text_content) + "\n", encoding="utf-8")
     main_text_escaped = _ffmpeg_escape(str(main_text_file.resolve()))
@@ -608,7 +609,7 @@ def _render_short(
     main_draw = (
         f"drawtext=textfile='{main_text_escaped}':fontfile='{font}':"
         "fontcolor=white:fontsize=56:line_spacing=15:fix_bounds=1:"
-        "x=(w-text_w)/2:y=1150,"
+        "x=(w-tw)/2:y=1150,"
     )
 
     vf = (
