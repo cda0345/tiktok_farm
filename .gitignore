@@ -1,0 +1,21 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.vscode/
+
+# outputs grandes/gerados
+# (Gossip pipeline outputs)
+gossip_post/output/
+gossip_posts_br/
+
+# TikTok lyrics pipeline assets not needed for gossip
+audio/
+broll_library/
+posts/
+
+# local tools / downloads
+tools/ffmpeg*/
+tools/*.zip
