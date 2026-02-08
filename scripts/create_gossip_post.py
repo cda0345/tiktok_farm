@@ -315,9 +315,16 @@ def _ffmpeg_escape(path: str) -> str:
 def _sanitize_overlay_text(text: str) -> str:
     # Remove hidden/control Unicode chars that may render as small boxes.
     text = (text or "").replace("\r", "")
+    # Remove caracteres Unicode problemáticos e invisíveis
     text = re.sub(r"[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]", "", text)
+    # Remove emojis e símbolos especiais que podem causar problemas
+    text = re.sub(r'[\U0001F300-\U0001F9FF]', '', text)  # Emojis
+    text = re.sub(r'[\u2600-\u26FF\u2700-\u27BF]', '', text)  # Dingbats e símbolos
+    # Normaliza espaços em branco
     text = re.sub(r"[^\S\n]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
+    # Remove caracteres de controle problemáticos
+    text = ''.join(char for char in text if ord(char) >= 32 or char == '\n')
     return text.strip()
 
 
@@ -374,21 +381,34 @@ def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool 
     clean = _clean_text(text)
     if upper:
         clean = clean.upper()
-    wrapped = textwrap.wrap(clean, width=max_chars)
+    # Use break_long_words=False para evitar cortar palavras no meio
+    wrapped = textwrap.wrap(clean, width=max_chars, break_long_words=False, break_on_hyphens=False)
     # We prioritize showing the full message without "..." suffixes
     return "\n".join(wrapped[:max_lines])
 
 
 def _pick_pt_hook(headline: str) -> str:
     h = _clean_text(headline).lower()
-    if any(k in h for k in ["morre", "morte", "luto", "velório", "velorio"]):
-        return "LUTO NO MUNDO DOS FAMOSOS"
-    if any(k in h for k in ["bbb", "a fazenda", "reality"]):
+    if any(k in h for k in ["morre", "morte", "luto", "velório", "velorio", "enterro"]):
+        return "LUTO NO MUNDO FAMOSO"
+    if any(k in h for k in ["bbb", "big brother", "paredão", "paredao", "eliminação", "eliminacao", "prova do líder", "prova do lider", "anjo"]):
+        return "TRETA NO BBB"
+    if any(k in h for k in ["a fazenda", "reality", "peão", "peao"]):
         return "TRETA NO REALITY"
-    if any(k in h for k in ["filha", "filho", "bebê", "bebe", "gravidez"]):
+    if any(k in h for k in ["filha", "filho", "bebê", "bebe", "gravidez", "grávida", "gravida", "nasceu"]):
         return "FOFURA E EMOÇÃO"
-    if any(k in h for k in ["separ", "divórcio", "divorcio", "trai", "polêmica", "polemica"]):
+    if any(k in h for k in ["separ", "divórcio", "divorcio", "trai", "affair", "corno"]):
+        return "SEPARAÇÃO CONFIRMADA"
+    if any(k in h for k in ["polêmica", "polemica", "briga", "treta", "confusão", "confusao", "desabaf"]):
         return "DEU O QUE FALAR"
+    if any(k in h for k in ["novela", "personagem", "ator", "atriz", "papel", "cena"]):
+        return "BABADO NA NOVELA"
+    if any(k in h for k in ["cirurgia", "hospital", "internado", "internada", "saúde", "saude", "doença", "doenca"]):
+        return "NOTÍCIA URGENTE"
+    if any(k in h for k in ["namoro", "casal", "romance", "casamento", "noivar", "noivo", "noiva"]):
+        return "ROMANCE CONFIRMADO"
+    if any(k in h for k in ["carnaval", "bloco", "fantasia", "desfile"]):
+        return "BABADO NO CARNAVAL"
     return "FOFOCA DO MOMENTO"
 
 
@@ -396,10 +416,14 @@ def _pick_en_hook(headline: str) -> str:
     h = _clean_text(headline).lower()
     if any(k in h for k in ["dies", "death", "dead", "passed away", "funeral"]):
         return "SHOCKING LOSS"
-    if any(k in h for k in ["split", "divorce", "cheat", "scandal"]):
+    if any(k in h for k in ["split", "divorce", "cheat", "scandal", "affair"]):
         return "MAJOR CELEB DRAMA"
-    if any(k in h for k in ["baby", "pregnan", "daughter", "son"]):
+    if any(k in h for k in ["baby", "pregnan", "daughter", "son", "born"]):
         return "BIG FAMILY UPDATE"
+    if any(k in h for k in ["arrest", "jail", "court", "lawsuit", "sued"]):
+        return "CELEB IN TROUBLE"
+    if any(k in h for k in ["wedding", "engaged", "dating", "romance", "couple"]):
+        return "LOVE CONFIRMED"
     return "TRENDING CELEB TEA"
 
 
@@ -414,29 +438,14 @@ def _is_portuguese_context(source: str, headline: str) -> bool:
 
 def _build_text_layers(headline: str, source: str) -> tuple[str, str]:
     clean = _clean_text(headline)
-    # Build a more specific top hook from the actual headline, not a generic tag.
-    # 1) Prefer the first semantic chunk before separators.
-    # 2) Fallback to the first 8 words.
-    chunk = re.split(r"\s*[-:|]\s*", clean, maxsplit=1)[0].strip()
-    if len(chunk.split()) < 3:
-        chunk = " ".join(clean.split()[:8]).strip()
+    is_pt = _is_portuguese_context(source, clean)
 
-    # Light cleanup to keep the hook punchy.
-    chunk = chunk.replace("‘", "").replace("’", "").replace("“", "").replace("”", "")
-    chunk = re.sub(r"^[\"':;,.!?-]+|[\"':;,.!?-]+$", "", chunk)
-    chunk = re.sub(r"\b(veja|entenda|saiba|assista)\b", "", chunk, flags=re.I)
-    chunk = _clean_text(chunk)
+    # Hook: sempre usar chamada temática impactante (estilo TikTok/Shorts)
+    hook_text = _pick_pt_hook(clean) if is_pt else _pick_en_hook(clean)
+    hook = _wrap_for_overlay(hook_text, max_chars=20, max_lines=2, upper=True)
 
-    # If chunk is still too short/weak, fallback to the old generic style.
-    if len(chunk.split()) < 2:
-        is_pt = _is_portuguese_context(source, clean)
-        chunk = _pick_pt_hook(clean) if is_pt else _pick_en_hook(clean)
-
-    # Aumentando para 3 linhas no Hook para prevenir cortes em palavras grandes
-    hook = _wrap_for_overlay(chunk, max_chars=20, max_lines=3, upper=True)
-
-    # Bottom text: summarized detail.
-    summary = _wrap_for_overlay(clean, max_chars=25, max_lines=4, upper=False)
+    # Bottom text: texto completo sem truncar — a renderização cuida do limite visual
+    summary = clean
     return hook, summary
 
 
@@ -447,8 +456,8 @@ def _headline_for_overlay(headline: str, max_chars: int = 24, max_lines: int = 5
 
 def _build_display_headline(headline: str) -> str:
     # Portal-style, bold and concise.
-    # Increased lines to 8 to prevent cutting sentences.
-    return _wrap_for_overlay(headline, max_chars=28, max_lines=8, upper=True)
+    # Aumentado para 22 chars por linha e 7 linhas para acomodar notícias longas
+    return _wrap_for_overlay(headline, max_chars=22, max_lines=7, upper=True)
 
 
 def _summarize_news_text(item: NewsItem) -> str:
@@ -467,26 +476,46 @@ def _summarize_news_text(item: NewsItem) -> str:
                 system_instr = (
                     "Você é um editor de vídeos Curtos/TikTok especializado em fofocas e entretenimento. "
                     "REGRAS OBRIGATÓRIAS:\n"
-                    "1. GANCHO (HOOK): Uma frase ULTRA CURTA com o clímax (MÁXIMO 5 PALAVRAS, TUDO EM MAIÚSCULAS). EXEMPLOS: 'NEYMAR EM POLÊMICA!', 'BBB: TRETA PESADA!', 'FAMOSA ANUNCIA GRAVIDEZ!'\n"
-                    "2. CORPO: Resuma o fato principal em 1-2 frases curtas (máx 15 palavras TOTAL, TUDO EM MAIÚSCULAS).\n"
-                    "3. LOOP/CTA: Termine com uma pergunta curta e impactante (máx 8 palavras, TUDO EM MAIÚSCULAS).\n"
-                    "4. HASHTAGS: Inclua 3 hashtags relevantes para SEO no final em LETRAS MINÚSCULAS.\n"
-                    "IMPORTANTE: Exceto as hashtags, o texto deve estar TODO EM LETRA MAIÚSCULA.\n"
-                    "5. IDIOMA: Português do Brasil. Sem aspas ou emojis.\n"
-                    "6. FORMATO: Responda com as 4 linhas separadas, cada uma em uma linha nova."
+                    "1. GANCHO (HOOK): EXATAMENTE 3-4 PALAVRAS que capturam o CLÍMAX da notícia, TUDO EM MAIÚSCULAS, SEM PONTUAÇÃO.\n"
+                    "   Exemplos: 'POLÊMICA NO BBB', 'FAMOSA GRÁVIDA', 'SEPARAÇÃO CONFIRMADA', 'DECLARAÇÃO EMOCIONANTE'\n"
+                    "2. RESUMO: Em UM ÚNICO PARÁGRAFO de 12-15 PALAVRAS, resuma a notícia completa mantendo a informação principal.\n"
+                    "   Seja DIRETO e INFORMATIVO. Use linguagem simples. TUDO EM MAIÚSCULAS.\n"
+                    "   NÃO divida em múltiplas frases. APENAS UM PARÁGRAFO corrido.\n"
+                    "   Exemplo: 'CLAUDIA RODRIGUES FAZ DECLARAÇÃO EMOCIONANTE PARA ESPOSA NO ANIVERSÁRIO DE CASAMENTO'\n"
+                    "3. CTA (CALL TO ACTION): Uma pergunta ou frase BEM CURTA (4-6 PALAVRAS) relacionada à notícia, TUDO EM MAIÚSCULAS.\n"
+                    "   Exemplos: 'E AÍ O QUE ACHOU?', 'VOCÊ SABIA DISSO?', 'O QUE VOCÊ ACHA?', 'JÁ CONHECIA ESSA?', 'COMENTA AÍ EMBAIXO!'\n"
+                    "   Deve ser RELEVANTE ao contexto da notícia. Não use CTAs genéricos sempre.\n"
+                    "4. HASHTAGS: 3 hashtags relevantes em LETRAS MINÚSCULAS.\n"
+                    "FORMATO FINAL (4 linhas):\n"
+                    "Linha 1: Hook (3-4 palavras)\n"
+                    "Linha 2: Resumo (12-15 palavras em um parágrafo)\n"
+                    "Linha 3: CTA (4-6 palavras)\n"
+                    "Linha 4: Hashtags (lowercase)\n"
+                    "IMPORTANTE: SEM aspas, emojis, símbolos especiais ou caracteres estranhos. Apenas texto limpo."
                 )
-                user_content = f"Crie o roteiro curto para esta notícia:\n\n{context}"
+                user_content = f"Resuma esta notícia de forma DIRETA e COMPLETA:\n\n{context}"
             else:
                 system_instr = (
-                    "You are a Shorts/TikTok editor specialized in celebrity gossip."
+                    "You are a Shorts/TikTok editor specialized in celebrity gossip. "
                     "MANDATORY RULES:\n"
-                    "1. HOOK: Start with the climax/shock (max 6 words, ALL CAPS).\n"
-                    "2. BODY: Summarize the fact in one short sentence (max 8 words, ALL CAPS).\n"
-                    "3. LOOP/CTA: End with a short provocative question (max 10 words, ALL CAPS).\n"
-                    "4. HASHTAGS: Include 3 relevant SEO hashtags at the end in LOWERCASE.\n"
-                    "5. FORMAT: 4 lines (Hook, Body, CTA, Hashtags), no quotes, no emojis."
+                    "1. HOOK: EXACTLY 3-4 WORDS capturing the CLIMAX, ALL CAPS, NO PUNCTUATION.\n"
+                    "   Examples: 'CELEB DIVORCE CONFIRMED', 'SHOCKING ANNOUNCEMENT', 'MAJOR CONTROVERSY', 'EMOTIONAL DECLARATION'\n"
+                    "2. SUMMARY: In ONE SINGLE PARAGRAPH of 12-15 WORDS, summarize the complete news keeping the main information.\n"
+                    "   Be DIRECT and INFORMATIVE. Use simple language. ALL CAPS.\n"
+                    "   DO NOT split into multiple sentences. JUST ONE flowing paragraph.\n"
+                    "   Example: 'CELEB SHARES EMOTIONAL TRIBUTE TO SPOUSE ON WEDDING ANNIVERSARY WITH HEARTFELT PHOTOS'\n"
+                    "3. CTA (CALL TO ACTION): A VERY SHORT question or phrase (4-6 WORDS) related to the news, ALL CAPS.\n"
+                    "   Examples: 'WHAT DO YOU THINK?', 'DID YOU KNOW THIS?', 'YOUR THOUGHTS BELOW?', 'COMMENT YOUR OPINION!'\n"
+                    "   Must be RELEVANT to the news context. Don't always use generic CTAs.\n"
+                    "4. HASHTAGS: 3 relevant hashtags in lowercase.\n"
+                    "FINAL FORMAT (4 lines):\n"
+                    "Line 1: Hook (3-4 words)\n"
+                    "Line 2: Summary (12-15 words in one paragraph)\n"
+                    "Line 3: CTA (4-6 words)\n"
+                    "Line 4: Hashtags (lowercase)\n"
+                    "IMPORTANT: NO quotes, emojis or special characters. Clean text only."
                 )
-                user_content = f"Create a short script for this news:\n\n{context}"
+                user_content = f"Summarize this news DIRECTLY and COMPLETELY:\n\n{context}"
 
             payload = {
                 "model": cfg.model,
@@ -569,64 +598,65 @@ def _render_short(
     overlay_dir = out_video.parent / "_overlay_text"
     overlay_dir.mkdir(parents=True, exist_ok=True)
     hook_box_color = "0x000000"
+    
     main_path = summary_file or headline_file
     main_raw = main_path.read_text(encoding="utf-8") if main_path.exists() else ""
-    main_lines = [ln.strip() for ln in _sanitize_overlay_text(main_raw).replace("\xa0", " ").splitlines() if ln.strip()]
-    if not main_lines:
-        main_lines = ["SEM TEXTO"]
-
+    main_clean = _sanitize_overlay_text(main_raw).replace("\xa0", " ")
+    
     hook_raw = hook_file.read_text(encoding="utf-8") if hook_file and hook_file.exists() else ""
-    hook_lines = [ln.strip() for ln in _sanitize_overlay_text(hook_raw).replace("\xa0", " ").splitlines() if ln.strip()]
-    if not hook_lines:
-        hook_lines = ["FOFOCA DO MOMENTO"]
+    hook_clean = _sanitize_overlay_text(hook_raw).replace("\xa0", " ")
 
-    # Render hook text - use manual line breaking for compatibility
-    hook_text_content = "\n".join(hook_lines[:3])
-    hook_text_file = overlay_dir / "hook_block.txt"
-    hook_text_file.write_text(_sanitize_overlay_text(hook_text_content) + "\n", encoding="utf-8")
-    hook_text_escaped = _ffmpeg_escape(str(hook_text_file.resolve()))
-    
-    hook_draw = (
-        f"drawtext=textfile='{hook_text_escaped}':fontfile='{font}':"
-        "fontcolor=white:fontsize=68:line_spacing=15:fix_bounds=1:"
-        f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=20:"
-        "x=(w-tw)/2:y=420,"
-    )
+    # Render HOOK - 2 linhas max, 20 chars por linha
+    hook_lines = textwrap.wrap(hook_clean, width=20, break_long_words=False, break_on_hyphens=False)[:2]
+    hook_filters = []
+    for i, line in enumerate(hook_lines):
+        line_esc = _ffmpeg_escape_text(line)
+        y_pos = 560 + (i * 90)
+        hook_filters.append(
+            f"drawtext=text='{line_esc}':fontfile='{font}':"
+            f"fontcolor=white:fontsize=72:fix_bounds=1:"
+            f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=20:"
+            f"x=(w-tw)/2:y={y_pos}"
+        )
 
-    # Render main headline - break lines manually for better compatibility
-    # Split long headline into multiple lines (max ~35 chars per line for better fit)
-    import textwrap
-    wrapped_lines = []
-    for line in main_lines[:8]:
-        # Wrap each line to max 35 characters, preserving word boundaries
-        wrapped_lines.extend(textwrap.wrap(line, width=35, break_long_words=False, break_on_hyphens=False))
+    # Render MAIN HEADLINE - Aumentado para 7 linhas, 22 chars por linha para caber mais texto
+    # Removemos TODA quebra de linha ou espaço duplo antes do wrap para evitar caracteres fantasmas
+    main_input = " ".join(main_clean.split())
+    main_lines = textwrap.wrap(main_input, width=22, break_long_words=False, break_on_hyphens=False)[:7]
+    main_filters = []
     
-    main_text_content = "\n".join(wrapped_lines[:6])  # Max 6 lines
-    main_text_file = overlay_dir / "main_block.txt"
-    main_text_file.write_text(_sanitize_overlay_text(main_text_content) + "\n", encoding="utf-8")
-    main_text_escaped = _ffmpeg_escape(str(main_text_file.resolve()))
-    
-    main_draw = (
-        f"drawtext=textfile='{main_text_escaped}':fontfile='{font}':"
-        "fontcolor=white:fontsize=56:line_spacing=15:fix_bounds=1:"
-        "x=(w-tw)/2:y=1150,"
-    )
+    # Ajuste dinâmico de posição Y e fonte baseado no número de linhas
+    if len(main_lines) > 5:
+        start_y = 1080
+        line_spacing = 78
+        font_size = 58
+    else:
+        start_y = 1180
+        line_spacing = 85
+        font_size = 62
 
-    vf = (
-        "scale=1080:1920:force_original_aspect_ratio=decrease,"
-        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,"
-        "eq=brightness=-0.02:contrast=1.08:saturation=1.02,"
-        f"{hook_draw}"
-        # Bottom cinematic fade for headline readability - ajustado para o novo posicionamento
-        "drawbox=x=0:y=ih*0.56:w=iw:h=ih*0.44:color=black@0.22:t=fill,"
-        "drawbox=x=0:y=ih*0.66:w=iw:h=ih*0.34:color=black@0.42:t=fill,"
-        "drawbox=x=0:y=ih*0.76:w=iw:h=ih*0.24:color=black@0.62:t=fill,"
-        # Headline block.
-        f"{main_draw}"
-        # Subtle CTA in footer, less intrusive than previous style.
+    for i, line in enumerate(main_lines):
+        line_esc = _ffmpeg_escape_text(line)
+        y_pos = start_y + (i * line_spacing)
+        main_filters.append(
+            f"drawtext=text='{line_esc}':fontfile='{font}':"
+            f"fontcolor=white:fontsize={font_size}:fix_bounds=1:"
+            f"x=(w-tw)/2:y={y_pos}"
+        )
+
+    vf_layers = [
+        "scale=1080:1920:force_original_aspect_ratio=decrease",
+        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",
+        "eq=brightness=-0.02:contrast=1.08:saturation=1.02",
+        *hook_filters,
+        "drawbox=x=0:y=ih*0.56:w=iw:h=ih*0.44:color=black@0.22:t=fill",
+        "drawbox=x=0:y=ih*0.66:w=iw:h=ih*0.34:color=black@0.42:t=fill",
+        "drawbox=x=0:y=ih*0.76:w=iw:h=ih*0.24:color=black@0.62:t=fill",
+        *main_filters,
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
         "fontsize=44:x=(w-text_w)/2:y=h*0.94:enable='lt(mod(t\\,1.4)\\,0.7)'"
-    )
+    ]
+    vf = ",".join(vf_layers)
 
     out_video.parent.mkdir(parents=True, exist_ok=True)
 
@@ -743,34 +773,54 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         hashtags = " ".join([ln.lower() for ln in all_lines if ln.startswith("#")])
         ai_parts = [ln for ln in all_lines if not ln.startswith("#")]
         
-        if len(ai_parts) >= 2:
-            # Hook com limite maior de caracteres (25) para não cortar palavras
+        if len(ai_parts) >= 3:
+            # Novo formato: Linha 1 = Hook, Linha 2 = Resumo, Linha 3 = CTA
             hook_raw = ai_parts[0]
-            # Se o hook da IA for muito longo, pega apenas as primeiras 5 palavras mais impactantes
-            hook_words = hook_raw.split()
-            if len(hook_words) > 5:
-                hook = " ".join(hook_words[:5])
-            else:
-                hook = hook_raw
-            headline_text = "\n".join(ai_parts[1:])
+            hook_words = hook_raw.split()[:4]  # Força máximo de 4 palavras
+            hook = " ".join(hook_words)
+            
+            # Resumo: já vem completo em um parágrafo de 12-15 palavras
+            resumo = ai_parts[1] if len(ai_parts) > 1 else ""
+            
+            # CTA: pergunta/frase curta de 4-6 palavras
+            cta = ai_parts[2] if len(ai_parts) > 2 else ""
+            
+            # Junta Resumo + CTA para formar o headline completo
+            headline_text = f"{resumo}. {cta}" if cta else resumo
+        elif len(ai_parts) >= 2:
+            # Fallback: se não tiver CTA, usa apenas Hook + Resumo
+            hook_raw = ai_parts[0]
+            hook_words = hook_raw.split()[:4]
+            hook = " ".join(hook_words)
+            headline_text = ai_parts[1]
         else:
-            # Fallback: cria hook curto e impactante do título
+            # Fallback completo: cria hook curto e impactante do título
             hook, summary = _build_text_layers(item.title, item.source)
-            # Limita o hook a 5 palavras no fallback também
-            hook_words = hook.split()
-            if len(hook_words) > 5:
-                hook = " ".join(hook_words[:5])
-            headline_text = "\n".join(ai_parts) if ai_parts else summary
+            # Força máximo de 4 palavras no hook
+            hook_words = hook.split()[:4]
+            hook = " ".join(hook_words)
+            headline_text = summary
 
-        # Remove hashtags do headline_text para o vídeo
-        headline_text_clean = re.sub(r'#\w+', '', headline_text).strip()
-        headline_text_clean = re.sub(r'\s+', ' ', headline_text_clean)  # Remove espaços extras
+        # IMPORTANTE: Remove TODAS as hashtags e caracteres especiais
+        # Hashtags devem aparecer SOMENTE na caption/legenda
+        hook_clean = re.sub(r'#\w+', '', hook).strip()
+        hook_clean = re.sub(r'[^\w\s\u00C0-\u00FF]', '', hook_clean)  # Remove caracteres especiais exceto letras acentuadas
+        hook_clean = re.sub(r'\s+', ' ', hook_clean).strip()
         
-        # Garante o wrap do hook vindo da IA com mais caracteres por linha
-        hook = _wrap_for_overlay(hook, max_chars=30, max_lines=3, upper=True)
+        headline_text_clean = re.sub(r'#\w+', '', headline_text).strip()
+        headline_text_clean = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text_clean)  # Mantém pontuação básica
+        headline_text_clean = re.sub(r'\s+', ' ', headline_text_clean).strip()
+        
+        # Limita a 21 palavras (15 do resumo + 6 do CTA = ideal para o formato completo)
+        words = headline_text_clean.split()
+        if len(words) > 21:
+            headline_text_clean = " ".join(words[:21]) + "..."
+        
+        # Hook: 20 chars por linha, máximo 2 linhas
+        hook_wrapped = _wrap_for_overlay(hook_clean, max_chars=20, max_lines=2, upper=True)
         
         hook_file = post_dir / "hook.txt"
-        hook_file.write_text(_sanitize_overlay_text(hook) + "\n", encoding="utf-8")
+        hook_file.write_text(_sanitize_overlay_text(hook_wrapped) + "\n", encoding="utf-8")
 
         summary_file = post_dir / "summary.txt"
         summary_file.write_text(_sanitize_overlay_text(headline_text_clean) + "\n", encoding="utf-8")
@@ -793,8 +843,10 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         }
         (post_dir / "news.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+        # Caption com hashtags (para redes sociais)
+        # Usa hook_clean e headline_text_clean (sem hashtags inline) + hashtags separadas no final
         (post_dir / "caption.txt").write_text(
-            f"{hook}\n{headline_text_clean}\n\n{hashtags}\n\nFonte: {item.source.upper()}\nLink: {item.link}\n",
+            f"{hook_clean}\n{headline_text_clean}\n\n{hashtags}\n\nFonte: {item.source.upper()}\nLink: {item.link}\n",
             encoding="utf-8",
         )
 
@@ -822,13 +874,13 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         )
 
         # Telegram Notification with hashtags in caption
-        # Clean up hook and headline for better formatting
-        hook_clean = " ".join(hook.split())  # Remove extra spaces/newlines
-        headline_clean = " ".join(headline_text_clean.split())  # Single line
+        # Clean up hook and headline for better formatting (já estão limpos, sem hashtags)
+        hook_telegram = " ".join(hook_clean.split())  # Remove extra spaces/newlines
+        headline_telegram = " ".join(headline_text_clean.split())  # Single line
         
         telegram_caption = (
-            f"🔥 {hook_clean}\n\n"
-            f"{headline_clean}\n\n"
+            f"🔥 {hook_telegram}\n\n"
+            f"{headline_telegram}\n\n"
             f"{hashtags}\n\n"
             f"📍 Fonte: {item.source.upper()}\n"
             f"🔗 {item.link}"

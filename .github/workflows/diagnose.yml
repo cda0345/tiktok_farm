@@ -1,0 +1,92 @@
+name: Diagnose Gossip Issues
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
+
+      - name: Check file structure
+        run: |
+          echo "=== Root directory ==="
+          ls -la
+          echo "=== Gossip post directory ==="
+          ls -la gossip_post/ || echo "gossip_post not found"
+          echo "=== Scripts directory ==="
+          ls -la scripts/ || echo "scripts not found"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip list
+
+      - name: Test imports
+        run: |
+          python -c "import requests; print('requests OK')"
+          python -c "import numpy; print('numpy OK')"
+          python -c "import librosa; print('librosa OK')"
+          python -c "from dotenv import load_dotenv; print('dotenv OK')"
+
+      - name: Test API connectivity
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -c "
+import os
+import requests
+
+bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+chat_id = os.getenv('TELEGRAM_CHAT_ID')
+
+if not bot_token or not chat_id:
+    print('❌ Telegram credentials not set')
+    exit(1)
+
+url = f'https://api.telegram.org/bot{bot_token}/getMe'
+r = requests.get(url, timeout=10)
+print(f'Telegram API: {r.status_code}')
+print(r.json())
+          "
+
+      - name: Test feed fetching
+        run: |
+          python -c "
+import requests
+
+feeds = [
+    'https://contigo.com.br/feed',
+    'https://ofuxico.com.br/wp-json/wp/v2/posts?per_page=10&_embed=1',
+    'https://www.terra.com.br/diversao/gente/rss.xml',
+    'https://gente.ig.com.br/rss.xml',
+]
+
+for feed in feeds:
+    try:
+        r = requests.get(feed, timeout=10)
+        print(f'✓ {feed}: {r.status_code}')
+    except Exception as e:
+        print(f'✗ {feed}: {e}')
+          "
+
+      - name: Dry run script check
+        run: |
+          python scripts/create_gossip_posts_br.py --help

@@ -61,18 +61,58 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
         except Exception:
             news_summary = ""
 
-    ai_parts = [ln.strip() for ln in (news_summary or "").splitlines() if ln.strip()]
+    all_lines = [ln.strip() for ln in (news_summary or "").splitlines() if ln.strip()]
     
-    if len(ai_parts) >= 2:
-        hook = ai_parts[0]
-        headline_text = "\n".join(ai_parts[1:])
+    # Separa hashtags (para caption) do conteúdo do vídeo
+    hashtags = " ".join([ln.lower() for ln in all_lines if ln.startswith("#")])
+    ai_parts = [ln for ln in all_lines if not ln.startswith("#")]
+    
+    if len(ai_parts) >= 3:
+        # Novo formato: Linha 1 = Hook (3-4 palavras), Linha 2 = Resumo (12-15 palavras), Linha 3 = CTA (4-6 palavras)
+        hook_raw = ai_parts[0]
+        hook_words = hook_raw.split()[:4]  # Força máximo de 4 palavras
+        hook_raw = " ".join(hook_words)
+        
+        # Resumo: já vem completo em um parágrafo direto e informativo
+        resumo = ai_parts[1] if len(ai_parts) > 1 else ""
+        
+        # CTA: pergunta/frase curta relacionada à notícia
+        cta = ai_parts[2] if len(ai_parts) > 2 else ""
+        
+        # Junta Resumo + CTA para formar o headline completo
+        headline_text = f"{resumo}. {cta}" if cta else resumo
+    elif len(ai_parts) >= 2:
+        # Fallback: se não tiver CTA, usa apenas Hook + Resumo
+        hook_raw = ai_parts[0]
+        hook_words = hook_raw.split()[:4]
+        hook_raw = " ".join(hook_words)
+        headline_text = ai_parts[1]
     else:
         if hasattr(cgp, "_build_text_layers"):
-            hook, gen_summary = cgp._build_text_layers(item.title, item.source)
+            hook_raw, gen_summary = cgp._build_text_layers(item.title, item.source)
         else:
-            hook = cgp._headline_for_overlay(item.title, max_chars=18, max_lines=2)
-            gen_summary = cgp._headline_for_overlay(item.title, max_chars=27, max_lines=4)
-        headline_text = news_summary or gen_summary
+            hook_raw = cgp._headline_for_overlay(item.title, max_chars=18, max_lines=2)
+            gen_summary = cgp._headline_for_overlay(item.title, max_chars=20, max_lines=4)
+        
+        # Força máximo de 4 palavras no hook
+        hook_words = hook_raw.split()[:4]
+        hook_raw = " ".join(hook_words)
+        headline_text = gen_summary
+
+    # Remove TODAS as hashtags e caracteres especiais (para o vídeo)
+    # Hashtags devem aparecer SOMENTE na caption
+    hook = re.sub(r'#\w+', '', hook_raw).strip()
+    hook = re.sub(r'[^\w\s\u00C0-\u00FF]', '', hook)  # Remove caracteres especiais exceto acentos
+    hook = re.sub(r'\s+', ' ', hook).strip()
+    
+    headline_text = re.sub(r'#\w+', '', headline_text).strip()
+    headline_text = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text)  # Mantém pontuação básica
+    headline_text = re.sub(r'\s+', ' ', headline_text).strip()
+    
+    # Limita a 21 palavras (15 do resumo + 6 do CTA = ideal para o formato completo)
+    words = headline_text.split()
+    if len(words) > 21:
+        headline_text = " ".join(words[:21]) + "..."
 
     sanitize = getattr(cgp, "_sanitize_overlay_text", _clean_text)
 
@@ -103,10 +143,13 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
 
-    (post_dir / "caption.txt").write_text(
-        f"{hook}\n\n{headline_text}\n\nFonte: {item.source.upper()}\nLink: {item.link}\n",
-        encoding="utf-8",
-    )
+    # Caption com hashtags (para redes sociais) - hook e headline já estão sem hashtags inline
+    caption_text = f"{hook}\n\n{headline_text}\n\n"
+    if hashtags:
+        caption_text += f"{hashtags}\n\n"
+    caption_text += f"Fonte: {item.source.upper()}\nLink: {item.link}\n"
+    
+    (post_dir / "caption.txt").write_text(caption_text, encoding="utf-8")
 
     slug = cgp._make_slug(item.title)
     out_video = post_dir / "output" / f"gossip_{slug}.mp4"
