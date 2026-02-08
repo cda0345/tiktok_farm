@@ -580,35 +580,31 @@ def _render_short(
     if not hook_lines:
         hook_lines = ["FOFOCA DO MOMENTO"]
 
-    hook_draw_parts = []
-    # Aumentando de 2 para 3 linhas no renderizador do Hook
-    for idx, line in enumerate(hook_lines[:3]):
-        line_file = overlay_dir / f"hook_{idx}.txt"
-        line_file.write_text(_sanitize_overlay_text(line) + "\n", encoding="utf-8")
-        line_file_escaped = _ffmpeg_escape(str(line_file.resolve()))
-        # Fonte reduzida para 60 e Y ajustado para 450 para não bater no logo superior
-        y = 450 + (idx * 80)
-        hook_draw_parts.append(
-            f"drawtext=textfile='{line_file_escaped}':fontfile='{font}':"
-            "fontcolor=white:fontsize=60:line_spacing=6:fix_bounds=1:"
-            f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=16:"
-            f"x=(w-text_w)/2:y={y},"
-        )
-    hook_draw = "".join(hook_draw_parts)
+    # Render hook as a single text block (top)
+    hook_text_content = "\n".join(hook_lines[:3])
+    hook_text_file = overlay_dir / "hook_block.txt"
+    hook_text_file.write_text(_sanitize_overlay_text(hook_text_content) + "\n", encoding="utf-8")
+    hook_text_escaped = _ffmpeg_escape(str(hook_text_file.resolve()))
+    
+    hook_draw = (
+        f"drawtext=textfile='{hook_text_escaped}':fontfile='{font}':"
+        "fontcolor=white:fontsize=64:line_spacing=10:fix_bounds=1:"
+        f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=16:"
+        "x=(w-text_w)/2:y=450,"
+    )
 
-    main_draw_parts = []
-    for idx, line in enumerate(main_lines[:8]):
-        line_file = overlay_dir / f"main_{idx}.txt"
-        line_file.write_text(_sanitize_overlay_text(line) + "\n", encoding="utf-8")
-        line_file_escaped = _ffmpeg_escape(str(line_file.resolve()))
-        # Posicionamento movido para baixo (1180) para não tampar o centro da imagem
-        y = 1180 + (idx * 68)
-        main_draw_parts.append(
-            f"drawtext=textfile='{line_file_escaped}':fontfile='{font}':"
-            "fontcolor=white:fontsize=52:line_spacing=6:fix_bounds=1:"
-            f"x=(w-text_w)/2:y={y},"
-        )
-    main_draw = "".join(main_draw_parts)
+    # Render main headline as a single text block with proper line wrapping
+    main_text_content = "\n".join(main_lines[:8])
+    main_text_file = overlay_dir / "main_block.txt"
+    main_text_file.write_text(_sanitize_overlay_text(main_text_content) + "\n", encoding="utf-8")
+    main_text_escaped = _ffmpeg_escape(str(main_text_file.resolve()))
+    
+    # Use text_w and text_h for dynamic centering with line wrapping enabled
+    main_draw = (
+        f"drawtext=textfile='{main_text_escaped}':fontfile='{font}':"
+        "fontcolor=white:fontsize=52:line_spacing=10:fix_bounds=1:"
+        "x=(w-text_w)/2:y=1200,"
+    )
 
     vf = (
         "scale=1080:1920:force_original_aspect_ratio=decrease,"
@@ -820,9 +816,13 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         )
 
         # Telegram Notification with hashtags in caption
+        # Clean up hook and headline for better formatting
+        hook_clean = " ".join(hook.split())  # Remove extra spaces/newlines
+        headline_clean = " ".join(headline_text_clean.split())  # Single line
+        
         telegram_caption = (
-            f"🔥 {hook}\n\n"
-            f"{headline_text_clean}\n\n"
+            f"🔥 {hook_clean}\n\n"
+            f"{headline_clean}\n\n"
             f"{hashtags}\n\n"
             f"📍 Fonte: {item.source.upper()}\n"
             f"🔗 {item.link}"
