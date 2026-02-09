@@ -293,6 +293,7 @@ def _select_font() -> str:
     2) System fonts (macOS/local dev)
     """
     repo_fonts = [
+        ROOT_DIR / "assets" / "fonts" / "BebasNeue-Bold.ttf",
         ROOT_DIR / "assets" / "fonts" / "BebasNeue-Regular.ttf",
         ROOT_DIR / "assets" / "fonts" / "Anton-Regular.ttf",
         ROOT_DIR / "assets" / "fonts" / "Impact.ttf",

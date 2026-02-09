@@ -36,7 +36,13 @@ jobs:
       - name: Install system deps (ffmpeg)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg libfreetype6
+
+      - name: Verify bundled fonts
+        run: |
+          echo "=== Checking bundled fonts ==="
+          ls -la assets/fonts/ || echo "⚠️ assets/fonts/ not found!"
+          file assets/fonts/*.ttf 2>/dev/null || echo "⚠️ No .ttf files found"
 
       - name: Install Python deps
         run: |
