@@ -618,9 +618,9 @@ def _render_short(
     overlay_dir.mkdir(parents=True, exist_ok=True)
     hook_box_color = "0x000000"
 
-    # YouTube Shorts safe areas (1080x1920):
-    # - Keep clear of top UI + logo
-    # - Keep clear of bottom UI (channel bar/buttons)
+    # Make spacing consistent across macOS/Linux builds of FFmpeg/libfreetype.
+    # Keep only widely-supported drawtext params.
+
     SAFE_TOP = 220
     SAFE_BOTTOM = 1520
 
@@ -642,8 +642,8 @@ def _render_short(
         y_pos = _clamp(hook_base_y + (i * 90), SAFE_TOP, SAFE_BOTTOM)
         hook_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
-            f"fontcolor=white:fontsize=72:fix_bounds=1:"
-            f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=20:"
+            f"fontcolor=white:fontsize=74:fix_bounds=1:"
+            f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=18:"
             f"x=(w-tw)/2:y={y_pos}"
         )
 
@@ -655,11 +655,11 @@ def _render_short(
     # Compute top of the lower text block so it never overlaps YouTube bottom UI.
     # We anchor the last line to SAFE_BOTTOM and build upwards.
     if len(main_lines) > 5:
-        line_spacing = 78
-        font_size = 58
+        line_spacing = 74
+        font_size = 60
     else:
-        line_spacing = 85
-        font_size = 62
+        line_spacing = 80
+        font_size = 64
 
     # Start Y so that the full block ends at SAFE_BOTTOM.
     block_h = max(0, (len(main_lines) - 1) * line_spacing)
@@ -686,7 +686,7 @@ def _render_short(
         *main_filters,
         # CTA stays above bottom UI
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
-        "fontsize=44:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",
+        "fontsize=46:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",
     ]
     vf = ",".join(vf_layers)
 
