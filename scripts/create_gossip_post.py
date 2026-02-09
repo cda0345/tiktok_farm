@@ -286,6 +286,21 @@ def _make_slug(text: str, max_words: int = 5) -> str:
 
 
 def _select_font() -> str:
+    """Pick a bold/condensed font.
+
+    Priority:
+    1) Repo-bundled font(s) (works on GitHub Actions/Linux)
+    2) System fonts (macOS/local dev)
+    """
+    repo_fonts = [
+        ROOT_DIR / "assets" / "fonts" / "BebasNeue-Regular.ttf",
+        ROOT_DIR / "assets" / "fonts" / "Anton-Regular.ttf",
+        ROOT_DIR / "assets" / "fonts" / "Impact.ttf",
+    ]
+    for p in repo_fonts:
+        if p.exists():
+            return str(p)
+
     # Condensed, editorial look closer to gossip portals.
     candidates = [
         "/System/Library/Fonts/Supplemental/Avenir Next Condensed Heavy.ttf",
@@ -301,6 +316,10 @@ def _select_font() -> str:
         if Path(c).exists():
             return c
     return "/System/Library/Fonts/Helvetica.ttc"
+
+
+def _clamp(n: int, lo: int, hi: int) -> int:
+    return max(lo, min(hi, n))
 
 
 def _ffmpeg_escape(path: str) -> str:
@@ -598,7 +617,13 @@ def _render_short(
     overlay_dir = out_video.parent / "_overlay_text"
     overlay_dir.mkdir(parents=True, exist_ok=True)
     hook_box_color = "0x000000"
-    
+
+    # YouTube Shorts safe areas (1080x1920):
+    # - Keep clear of top UI + logo
+    # - Keep clear of bottom UI (channel bar/buttons)
+    SAFE_TOP = 220
+    SAFE_BOTTOM = 1520
+
     main_path = summary_file or headline_file
     main_raw = main_path.read_text(encoding="utf-8") if main_path.exists() else ""
     main_clean = _sanitize_overlay_text(main_raw).replace("\xa0", " ")
@@ -609,9 +634,12 @@ def _render_short(
     # Render HOOK - 2 linhas max, 20 chars por linha
     hook_lines = textwrap.wrap(hook_clean, width=20, break_long_words=False, break_on_hyphens=False)[:2]
     hook_filters = []
+
+    # Keep hook on tarja, but inside safe area.
+    hook_base_y = _clamp(560, SAFE_TOP, SAFE_BOTTOM)
     for i, line in enumerate(hook_lines):
         line_esc = _ffmpeg_escape_text(line)
-        y_pos = 560 + (i * 90)
+        y_pos = _clamp(hook_base_y + (i * 90), SAFE_TOP, SAFE_BOTTOM)
         hook_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
             f"fontcolor=white:fontsize=72:fix_bounds=1:"
@@ -619,25 +647,27 @@ def _render_short(
             f"x=(w-tw)/2:y={y_pos}"
         )
 
-    # Render MAIN HEADLINE - Aumentado para 7 linhas, 22 chars por linha para caber mais texto
-    # Removemos TODA quebra de linha ou espaço duplo antes do wrap para evitar caracteres fantasmas
+    # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
     main_lines = textwrap.wrap(main_input, width=22, break_long_words=False, break_on_hyphens=False)[:7]
     main_filters = []
-    
-    # Ajuste dinâmico de posição Y e fonte baseado no número de linhas
+
+    # Compute top of the lower text block so it never overlaps YouTube bottom UI.
+    # We anchor the last line to SAFE_BOTTOM and build upwards.
     if len(main_lines) > 5:
-        start_y = 1080
         line_spacing = 78
         font_size = 58
     else:
-        start_y = 1180
         line_spacing = 85
         font_size = 62
 
+    # Start Y so that the full block ends at SAFE_BOTTOM.
+    block_h = max(0, (len(main_lines) - 1) * line_spacing)
+    start_y = _clamp(SAFE_BOTTOM - block_h, SAFE_TOP + 520, SAFE_BOTTOM)
+
     for i, line in enumerate(main_lines):
         line_esc = _ffmpeg_escape_text(line)
-        y_pos = start_y + (i * line_spacing)
+        y_pos = _clamp(start_y + (i * line_spacing), SAFE_TOP, SAFE_BOTTOM)
         main_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
             f"fontcolor=white:fontsize={font_size}:fix_bounds=1:"
@@ -649,12 +679,14 @@ def _render_short(
         "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",
         "eq=brightness=-0.02:contrast=1.08:saturation=1.02",
         *hook_filters,
+        # Keep the tarjas, but ensure they start below the hook area visually.
         "drawbox=x=0:y=ih*0.56:w=iw:h=ih*0.44:color=black@0.22:t=fill",
         "drawbox=x=0:y=ih*0.66:w=iw:h=ih*0.34:color=black@0.42:t=fill",
         "drawbox=x=0:y=ih*0.76:w=iw:h=ih*0.24:color=black@0.62:t=fill",
         *main_filters,
+        # CTA stays above bottom UI
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
-        "fontsize=44:x=(w-text_w)/2:y=h*0.94:enable='lt(mod(t\\,1.4)\\,0.7)'"
+        "fontsize=44:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",
     ]
     vf = ",".join(vf_layers)
 
