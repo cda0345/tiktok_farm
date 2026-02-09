@@ -640,10 +640,10 @@ def _render_short(
     hook_base_y = _clamp(560, SAFE_TOP, SAFE_BOTTOM)
     for i, line in enumerate(hook_lines):
         line_esc = _ffmpeg_escape_text(line)
-        y_pos = _clamp(hook_base_y + (i * 90), SAFE_TOP, SAFE_BOTTOM)
+        y_pos = _clamp(hook_base_y + (i * 104), SAFE_TOP, SAFE_BOTTOM)
         hook_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
-            f"fontcolor=white:fontsize=74:fix_bounds=1:"
+            f"fontcolor=white:fontsize=85:fix_bounds=1:"
             f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=18:"
             f"x=(w-tw)/2:y={y_pos}"
         )
@@ -656,11 +656,11 @@ def _render_short(
     # Compute top of the lower text block so it never overlaps YouTube bottom UI.
     # We anchor the last line to SAFE_BOTTOM and build upwards.
     if len(main_lines) > 5:
-        line_spacing = 74
-        font_size = 60
+        line_spacing = 85
+        font_size = 69
     else:
-        line_spacing = 80
-        font_size = 64
+        line_spacing = 92
+        font_size = 74
 
     # Start Y so that the full block ends at SAFE_BOTTOM.
     block_h = max(0, (len(main_lines) - 1) * line_spacing)
@@ -687,7 +687,7 @@ def _render_short(
         *main_filters,
         # CTA stays above bottom UI
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
-        "fontsize=46:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",
+        "fontsize=53:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",
     ]
     vf = ",".join(vf_layers)
 
