@@ -23,6 +23,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+import random
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
@@ -472,6 +473,8 @@ def _build_text_layers(headline: str, source: str) -> tuple[str, str]:
 
     # Hook: sempre usar chamada temática impactante (estilo TikTok/Shorts)
     hook_text = _pick_pt_hook(clean) if is_pt else _pick_en_hook(clean)
+    # Adiciona o nome do famoso ao hook
+    hook_text = f"{hook_text}: {clean.split()[0].upper()}"
     hook = _wrap_for_overlay(hook_text, max_chars=20, max_lines=2, upper=True)
 
     # Bottom text: texto completo sem truncar — a renderização cuida do limite visual
@@ -687,13 +690,13 @@ def _render_short(
 
     vf_layers = [
         "scale=1080:1920:force_original_aspect_ratio=decrease",
-        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",
+        f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color={bg_color}",
         "eq=brightness=-0.02:contrast=1.08:saturation=1.02",
         *hook_filters,
         # Keep the tarjas, but ensure they start below the hook area visually.
-        "drawbox=x=0:y=ih*0.56:w=iw:h=ih*0.44:color=black@0.22:t=fill",
-        "drawbox=x=0:y=ih*0.66:w=iw:h=ih*0.34:color=black@0.42:t=fill",
-        "drawbox=x=0:y=ih*0.76:w=iw:h=ih*0.24:color=black@0.62:t=fill",
+        f"drawbox=x=0:y=ih*0.56:w=iw:h=ih*0.44:color={tarja_color}@0.22:t=fill",
+        f"drawbox=x=0:y=ih*0.66:w=iw:h=ih*0.34:color={tarja_color}@0.42:t=fill",
+        f"drawbox=x=0:y=ih*0.76:w=iw:h=ih*0.24:color={tarja_color}@0.62:t=fill",
         *main_filters,
         # CTA stays above bottom UI
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
