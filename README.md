@@ -255,3 +255,6 @@ Vibe/Tema: city drive/nightlife
 Formato: Vídeo de 15 segundos com letras sincronizadas (LRC).
 Ação: Execute o pipeline online para baixar b-rolls e use o script de lyrics para renderizar a versão curta."
 execute no terminal em primeiro plano
+
+
+python3 scripts/scheduler.py

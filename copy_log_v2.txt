@@ -1,0 +1,885 @@
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy para Windows                              
+-------------------------------------------------------------------------------
+
+  Iniciado: s†bado, 7 de fevereiro de 2026 10:50:33
+   Origem : d:\projeto_insta_pc\
+     Destino : d:\projeto_insta_pc\Tiktok_farm\
+
+    Arquivos: *.*
+	    
+ Diret¢rios Exc: .venv
+	    __pycache__
+	    .git
+	    00_projeto_insta_antigo
+	    Tiktok_farm
+	    broll
+	    broll_library
+	    A_Postar
+	    
+  Opá‰es: *.* /S /E /DCOPY:DA /COPY:DAT /MT:32 /R:1 /W:1 
+
+------------------------------------------------------------------------------
+
+	  Novo Arquivo		     252	d:\projeto_insta_pc\.env  0%  100%  
+	  Novo Arquivo		    4962	d:\projeto_insta_pc\ai_client.py100%  
+	  Novo Arquivo		    3734	d:\projeto_insta_pc\analyze_brolls.py100%  
+	  Novo Arquivo		    2099	d:\projeto_insta_pc\apply_structured_captions.py100%  
+	  Novo Arquivo		    4101	d:\projeto_insta_pc\audio_handler.py100%  
+	  Novo Arquivo		    2513	d:\projeto_insta_pc\batch_fix_captions.py100%  
+	  Novo Arquivo		    6079	d:\projeto_insta_pc\batch_posts.py100%  
+	  Novo Arquivo		    2068	d:\projeto_insta_pc\batch_posts_youtube.ps1100%  
+	  Novo Arquivo		   14352	d:\projeto_insta_pc\BATCH_PROCESSING_GUIDE.md100%  
+	  Novo Arquivo		    2489	d:\projeto_insta_pc\batch_regenerate_variants.py100%  
+	  Novo Arquivo		    4154	d:\projeto_insta_pc\broll_categories.py100%  
+	  Novo Arquivo		   11153	d:\projeto_insta_pc\broll_loader.py100%  
+	  Novo Arquivo		    1741	d:\projeto_insta_pc\CAPTION_GUIDELINES.md100%  
+	  Novo Arquivo		    1305	d:\projeto_insta_pc\config.py100%  
+	  Novo Arquivo		  136614	d:\projeto_insta_pc\copy_log.txt100%  
+	  Novo Arquivo		       0	d:\projeto_insta_pc\copy_log_v2.txt100%  
+	  Novo Arquivo		    3117	d:\projeto_insta_pc\download_more_broll.py100%  
+	  Novo Arquivo		    5865	d:\projeto_insta_pc\editor.py100%  
+	  Novo Arquivo		    6084	d:\projeto_insta_pc\exporter.py100%  
+	  Novo Arquivo		    8227	d:\projeto_insta_pc\exporter_fast.py100%  
+	  Novo Arquivo		    4120	d:\projeto_insta_pc\extract_brolls_from_terminal.py100%  
+	  Novo Arquivo		    5757	d:\projeto_insta_pc\fetch_lyrics.py100%  
+	  Novo Arquivo		    5332	d:\projeto_insta_pc\ffmpeg_utils.py100%  
+	  Novo Arquivo		    3314	d:\projeto_insta_pc\fix_all_themes.py100%  
+	  Novo Arquivo		    1240	d:\projeto_insta_pc\gpu.py100%  
+	  Novo Arquivo		    2989	d:\projeto_insta_pc\lrc_parser.py100%  
+	  Novo Arquivo		   12353	d:\projeto_insta_pc\main.py100%  
+	  Novo Arquivo		    9589	d:\projeto_insta_pc\online_pipeline.py100%  
+	  Novo Arquivo		    1747	d:\projeto_insta_pc\posts_abstract_batch.csv100%  
+	  Novo Arquivo		    1151	d:\projeto_insta_pc\posts_missing_200.csv100%  
+	  Novo Arquivo		     471	d:\projeto_insta_pc\posts_queue.csv100%  
+	  Novo Arquivo		    4254	d:\projeto_insta_pc\posts_queue_batch_19_68.csv100%  
+	  Novo Arquivo		     311	d:\projeto_insta_pc\posts_reprocess.csv100%  
+	  Novo Arquivo		     160	d:\projeto_insta_pc\posts_reprocess_abstract.csv100%  
+	  Novo Arquivo		     645	d:\projeto_insta_pc\posts_reprocess_batch2.csv100%  
+	  Novo Arquivo		     377	d:\projeto_insta_pc\posts_reprocess_batch3.csv100%  
+	  Novo Arquivo		     451	d:\projeto_insta_pc\posts_reprocess_dj_booth.csv100%  
+	  Novo Arquivo		     552	d:\projeto_insta_pc\posts_reprocess_final.csv100%  
+	  Novo Arquivo		    1190	d:\projeto_insta_pc\posts_reprocess_nightlife_light.csv100%  
+	  Novo Arquivo		    2729	d:\projeto_insta_pc\posts_vintage_retro_batch.csv100%  
+	  Novo Arquivo		    1805	d:\projeto_insta_pc\post_parser.py100%  
+	  Novo Arquivo		    3825	d:\projeto_insta_pc\precompute_motion.py100%  
+	  Novo Arquivo		    9987	d:\projeto_insta_pc\README.md100%  
+	  Novo Arquivo		    3530	d:\projeto_insta_pc\regenerate_missing_videos.ps1100%  
+	  Novo Arquivo		    1311	d:\projeto_insta_pc\reprocess_blacklist.csv100%  
+	  Novo Arquivo		     114	d:\projeto_insta_pc\requirements.txt100%  
+	  Novo Arquivo		  120808	d:\projeto_insta_pc\search_megalobiz.html100%  
+	  Novo Arquivo		  120808	d:\projeto_insta_pc\search_megalobiz_v2.html100%  
+	  Novo Arquivo		     229	d:\projeto_insta_pc\search_megalobiz_v3.html100%  
+	  Novo Arquivo		    2433	d:\projeto_insta_pc\setup_city_batch.py100%  
+	  Novo Arquivo		   80876	d:\projeto_insta_pc\test_audio.mp3100%  
+	  Novo Arquivo		    5316	d:\projeto_insta_pc\test_render_debug.py100%  
+	  Novo Arquivo		    5800	d:\projeto_insta_pc\tiktok_lyrics.py100%  
+	  Novo Arquivo		    2195	d:\projeto_insta_pc\vary_captions.py100%  
+	  Novo Arquivo		     594	d:\projeto_insta_pc\providers\base.py100%  
+	  Novo Arquivo		    1882	d:\projeto_insta_pc\providers\local.py100%  
+	  Novo Arquivo		    8754	d:\projeto_insta_pc\providers\pexels.py100%  
+	  Novo Arquivo		   11752	d:\projeto_insta_pc\providers\youtube.py100%  
+	  Novo Arquivo		     138	d:\projeto_insta_pc\providers\__init__.py100%  
+	  Novo Arquivo		 101.3 m	d:\projeto_insta_pc\tools\ffmpeg_release_essentials.zip 68%  100%  
+	  Novo Arquivo		  11.5 m	d:\projeto_insta_pc\audio\tracks\adam_beyer_&_bart_skils_your_mind.mp3100%  
+	  Novo Arquivo		   7.5 m	d:\projeto_insta_pc\audio\tracks\adriatique_home_(mind_against_remix).mp3100%  
+	  Novo Arquivo		   5.3 m	d:\projeto_insta_pc\audio\tracks\anotr relax my eyes.mp3100%  
+	  Novo Arquivo		   5.3 m	d:\projeto_insta_pc\audio\tracks\anotr_relax_my_eyes.mp3100%  
+	  Novo Arquivo		   6.8 m	d:\projeto_insta_pc\audio\tracks\anotr_vertigo_carlita_remix.mp3100%  
+	  Novo Arquivo		   9.5 m	d:\projeto_insta_pc\audio\tracks\armand_van_helden_funk_phenomena.mp3100%  
+	  Novo Arquivo		   4.7 m	d:\projeto_insta_pc\audio\tracks\armand_van_helden_i_want_your_soul.mp3100%  
+	  Novo Arquivo		  10.2 m	d:\projeto_insta_pc\audio\tracks\armand_van_helden_you_dont_know_me.mp3100%  
+	  Novo Arquivo		   5.0 m	d:\projeto_insta_pc\audio\tracks\ben_bîhmer_beyond_beliefs.mp3100%  
+	  Novo Arquivo		   6.5 m	d:\projeto_insta_pc\audio\tracks\bicep_glue.mp3100%  
+	  Novo Arquivo		  10.4 m	d:\projeto_insta_pc\audio\tracks\blaze_lovelee_dae.mp3100%  
+	  Novo Arquivo		  11.0 m	d:\projeto_insta_pc\audio\tracks\boris_brejcha_gravity.mp3 27%   81%  100%  
+	  Novo Arquivo		   5.4 m	d:\projeto_insta_pc\audio\tracks\burial_archangel.mp3100%  
+	  Novo Arquivo		   7.5 m	d:\projeto_insta_pc\audio\tracks\cajmere_brighter_days.mp3100%  
+	  Novo Arquivo		   9.7 m	d:\projeto_insta_pc\audio\tracks\chris stussy all night long.mp3100%  
+	  Novo Arquivo		   8.5 m	d:\projeto_insta_pc\audio\tracks\chris_stussy_desire.mp3100%  
+	  Novo Arquivo		   8.5 m	d:\projeto_insta_pc\audio\tracks\chris_stussy_ecstasy.mp3100%  
+	  Novo Arquivo		   4.4 m	d:\projeto_insta_pc\audio\tracks\cloonee_be_good_to_me.mp3100%  
+	  Novo Arquivo		   8.3 m	d:\projeto_insta_pc\audio\tracks\cloonee_like_what.mp3100%  
+	  Novo Arquivo		   4.3 m	d:\projeto_insta_pc\audio\tracks\crystal_waters_100%_pure_love.mp3100%  
+	  Novo Arquivo		  10.7 m	d:\projeto_insta_pc\audio\tracks\danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin').mp3 27%   74%  100%  
+	  Novo Arquivo		   4.6 m	d:\projeto_insta_pc\audio\tracks\degrees_of_motion_do_you_want_it_right_now.mp3100%  
+	  Novo Arquivo		   56752	d:\projeto_insta_pc\audio\tracks\demo_128bpm_01.mp3100%  
+	  Novo Arquivo		   9.1 m	d:\projeto_insta_pc\audio\tracks\dennis cruz el sueno.mp3100%  
+	  Novo Arquivo		   9.1 m	d:\projeto_insta_pc\audio\tracks\dennis_cruz_el_sueno.mp3100%  
+	  Novo Arquivo		   4.5 m	d:\projeto_insta_pc\audio\tracks\disclosure_higher_than_ever_before.mp3100%  
+	  Novo Arquivo		   4.8 m	d:\projeto_insta_pc\audio\tracks\dom_dolla_girl$.mp3100%  
+	  Novo Arquivo		   4.7 m	d:\projeto_insta_pc\audio\tracks\dom_dolla_saving_up.mp3100%  
+	  Novo Arquivo		   9.3 m	d:\projeto_insta_pc\audio\tracks\dom_dolla_take_it.mp3100%  
+	  Novo Arquivo		   9.5 m	d:\projeto_insta_pc\audio\tracks\elderbrook_cola.mp3100%  
+	  Novo Arquivo		   5.6 m	d:\projeto_insta_pc\audio\tracks\everything_but_the_girl,_todd_terry_missing_(todd_terry_remix).mp3100%  
+	  Novo Arquivo		   9.1 m	d:\projeto_insta_pc\audio\tracks\fisher losing it.mp3100%  
+	  Novo Arquivo		   9.1 m	d:\projeto_insta_pc\audio\tracks\fisher_losing_it.mp3100%  
+	  Novo Arquivo		   4.2 m	d:\projeto_insta_pc\audio\tracks\four_tet_lush.mp3100%  
+	  Novo Arquivo		  13.7 m	d:\projeto_insta_pc\audio\tracks\frankie_knuckles_rain_falls.mp3100%  
+	  Novo Arquivo		  10.0 m	d:\projeto_insta_pc\audio\tracks\frankie_knuckles_the_whistle_song.mp3100%  
+	  Novo Arquivo		   9.4 m	d:\projeto_insta_pc\audio\tracks\frankie_knuckles_your_love.mp3100%  
+	  Novo Arquivo		   5.7 m	d:\projeto_insta_pc\audio\tracks\fred_again.._delilah_(pull_me_out_of_this).mp3100%  
+	  Novo Arquivo		   5.0 m	d:\projeto_insta_pc\audio\tracks\gorgon_city_body_language.mp3100%  
+	  Novo Arquivo		   5.0 m	d:\projeto_insta_pc\audio\tracks\gorgon_city_voodoo.mp3100%  
+	  Novo Arquivo		   8.9 m	d:\projeto_insta_pc\audio\tracks\hardrive,_barbara_tucker,_louie_vega_deep_inside.mp3100%  
+	  Novo Arquivo		   9.3 m	d:\projeto_insta_pc\audio\tracks\hot_since_82_poison.mp3100%  
+	  Novo Arquivo		   5.6 m	d:\projeto_insta_pc\audio\tracks\inner_city_good_life.mp3100%  
+	  Novo Arquivo		   6.9 m	d:\projeto_insta_pc\audio\tracks\jamie_xx_gosh.mp3100%  
+	  Novo Arquivo		  10.9 m	d:\projeto_insta_pc\audio\tracks\jan_blomqvist_the_space_in_between.mp3100%  
+	  Novo Arquivo		   6.3 m	d:\projeto_insta_pc\audio\tracks\john_summit_la_danza.mp3100%  
+	  Novo Arquivo		   6.2 m	d:\projeto_insta_pc\audio\tracks\junior_jack_stupidisco_(radio_edit).mp3100%  
+	  Novo Arquivo		  10.2 m	d:\projeto_insta_pc\audio\tracks\kerri_chandler_bar_a_thym.mp3 88%  100%  
+	  Novo Arquivo		  19.7 m	d:\projeto_insta_pc\audio\tracks\kerri_chandler_let_me_show_you.mp3100%  
+	  Novo Arquivo		   8.2 m	d:\projeto_insta_pc\audio\tracks\kings_of_tomorrow_finally.mp3100%  
+	  Novo Arquivo		   8.2 m	d:\projeto_insta_pc\audio\tracks\kings_of_tomorrow_finally_original.mp3100%  
+	  Novo Arquivo		   9.8 m	d:\projeto_insta_pc\audio\tracks\maceo_plex_solar_detroit.mp3100%  
+	  Novo Arquivo		   8.5 m	d:\projeto_insta_pc\audio\tracks\marshall_jefferson,_solardo_move_your_body.mp3100%  
+	  Novo Arquivo		   8.5 m	d:\projeto_insta_pc\audio\tracks\marshall_jefferson_move_your_body.mp3100%  
+	  Novo Arquivo		   5.1 m	d:\projeto_insta_pc\audio\tracks\masters_at_work_to_be_in_love.mp3100%  
+	  Novo Arquivo		   6.4 m	d:\projeto_insta_pc\audio\tracks\masters_at_work_work.mp3100%  
+	  Novo Arquivo		   4.7 m	d:\projeto_insta_pc\audio\tracks\meduza_tell_me_why.mp3100%  
+	  Novo Arquivo		   8.5 m	d:\projeto_insta_pc\audio\tracks\michael bibi hanging tree.mp3100%  
+	  Novo Arquivo		   8.5 m	d:\projeto_insta_pc\audio\tracks\michael_bibi_got_the_fire.mp3100%  
+	  Novo Arquivo		   8.5 m	d:\projeto_insta_pc\audio\tracks\michael_bibi_hanging_tree.mp3100%  
+	  Novo Arquivo		  11.7 m	d:\projeto_insta_pc\audio\tracks\ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix).mp3100%  
+	  Novo Arquivo		   6.0 m	d:\projeto_insta_pc\audio\tracks\moderat_bad_kingdom.mp3100%  
+	  Novo Arquivo		   6.3 m	d:\projeto_insta_pc\audio\tracks\moloko,_boris_dlugosch,_michael_lange_sing_it_back.mp3100%  
+	  Novo Arquivo		  10.9 m	d:\projeto_insta_pc\audio\tracks\monolink_return_to_oz_(artbat_remix).mp3100%  
+	  Novo Arquivo		   7.5 m	d:\projeto_insta_pc\audio\tracks\mr._fingers_can_you_feel_it.mp3100%  
+	  Novo Arquivo		   5.5 m	d:\projeto_insta_pc\audio\tracks\nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited).mp3100%  
+	  Novo Arquivo		   8.1 m	d:\projeto_insta_pc\audio\tracks\paco_osuna_time.mp3100%  
+	  Novo Arquivo		   5.0 m	d:\projeto_insta_pc\audio\tracks\pawsa groove it.mp3100%  
+	  Novo Arquivo		   5.0 m	d:\projeto_insta_pc\audio\tracks\pawsa_collect_the_commas.mp3100%  
+	  Novo Arquivo		   3.7 m	d:\projeto_insta_pc\audio\tracks\peggy_gou_nanana.mp3100%  
+	  Novo Arquivo		   4.1 m	d:\projeto_insta_pc\audio\tracks\purple_disco_machine_rise.mp3100%  
+	  Novo Arquivo		   4.1 m	d:\projeto_insta_pc\audio\tracks\purple_disco_machine_substitution.mp3100%  
+	  Novo Arquivo		   6.6 m	d:\projeto_insta_pc\audio\tracks\robin_s._show_me_love.mp3100%  
+	  Novo Arquivo		   5.4 m	d:\projeto_insta_pc\audio\tracks\robin_s_show_me_love.mp3100%  
+	  Novo Arquivo		   7.3 m	d:\projeto_insta_pc\audio\tracks\robin_s_show_me_love_1993.mp3100%  
+	  Novo Arquivo		   6.6 m	d:\projeto_insta_pc\audio\tracks\roger_sanchez_another_chance.mp3100%  
+	  Novo Arquivo		   4.6 m	d:\projeto_insta_pc\audio\tracks\rui_da_silva,_cassandra_touch_me_(radio_edit).mp3100%  
+	  Novo Arquivo		  13.2 m	d:\projeto_insta_pc\audio\tracks\rÅfÅs_du_sol_innerbloom.mp3100%  
+	  Novo Arquivo		   9.8 m	d:\projeto_insta_pc\audio\tracks\shakedown_at_night.mp3100%  
+	  Novo Arquivo		   8.7 m	d:\projeto_insta_pc\audio\tracks\sheila_spacer.mp3100%  
+	  Novo Arquivo		   9.5 m	d:\projeto_insta_pc\audio\tracks\solomun_friends.mp3 52%   62%   93%  100%  
+	  Novo Arquivo		   5.3 m	d:\projeto_insta_pc\audio\tracks\soul_ii_soul,_caron_wheeler_back_to_life.mp3100%  
+	  Novo Arquivo		   6.0 m	d:\projeto_insta_pc\audio\tracks\Stardust Music Sounds Better With You.mp3100%  
+	  Novo Arquivo		  14.0 m	d:\projeto_insta_pc\audio\tracks\stardust,_benjamin_diamond_music_sounds_better_with_you.mp3 63%   85%   92%  100%  
+	  Novo Arquivo		   6.0 m	d:\projeto_insta_pc\audio\tracks\stardust_music_sounds_better_with_you.mp3100%  
+	  Novo Arquivo		   9.6 m	d:\projeto_insta_pc\audio\tracks\stephan_bodzin_singularity.mp3100%  
+	  Novo Arquivo		   5.3 m	d:\projeto_insta_pc\audio\tracks\ultra_nate_free.mp3100%  
+	  Novo Arquivo		   5.3 m	d:\projeto_insta_pc\audio\tracks\ultra_natÇ_free.mp3100%  
+	  Novo Arquivo		   8.7 m	d:\projeto_insta_pc\audio\tracks\weiss_feel_my_needs.mp3100%  
+	  Novo Arquivo		   7.6 m	d:\projeto_insta_pc\audio\tracks\weiss_let_me_be.mp3100%  
+	  Novo Arquivo		   5.2 m	d:\projeto_insta_pc\audio\tracks\womack_&_womack_teardrops.mp3100%  
+	  Novo Arquivo		  10.9 m	d:\projeto_insta_pc\audio\tracks\Éme_rej.mp3100%  
+	  Novo Arquivo		      72	d:\projeto_insta_pc\posts\post_006_fisher_losing_it\caption.txt100%  
+	  Novo Arquivo		     135	d:\projeto_insta_pc\posts\post_006_fisher_losing_it\caption_spec.txt100%  
+	  Novo Arquivo		     271	d:\projeto_insta_pc\posts\post_006_fisher_losing_it\lyrics.lrc100%  
+	  Novo Arquivo		      73	d:\projeto_insta_pc\posts\post_007_dennis_cruz_el_sueno\caption.txt100%  
+	  Novo Arquivo		     139	d:\projeto_insta_pc\posts\post_007_dennis_cruz_el_sueno\caption_spec.txt100%  
+	  Novo Arquivo		    2441	d:\projeto_insta_pc\posts\post_007_dennis_cruz_el_sueno\lyrics.lrc100%  
+	  Novo Arquivo		      64	d:\projeto_insta_pc\posts\post_003_chris_stussy_all_night_long\caption.txt100%  
+	  Novo Arquivo		     157	d:\projeto_insta_pc\posts\post_003_chris_stussy_all_night_long\caption_spec.txt100%  
+	  Novo Arquivo		     908	d:\projeto_insta_pc\posts\post_003_chris_stussy_all_night_long\lyrics.lrc100%  
+	  Novo Arquivo		      79	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\caption.txt100%  
+	  Novo Arquivo		     157	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\caption_spec.txt100%  
+	  Novo Arquivo		    1665	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\lyrics.lrc100%  
+	  Novo Arquivo		      62	d:\projeto_insta_pc\posts\post_009_cloonee_be_good_to_me\caption.txt100%  
+	  Novo Arquivo		     156	d:\projeto_insta_pc\posts\post_009_cloonee_be_good_to_me\caption_spec.txt100%  
+	  Novo Arquivo		    1674	d:\projeto_insta_pc\posts\post_009_cloonee_be_good_to_me\lyrics.lrc100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\caption.txt100%  
+	  Novo Arquivo		     120	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\caption_spec.txt100%  
+	  Novo Arquivo		    1530	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\videos_used.json100%  
+	  Novo Arquivo		      74	d:\projeto_insta_pc\posts\post_008_frankie_knuckles_your_love\caption.txt100%  
+	  Novo Arquivo		     145	d:\projeto_insta_pc\posts\post_008_frankie_knuckles_your_love\caption_spec.txt100%  
+	  Novo Arquivo		    1031	d:\projeto_insta_pc\posts\post_008_frankie_knuckles_your_love\lyrics.lrc100%  
+	  Novo Arquivo		      71	d:\projeto_insta_pc\posts\post_002_pawsa_groove_it\caption.txt100%  
+	  Novo Arquivo		     143	d:\projeto_insta_pc\posts\post_002_pawsa_groove_it\caption_spec.txt100%  
+	  Novo Arquivo		      75	d:\projeto_insta_pc\posts\post_005_anotr_relax_my_eyes\caption.txt100%  
+	  Novo Arquivo		     157	d:\projeto_insta_pc\posts\post_005_anotr_relax_my_eyes\caption_spec.txt100%  
+	  Novo Arquivo		    1091	d:\projeto_insta_pc\posts\post_005_anotr_relax_my_eyes\lyrics.lrc100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\caption.txt100%  
+	  Novo Arquivo		     122	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\caption_spec.txt100%  
+	  Novo Arquivo		    1534	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\videos_used.json100%  
+	  Novo Arquivo		      74	d:\projeto_insta_pc\posts\post_011_marshall_jefferson_move_your_body\caption.txt100%  
+	  Novo Arquivo		     161	d:\projeto_insta_pc\posts\post_011_marshall_jefferson_move_your_body\caption_spec.txt100%  
+	  Novo Arquivo		    4054	d:\projeto_insta_pc\posts\post_011_marshall_jefferson_move_your_body\lyrics.lrc100%  
+	  Novo Arquivo		      65	d:\projeto_insta_pc\posts\post_015_elderbrook_cola\caption.txt100%  
+	  Novo Arquivo		     134	d:\projeto_insta_pc\posts\post_015_elderbrook_cola\caption_spec.txt100%  
+	  Novo Arquivo		    2588	d:\projeto_insta_pc\posts\post_015_elderbrook_cola\lyrics.lrc100%  
+	  Novo Arquivo		      62	d:\projeto_insta_pc\posts\post_014_meduza_tell_me_why\caption.txt100%  
+	  Novo Arquivo		     132	d:\projeto_insta_pc\posts\post_014_meduza_tell_me_why\caption_spec.txt100%  
+	  Novo Arquivo		     580	d:\projeto_insta_pc\posts\post_014_meduza_tell_me_why\lyrics.lrc100%  
+	  Novo Arquivo		      69	d:\projeto_insta_pc\posts\post_012_stardust_music_sounds_better_with_you\caption.txt100%  
+	  Novo Arquivo		     167	d:\projeto_insta_pc\posts\post_012_stardust_music_sounds_better_with_you\caption_spec.txt100%  
+	  Novo Arquivo		    2288	d:\projeto_insta_pc\posts\post_012_stardust_music_sounds_better_with_you\lyrics.lrc100%  
+	  Novo Arquivo		      70	d:\projeto_insta_pc\posts\post_013_john_summit_la_danza\caption.txt100%  
+	  Novo Arquivo		     139	d:\projeto_insta_pc\posts\post_013_john_summit_la_danza\caption_spec.txt100%  
+	  Novo Arquivo		    2002	d:\projeto_insta_pc\posts\post_013_john_summit_la_danza\lyrics.lrc100%  
+	  Novo Arquivo		      63	d:\projeto_insta_pc\posts\post_023_ultra_nate_free\caption.txt100%  
+	  Novo Arquivo		     129	d:\projeto_insta_pc\posts\post_023_ultra_nate_free\caption_spec.txt100%  
+	  Novo Arquivo		    4034	d:\projeto_insta_pc\posts\post_023_ultra_nate_free\lyrics.lrc100%  
+	  Novo Arquivo		    1314	d:\projeto_insta_pc\posts\post_023_ultra_nate_free\videos_used.json100%  
+	  Novo Arquivo		      77	d:\projeto_insta_pc\posts\post_017_kings_of_tomorrow_finally\caption.txt100%  
+	  Novo Arquivo		     155	d:\projeto_insta_pc\posts\post_017_kings_of_tomorrow_finally\caption_spec.txt100%  
+	  Novo Arquivo		    2111	d:\projeto_insta_pc\posts\post_017_kings_of_tomorrow_finally\lyrics.lrc100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\caption.txt100%  
+	  Novo Arquivo		     122	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\caption_spec.txt100%  
+	  Novo Arquivo		    1534	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\caption.txt100%  
+	  Novo Arquivo		     114	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\caption_spec.txt100%  
+	  Novo Arquivo		    1201	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\lyrics.lrc100%  
+	  Novo Arquivo		    1518	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\videos_used.json100%  
+	  Novo Arquivo		      61	d:\projeto_insta_pc\posts\post_022_degrees_of_motion_do_you_want_it_right_now\caption.txt100%  
+	  Novo Arquivo		     156	d:\projeto_insta_pc\posts\post_022_degrees_of_motion_do_you_want_it_right_now\caption_spec.txt100%  
+	  Novo Arquivo		    2957	d:\projeto_insta_pc\posts\post_022_degrees_of_motion_do_you_want_it_right_now\lyrics.lrc100%  
+	  Novo Arquivo		      75	d:\projeto_insta_pc\posts\post_018_anotr_relax_my_eyes\caption.txt100%  
+	  Novo Arquivo		     149	d:\projeto_insta_pc\posts\post_018_anotr_relax_my_eyes\caption_spec.txt100%  
+	  Novo Arquivo		    1091	d:\projeto_insta_pc\posts\post_018_anotr_relax_my_eyes\lyrics.lrc100%  
+	  Novo Arquivo		      68	d:\projeto_insta_pc\posts\post_024_kerri_chandler_let_me_show_you\caption.txt100%  
+	  Novo Arquivo		     142	d:\projeto_insta_pc\posts\post_024_kerri_chandler_let_me_show_you\caption_spec.txt100%  
+	  Novo Arquivo		      78	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\caption.txt100%  
+	  Novo Arquivo		     144	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\caption_spec.txt100%  
+	  Novo Arquivo		    2177	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\lyrics.lrc100%  
+	  Novo Arquivo		      79	d:\projeto_insta_pc\posts\post_025_kerri_chandler_bar_a_thym\caption.txt100%  
+	  Novo Arquivo		     137	d:\projeto_insta_pc\posts\post_025_kerri_chandler_bar_a_thym\caption_spec.txt100%  
+	  Novo Arquivo		    1319	d:\projeto_insta_pc\posts\post_025_kerri_chandler_bar_a_thym\videos_used.json100%  
+	  Novo Arquivo		      73	d:\projeto_insta_pc\posts\post_027_masters_at_work_work\caption.txt100%  
+	  Novo Arquivo		     132	d:\projeto_insta_pc\posts\post_027_masters_at_work_work\caption_spec.txt100%  
+	  Novo Arquivo		    2817	d:\projeto_insta_pc\posts\post_027_masters_at_work_work\lyrics.lrc100%  
+	  Novo Arquivo		      65	d:\projeto_insta_pc\posts\post_026_disclosure_higher_than_ever_before\caption.txt100%  
+	  Novo Arquivo		     148	d:\projeto_insta_pc\posts\post_026_disclosure_higher_than_ever_before\caption_spec.txt100%  
+	  Novo Arquivo		     495	d:\projeto_insta_pc\posts\post_026_disclosure_higher_than_ever_before\lyrics.lrc100%  
+	  Novo Arquivo		      57	d:\projeto_insta_pc\posts\post_028_kings_of_tomorrow_finally_original\caption.txt100%  
+	  Novo Arquivo		     148	d:\projeto_insta_pc\posts\post_028_kings_of_tomorrow_finally_original\caption_spec.txt100%  
+	  Novo Arquivo		    1184	d:\projeto_insta_pc\posts\post_028_kings_of_tomorrow_finally_original\lyrics.lrc100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_029_purple_disco_machine_rise\caption.txt100%  
+	  Novo Arquivo		     139	d:\projeto_insta_pc\posts\post_029_purple_disco_machine_rise\caption_spec.txt100%  
+	  Novo Arquivo		      63	d:\projeto_insta_pc\posts\post_030_purple_disco_machine_substitution\caption.txt100%  
+	  Novo Arquivo		     147	d:\projeto_insta_pc\posts\post_030_purple_disco_machine_substitution\caption_spec.txt100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_101_bicep_glue\caption.txt100%  
+	  Novo Arquivo		     108	d:\projeto_insta_pc\posts\post_101_bicep_glue\caption_spec.txt100%  
+	  Novo Arquivo		    1503	d:\projeto_insta_pc\posts\post_101_bicep_glue\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\caption.txt100%  
+	  Novo Arquivo		     124	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\caption_spec.txt100%  
+	  Novo Arquivo		    1535	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\caption.txt100%  
+	  Novo Arquivo		     134	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\caption_spec.txt100%  
+	  Novo Arquivo		     898	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\lyrics.lrc100%  
+	  Novo Arquivo		    1555	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\videos_used.json100%  
+	  Novo Arquivo		      63	d:\projeto_insta_pc\posts\post_105_lane_8_graves\caption.txt100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\caption.txt100%  
+	  Novo Arquivo		     115	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\caption_spec.txt100%  
+	  Novo Arquivo		    1177	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\lyrics.lrc100%  
+	  Novo Arquivo		    1533	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\caption.txt100%  
+	  Novo Arquivo		     124	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\caption_spec.txt100%  
+	  Novo Arquivo		    1535	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\videos_used.json100%  
+	  Novo Arquivo		      56	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\caption.txt100%  
+	  Novo Arquivo		     146	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\caption_spec.txt100%  
+	  Novo Arquivo		    1342	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\videos_used.json100%  
+	  Novo Arquivo		      68	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\caption.txt100%  
+	  Novo Arquivo		     158	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\caption_spec.txt100%  
+	  Novo Arquivo		    1612	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\caption.txt100%  
+	  Novo Arquivo		     131	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\caption_spec.txt100%  
+	  Novo Arquivo		    3236	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\lyrics.lrc100%  
+	  Novo Arquivo		    1549	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_110_four_tet_lush\caption.txt100%  
+	  Novo Arquivo		     111	d:\projeto_insta_pc\posts\post_110_four_tet_lush\caption_spec.txt100%  
+	  Novo Arquivo		    1509	d:\projeto_insta_pc\posts\post_110_four_tet_lush\videos_used.json100%  
+	  Novo Arquivo		      71	d:\projeto_insta_pc\posts\post_111_burial_archangel\caption.txt100%  
+	  Novo Arquivo		     138	d:\projeto_insta_pc\posts\post_111_burial_archangel\caption_spec.txt100%  
+	  Novo Arquivo		    2194	d:\projeto_insta_pc\posts\post_111_burial_archangel\lyrics.lrc100%  
+	  Novo Arquivo		    1326	d:\projeto_insta_pc\posts\post_111_burial_archangel\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\caption.txt100%  
+	  Novo Arquivo		     111	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\caption_spec.txt100%  
+	  Novo Arquivo		     526	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\lyrics.lrc100%  
+	  Novo Arquivo		    1509	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\videos_used.json100%  
+	  Novo Arquivo		      72	d:\projeto_insta_pc\posts\post_113_peggy_gou_starry_night\caption.txt100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\caption.txt100%  
+	  Novo Arquivo		     132	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\caption_spec.txt100%  
+	  Novo Arquivo		     719	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\lyrics.lrc100%  
+	  Novo Arquivo		      75	d:\projeto_insta_pc\posts\post_116_tale_of_us_north_star\caption.txt100%  
+	  Novo Arquivo		    1551	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\videos_used.json100%  
+	  Novo Arquivo		      61	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\caption.txt100%  
+	  Novo Arquivo		     141	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\caption_spec.txt100%  
+	  Novo Arquivo		     491	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\lyrics.lrc100%  
+	  Novo Arquivo		    1332	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\videos_used.json100%  
+	  Novo Arquivo		      64	d:\projeto_insta_pc\posts\post_114_solomun_friends\caption.txt100%  
+	  Novo Arquivo		     137	d:\projeto_insta_pc\posts\post_114_solomun_friends\caption_spec.txt100%  
+	  Novo Arquivo		    1324	d:\projeto_insta_pc\posts\post_114_solomun_friends\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\caption.txt100%  
+	  Novo Arquivo		     119	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\caption_spec.txt100%  
+	  Novo Arquivo		     118	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\lyrics.lrc100%  
+	  Novo Arquivo		    1525	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\videos_used.json100%  
+	  Novo Arquivo		      63	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\caption.txt100%  
+	  Novo Arquivo		     137	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\caption_spec.txt100%  
+	  Novo Arquivo		    4034	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\lyrics.lrc100%  
+	  Novo Arquivo		    1309	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\videos_used.json100%  
+	  Novo Arquivo		      64	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\caption.txt100%  
+	  Novo Arquivo		     164	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\caption_spec.txt100%  
+	  Novo Arquivo		    1917	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\lyrics.lrc100%  
+	  Novo Arquivo		    1624	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\videos_used.json100%  
+	  Novo Arquivo		      60	d:\projeto_insta_pc\posts\post_120_Éme_rej\caption.txt100%  
+	  Novo Arquivo		     106	d:\projeto_insta_pc\posts\post_120_Éme_rej\caption_spec.txt100%  
+	  Novo Arquivo		    1499	d:\projeto_insta_pc\posts\post_120_Éme_rej\videos_used.json100%  
+	  Novo Arquivo		      62	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\caption.txt100%  
+	  Novo Arquivo		     151	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\caption_spec.txt100%  
+	  Novo Arquivo		    3824	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\lyrics.lrc100%  
+	  Novo Arquivo		    1335	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\videos_used.json100%  
+	  Novo Arquivo		      69	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\caption.txt100%  
+	  Novo Arquivo		     149	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\caption_spec.txt100%  
+	  Novo Arquivo		    2447	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\lyrics.lrc100%  
+	  Novo Arquivo		    1357	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\videos_used.json100%  
+	  Novo Arquivo		      62	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\caption.txt100%  
+	  Novo Arquivo		     197	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\caption_spec.txt100%  
+	  Novo Arquivo		    1411	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\videos_used.json100%  
+	  Novo Arquivo		      70	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\caption.txt100%  
+	  Novo Arquivo		     180	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\caption_spec.txt100%  
+	  Novo Arquivo		    2120	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\lyrics.lrc100%  
+	  Novo Arquivo		    1401	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\videos_used.json100%  
+	  Novo Arquivo		      83	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\caption.txt100%  
+	  Novo Arquivo		     241	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\caption_spec.txt100%  
+	  Novo Arquivo		    2120	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\lyrics.lrc100%  
+	  Novo Arquivo		    2407	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\videos_used.json100%  
+	  Novo Arquivo		      70	d:\projeto_insta_pc\posts\post_206_sheila_spacer\caption.txt100%  
+	  Novo Arquivo		     136	d:\projeto_insta_pc\posts\post_206_sheila_spacer\caption_spec.txt100%  
+	  Novo Arquivo		    1141	d:\projeto_insta_pc\posts\post_206_sheila_spacer\lyrics.lrc100%  
+	  Novo Arquivo		    1303	d:\projeto_insta_pc\posts\post_206_sheila_spacer\videos_used.json100%  
+	  Novo Arquivo		      55	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\caption.txt100%  
+	  Novo Arquivo		     174	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\caption_spec.txt100%  
+	  Novo Arquivo		    1407	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\videos_used.json100%  
+	  Novo Arquivo		      53	d:\projeto_insta_pc\posts\post_208_soulsearcher_can't_get_enough!_(vocal_club_mix)\caption.txt100%  
+	  Novo Arquivo		     164	d:\projeto_insta_pc\posts\post_208_soulsearcher_can't_get_enough!_(vocal_club_mix)\caption_spec.txt100%  
+	  Novo Arquivo		      64	d:\projeto_insta_pc\posts\post_210_todd_terry,_low_steppa,_loop_da_loop_something_goin'_on\caption.txt100%  
+	  Novo Arquivo		     170	d:\projeto_insta_pc\posts\post_210_todd_terry,_low_steppa,_loop_da_loop_something_goin'_on\caption_spec.txt100%  
+	  Novo Arquivo		      66	d:\projeto_insta_pc\posts\post_209_dennis_edwards,_siedah_garrett_don't_look_any_further\caption.txt100%  
+	  Novo Arquivo		     178	d:\projeto_insta_pc\posts\post_209_dennis_edwards,_siedah_garrett_don't_look_any_further\caption_spec.txt100%  
+	  Novo Arquivo		    1949	d:\projeto_insta_pc\posts\post_209_dennis_edwards,_siedah_garrett_don't_look_any_further\lyrics.lrc100%  
+	  Novo Arquivo		      70	d:\projeto_insta_pc\posts\post_211_crystal_waters_gypsy_woman_(she's_homeless)\caption.txt100%  
+	  Novo Arquivo		     164	d:\projeto_insta_pc\posts\post_211_crystal_waters_gypsy_woman_(she's_homeless)\caption_spec.txt100%  
+	  Novo Arquivo		    2057	d:\projeto_insta_pc\posts\post_211_crystal_waters_gypsy_woman_(she's_homeless)\lyrics.lrc100%  
+	  Novo Arquivo		      69	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\caption.txt100%  
+	  Novo Arquivo		     139	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\caption_spec.txt100%  
+	  Novo Arquivo		    2177	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\lyrics.lrc100%  
+	  Novo Arquivo		    1317	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\videos_used.json100%  
+	  Novo Arquivo		      76	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\caption.txt100%  
+	  Novo Arquivo		     173	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\caption_spec.txt100%  
+	  Novo Arquivo		    2795	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\lyrics.lrc100%  
+	  Novo Arquivo		    1389	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\videos_used.json100%  
+	  Novo Arquivo		      81	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\caption.txt100%  
+	  Novo Arquivo		     150	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\caption_spec.txt100%  
+	  Novo Arquivo		    1990	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\lyrics.lrc100%  
+	  Novo Arquivo		    1317	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\videos_used.json100%  
+	  Novo Arquivo		      66	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\caption.txt100%  
+	  Novo Arquivo		     144	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\caption_spec.txt100%  
+	  Novo Arquivo		    2237	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\lyrics.lrc100%  
+	  Novo Arquivo		    1347	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\videos_used.json100%  
+	  Novo Arquivo		      64	d:\projeto_insta_pc\posts\post_219_pete_heller's_big_love_big_love\caption.txt100%  
+	  Novo Arquivo		     147	d:\projeto_insta_pc\posts\post_219_pete_heller's_big_love_big_love\caption_spec.txt100%  
+	  Novo Arquivo		    2026	d:\projeto_insta_pc\posts\post_219_pete_heller's_big_love_big_love\lyrics.lrc100%  
+	  Novo Arquivo		     156	d:\projeto_insta_pc\posts\post_306_paris_fred_again\caption.txt100%  
+	  Novo Arquivo		     127	d:\projeto_insta_pc\posts\post_303_ibiza_fisher\caption.txt100%  
+	  Novo Arquivo		     271	d:\projeto_insta_pc\posts\post_303_ibiza_fisher\lyrics.lrc100%  
+	  Novo Arquivo		      71	d:\projeto_insta_pc\posts\post_214_the_bucketheads_the_bomb!_(these_sounds_fall_into_my_mind)\caption.txt100%  
+	  Novo Arquivo		     171	d:\projeto_insta_pc\posts\post_214_the_bucketheads_the_bomb!_(these_sounds_fall_into_my_mind)\caption_spec.txt100%  
+	  Novo Arquivo		     689	d:\projeto_insta_pc\posts\post_214_the_bucketheads_the_bomb!_(these_sounds_fall_into_my_mind)\lyrics.lrc100%  
+	  Novo Arquivo		     146	d:\projeto_insta_pc\posts\post_307_paris_jan_blomqvist\caption.txt100%  
+	  Novo Arquivo		     719	d:\projeto_insta_pc\posts\post_307_paris_jan_blomqvist\lyrics.lrc100%  
+	  Novo Arquivo		     128	d:\projeto_insta_pc\posts\post_309_roma_boris_brejcha\caption.txt100%  
+	  Novo Arquivo		     118	d:\projeto_insta_pc\posts\post_309_roma_boris_brejcha\lyrics.lrc100%  
+	  Novo Arquivo		     150	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\caption.txt100%  
+	  Novo Arquivo		    1201	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\lyrics.lrc100%  
+	  Novo Arquivo		     144	d:\projeto_insta_pc\posts\post_308_roma_kerri_chandler\caption.txt100%  
+	  Novo Arquivo		     138	d:\projeto_insta_pc\posts\post_311_ibiza_michael_bibi\caption.txt100%  
+	  Novo Arquivo		      84	d:\projeto_insta_pc\posts\post_221_womack_&_womack_teardrops\caption.txt100%  
+	  Novo Arquivo		     144	d:\projeto_insta_pc\posts\post_221_womack_&_womack_teardrops\caption_spec.txt100%  
+	  Novo Arquivo		    2538	d:\projeto_insta_pc\posts\post_221_womack_&_womack_teardrops\lyrics.lrc100%  
+	  Novo Arquivo		     126	d:\projeto_insta_pc\posts\post_305_paris_bicep\caption.txt100%  
+	  Novo Arquivo		      65	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\caption.txt100%  
+	  Novo Arquivo		     172	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\caption_spec.txt100%  
+	  Novo Arquivo		    2574	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\lyrics.lrc100%  
+	  Novo Arquivo		    1387	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\videos_used.json100%  
+	  Novo Arquivo		     129	d:\projeto_insta_pc\posts\post_310_roma_meduza\caption.txt100%  
+	  Novo Arquivo		     580	d:\projeto_insta_pc\posts\post_310_roma_meduza\lyrics.lrc100%  
+	  Novo Arquivo		     126	d:\projeto_insta_pc\posts\post_302_ibiza_peggy_gou\caption.txt100%  
+	  Novo Arquivo		    1665	d:\projeto_insta_pc\posts\post_302_ibiza_peggy_gou\lyrics.lrc100%  
+	  Novo Arquivo		      66	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\caption.txt100%  
+	  Novo Arquivo		     160	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\caption_spec.txt100%  
+	  Novo Arquivo		    1373	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\videos_used.json100%  
+	  Novo Arquivo		     157	d:\projeto_insta_pc\posts\post_301_pdm_rise_ibiza\caption.txt100%  
+	  Novo Arquivo		    2059	d:\projeto_insta_pc\posts\post_301_pdm_rise_ibiza\lyrics.lrc100%  
+	  Novo Arquivo		      70	d:\projeto_insta_pc\posts\post_215_m_people_movin'_on_up\caption.txt100%  
+	  Novo Arquivo		     134	d:\projeto_insta_pc\posts\post_215_m_people_movin'_on_up\caption_spec.txt100%  
+	  Novo Arquivo		    1976	d:\projeto_insta_pc\posts\post_215_m_people_movin'_on_up\lyrics.lrc100%  
+	  Novo Arquivo		      63	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\caption.txt100%  
+	  Novo Arquivo		     131	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\caption_spec.txt100%  
+	  Novo Arquivo		     801	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\lyrics.lrc100%  
+	  Novo Arquivo		    1313	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\videos_used.json100%  
+	  Novo Arquivo		      76	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\caption.txt100%  
+	  Novo Arquivo		      62	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\caption.txt100%  
+	  Novo Arquivo		     166	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\caption_spec.txt100%  
+	  Novo Arquivo		     165	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\caption_spec.txt100%  
+	  Novo Arquivo		    2779	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\lyrics.lrc100%  
+	  Novo Arquivo		    1377	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\videos_used.json100%  
+	  Novo Arquivo		    1287	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\lyrics.lrc100%  
+	  Novo Arquivo		    1367	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\videos_used.json100%  
+	  Novo Arquivo		      62	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\caption.txt100%  
+	  Novo Arquivo		     154	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\caption_spec.txt100%  
+	  Novo Arquivo		    1648	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\lyrics.lrc100%  
+	  Novo Arquivo		    1361	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\videos_used.json100%  
+	  Novo Arquivo		  94.6 m	d:\projeto_insta_pc\tools\ffmpeg\bin\ffmpeg.exe  9%   12%   13%   15%   19%   22%   25%   26%   28%   31%   34%   35%   36%   38%   39%   41%   42%   44%   45%   47%   48%   50%   51%   52%   54%   57%   58%   60%   61%   63%   64%   65%   67%   68%   70%   73%   77%   79%   80%   81%   83%   84%   85%   86%   89%   90%   92%   96%   97%   98%  100%  
+	  Novo Arquivo		  94.4 m	d:\projeto_insta_pc\tools\ffmpeg\bin\ffprobe.exe100%  
+	  Novo Arquivo		   35147	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\LICENSE100%  
+	  Novo Arquivo		   40985	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\README.txt100%  
+	  Novo Arquivo		  11.7 m	d:\projeto_insta_pc\posts\post_007_dennis_cruz_el_sueno\output\v1.mp4100%  
+	  Novo Arquivo		  11.5 m	d:\projeto_insta_pc\posts\post_007_dennis_cruz_el_sueno\output\v2.mp4100%  
+	  Novo Arquivo		  10.7 m	d:\projeto_insta_pc\posts\post_007_dennis_cruz_el_sueno\output\v3.mp4100%  
+	  Novo Arquivo		  16.0 m	d:\projeto_insta_pc\posts\post_006_fisher_losing_it\output\v1.mp4100%  
+	  Novo Arquivo		  17.1 m	d:\projeto_insta_pc\posts\post_006_fisher_losing_it\output\v2.mp4100%  
+	  Novo Arquivo		  16.2 m	d:\projeto_insta_pc\posts\post_006_fisher_losing_it\output\v3.mp4100%  
+	  Novo Arquivo		  14.5 m	d:\projeto_insta_pc\posts\post_003_chris_stussy_all_night_long\output\v1.mp4100%  
+	  Novo Arquivo		  14.8 m	d:\projeto_insta_pc\posts\post_003_chris_stussy_all_night_long\output\v2.mp4100%  
+	  Novo Arquivo		  15.0 m	d:\projeto_insta_pc\posts\post_003_chris_stussy_all_night_long\output\v3.mp4100%  
+	  Novo Arquivo		  10.8 m	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\output\v1.mp4100%  
+	  Novo Arquivo		    5558	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\output\v1_plan.json100%  
+	  Novo Arquivo		  13.5 m	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\output\v2.mp4100%  
+	  Novo Arquivo		    7965	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\output\v2_plan.json100%  
+	  Novo Arquivo		  10.9 m	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\output\v3.mp4100%  
+	  Novo Arquivo		    6704	d:\projeto_insta_pc\posts\post_004_michael_bibi_hanging_tree\output\v3_plan.json100%  
+	  Novo Arquivo		  14.5 m	d:\projeto_insta_pc\posts\post_009_cloonee_be_good_to_me\output\v1.mp4100%  
+	  Novo Arquivo		  14.2 m	d:\projeto_insta_pc\posts\post_009_cloonee_be_good_to_me\output\v2.mp4100%  
+	  Novo Arquivo		  15.2 m	d:\projeto_insta_pc\posts\post_009_cloonee_be_good_to_me\output\v3.mp4100%  
+	  Novo Arquivo		   1.0 m	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\output\test_debug.mp4100%  
+	  Novo Arquivo		  15.0 m	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\output\test_full.mp4100%  
+	  Novo Arquivo		  14.2 m	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\output\v1.mp4100%  
+	  Novo Arquivo		    3939	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\output\v1_plan.json100%  
+	  Novo Arquivo		  13.5 m	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\output\v2.mp4100%  
+	  Novo Arquivo		    9767	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\output\v2_plan.json100%  
+	  Novo Arquivo		  14.3 m	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\output\v3.mp4100%  
+	  Novo Arquivo		    4905	d:\projeto_insta_pc\posts\post_001_peggy_gou_nanana\output\v3_plan.json100%  
+	  Novo Arquivo		  15.9 m	d:\projeto_insta_pc\posts\post_008_frankie_knuckles_your_love\output\v1.mp4100%  
+	  Novo Arquivo		  16.8 m	d:\projeto_insta_pc\posts\post_008_frankie_knuckles_your_love\output\v2.mp4100%  
+	  Novo Arquivo		  14.4 m	d:\projeto_insta_pc\posts\post_008_frankie_knuckles_your_love\output\v3.mp4100%  
+	  Novo Arquivo		  14.2 m	d:\projeto_insta_pc\posts\post_002_pawsa_groove_it\output\v1.mp4100%  
+	  Novo Arquivo		  16.4 m	d:\projeto_insta_pc\posts\post_002_pawsa_groove_it\output\v2.mp4100%  
+	  Novo Arquivo		  14.2 m	d:\projeto_insta_pc\posts\post_002_pawsa_groove_it\output\v3.mp4100%  
+	  Novo Arquivo		  13.7 m	d:\projeto_insta_pc\posts\post_005_anotr_relax_my_eyes\output_lyrics\tiktok_lyrics.mp4100%  
+	  Novo Arquivo		    8064	d:\projeto_insta_pc\posts\post_005_anotr_relax_my_eyes\output_lyrics\tiktok_lyrics_plan.json100%  
+	  Novo Arquivo		  14.9 m	d:\projeto_insta_pc\posts\post_005_anotr_relax_my_eyes\output\v1.mp4100%  
+	  Novo Arquivo		  14.5 m	d:\projeto_insta_pc\posts\post_005_anotr_relax_my_eyes\output\v2.mp4100%  
+	  Novo Arquivo		  15.0 m	d:\projeto_insta_pc\posts\post_005_anotr_relax_my_eyes\output\v3.mp4100%  
+	  Novo Arquivo		  12.3 m	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\output\v1.mp4100%  
+	  Novo Arquivo		    6895	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\output\v1_plan.json100%  
+	  Novo Arquivo		  12.0 m	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\output\v2.mp4100%  
+	  Novo Arquivo		    5655	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\output\v2_plan.json100%  
+	  Novo Arquivo		  12.8 m	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\output\v3.mp4100%  
+	  Novo Arquivo		    9084	d:\projeto_insta_pc\posts\post_010_mr._fingers_can_you_feel_it\output\v3_plan.json100%  
+	  Novo Arquivo		  15.6 m	d:\projeto_insta_pc\posts\post_011_marshall_jefferson_move_your_body\output\v1.mp4100%  
+	  Novo Arquivo		  13.7 m	d:\projeto_insta_pc\posts\post_011_marshall_jefferson_move_your_body\output\v2.mp4100%  
+	  Novo Arquivo		  16.7 m	d:\projeto_insta_pc\posts\post_011_marshall_jefferson_move_your_body\output\v3.mp4100%  
+	  Novo Arquivo		  14.6 m	d:\projeto_insta_pc\posts\post_015_elderbrook_cola\output\v1.mp4100%  
+	  Novo Arquivo		  17.0 m	d:\projeto_insta_pc\posts\post_015_elderbrook_cola\output\v2.mp4100%  
+	  Novo Arquivo		  17.3 m	d:\projeto_insta_pc\posts\post_015_elderbrook_cola\output\v3.mp4100%  
+	  Novo Arquivo		  10.2 m	d:\projeto_insta_pc\posts\post_014_meduza_tell_me_why\output\v1.mp4100%  
+	  Novo Arquivo		  10.5 m	d:\projeto_insta_pc\posts\post_014_meduza_tell_me_why\output\v2.mp4100%  
+	  Novo Arquivo		  10.6 m	d:\projeto_insta_pc\posts\post_014_meduza_tell_me_why\output\v3.mp4100%  
+	  Novo Arquivo		  13.1 m	d:\projeto_insta_pc\posts\post_012_stardust_music_sounds_better_with_you\output_lyrics\tiktok_lyrics.mp4100%  
+	  Novo Arquivo		    3902	d:\projeto_insta_pc\posts\post_012_stardust_music_sounds_better_with_you\output_lyrics\tiktok_lyrics_plan.json100%  
+	  Novo Arquivo		  12.4 m	d:\projeto_insta_pc\posts\post_012_stardust_music_sounds_better_with_you\output\v1.mp4100%  
+	  Novo Arquivo		  15.5 m	d:\projeto_insta_pc\posts\post_012_stardust_music_sounds_better_with_you\output\v2.mp4100%  
+	  Novo Arquivo		  16.2 m	d:\projeto_insta_pc\posts\post_012_stardust_music_sounds_better_with_you\output\v3.mp4100%  
+	  Novo Arquivo		  16.2 m	d:\projeto_insta_pc\posts\post_013_john_summit_la_danza\output\v1.mp4100%  
+	  Novo Arquivo		  16.8 m	d:\projeto_insta_pc\posts\post_013_john_summit_la_danza\output\v2.mp4100%  
+	  Novo Arquivo		  17.4 m	d:\projeto_insta_pc\posts\post_013_john_summit_la_danza\output\v3.mp4100%  
+	  Novo Arquivo		  13.5 m	d:\projeto_insta_pc\posts\post_023_ultra_nate_free\output\v1.mp4100%  
+	  Novo Arquivo		  14.6 m	d:\projeto_insta_pc\posts\post_017_kings_of_tomorrow_finally\output\v1.mp4100%  
+	  Novo Arquivo		  13.9 m	d:\projeto_insta_pc\posts\post_017_kings_of_tomorrow_finally\output\v2.mp4100%  
+	  Novo Arquivo		  14.6 m	d:\projeto_insta_pc\posts\post_017_kings_of_tomorrow_finally\output\v3.mp4100%  
+	  Novo Arquivo		  13.6 m	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\output\v1.mp4100%  
+	  Novo Arquivo		   11536	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\output\v1_plan.json100%  
+	  Novo Arquivo		  14.3 m	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\output\v2.mp4100%  
+	  Novo Arquivo		    9692	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\output\v2_plan.json100%  
+	  Novo Arquivo		  12.0 m	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\output\v3.mp4100%  
+	  Novo Arquivo		    6662	d:\projeto_insta_pc\posts\post_019_anotr_vertigo_carlita_remix\output\v3_plan.json100%  
+	  Novo Arquivo		  11.3 m	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\output\v1.mp4100%  
+	  Novo Arquivo		    7003	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\output\v1_plan.json100%  
+	  Novo Arquivo		  13.4 m	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\output\v2.mp4100%  
+	  Novo Arquivo		    8039	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\output\v2_plan.json100%  
+	  Novo Arquivo		  14.6 m	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\output\v3.mp4100%  
+	  Novo Arquivo		    9373	d:\projeto_insta_pc\posts\post_020_chris_stussy_desire\output\v3_plan.json100%  
+	  Novo Arquivo		  14.3 m	d:\projeto_insta_pc\posts\post_022_degrees_of_motion_do_you_want_it_right_now\output\v1.mp4100%  
+	  Novo Arquivo		  13.5 m	d:\projeto_insta_pc\posts\post_022_degrees_of_motion_do_you_want_it_right_now\output\v2.mp4100%  
+	  Novo Arquivo		  14.0 m	d:\projeto_insta_pc\posts\post_022_degrees_of_motion_do_you_want_it_right_now\output\v3.mp4100%  
+	  Novo Arquivo		  14.4 m	d:\projeto_insta_pc\posts\post_018_anotr_relax_my_eyes\output\v1.mp4100%  
+	  Novo Arquivo		  14.3 m	d:\projeto_insta_pc\posts\post_018_anotr_relax_my_eyes\output\v2.mp4100%  
+	  Novo Arquivo		  13.6 m	d:\projeto_insta_pc\posts\post_018_anotr_relax_my_eyes\output\v3.mp4100%  
+	  Novo Arquivo		  12.4 m	d:\projeto_insta_pc\posts\post_024_kerri_chandler_let_me_show_you\output\v1.mp4100%  
+	  Novo Arquivo		  12.0 m	d:\projeto_insta_pc\posts\post_024_kerri_chandler_let_me_show_you\output\v2.mp4100%  
+	  Novo Arquivo		  13.6 m	d:\projeto_insta_pc\posts\post_024_kerri_chandler_let_me_show_you\output\v3.mp4100%  
+	  Novo Arquivo		  16.2 m	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\output\v1.mp4100%  
+	  Novo Arquivo		    7524	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\output\v1_plan.json100%  
+	  Novo Arquivo		  14.6 m	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\output\v2.mp4100%  
+	  Novo Arquivo		    6866	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\output\v2_plan.json100%  
+	  Novo Arquivo		  15.0 m	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\output\v3.mp4100%  
+	  Novo Arquivo		    4280	d:\projeto_insta_pc\posts\post_016_robin_s._show_me_love\output\v3_plan.json100%  
+	  Novo Arquivo		  12.9 m	d:\projeto_insta_pc\posts\post_025_kerri_chandler_bar_a_thym\output\v1.mp4100%  
+	  Novo Arquivo		  11.9 m	d:\projeto_insta_pc\posts\post_025_kerri_chandler_bar_a_thym\output\v2.mp4100%  
+	  Novo Arquivo		  13.4 m	d:\projeto_insta_pc\posts\post_025_kerri_chandler_bar_a_thym\output\v3.mp4100%  
+	  Novo Arquivo		  11.7 m	d:\projeto_insta_pc\posts\post_027_masters_at_work_work\output\v1.mp4100%  
+	  Novo Arquivo		  13.1 m	d:\projeto_insta_pc\posts\post_027_masters_at_work_work\output\v2.mp4100%  
+	  Novo Arquivo		  12.9 m	d:\projeto_insta_pc\posts\post_027_masters_at_work_work\output\v3.mp4100%  
+	  Novo Arquivo		  11.3 m	d:\projeto_insta_pc\posts\post_026_disclosure_higher_than_ever_before\output\v1.mp4100%  
+	  Novo Arquivo		  11.5 m	d:\projeto_insta_pc\posts\post_026_disclosure_higher_than_ever_before\output\v2.mp4100%  
+	  Novo Arquivo		  10.4 m	d:\projeto_insta_pc\posts\post_026_disclosure_higher_than_ever_before\output\v3.mp4100%  
+	  Novo Arquivo		  14.7 m	d:\projeto_insta_pc\posts\post_028_kings_of_tomorrow_finally_original\output\v1.mp4100%  
+	  Novo Arquivo		  11.7 m	d:\projeto_insta_pc\posts\post_029_purple_disco_machine_rise\output\v1.mp4100%  
+	  Novo Arquivo		   9.4 m	d:\projeto_insta_pc\posts\post_029_purple_disco_machine_rise\output\v2.mp4100%  
+	  Novo Arquivo		  13.3 m	d:\projeto_insta_pc\posts\post_028_kings_of_tomorrow_finally_original\output\v2.mp4100%  
+	  Novo Arquivo		  10.6 m	d:\projeto_insta_pc\posts\post_029_purple_disco_machine_rise\output\v3.mp4100%  
+	  Novo Arquivo		  14.5 m	d:\projeto_insta_pc\posts\post_028_kings_of_tomorrow_finally_original\output\v3.mp4100%  
+	  Novo Arquivo		  11.2 m	d:\projeto_insta_pc\posts\post_030_purple_disco_machine_substitution\output\v1.mp4100%  
+	  Novo Arquivo		  12.3 m	d:\projeto_insta_pc\posts\post_030_purple_disco_machine_substitution\output\v2.mp4100%  
+	  Novo Arquivo		  10.9 m	d:\projeto_insta_pc\posts\post_030_purple_disco_machine_substitution\output\v3.mp4100%  
+	  Novo Arquivo		  11.3 m	d:\projeto_insta_pc\posts\post_101_bicep_glue\output\v1.mp4100%  
+	  Novo Arquivo		    8205	d:\projeto_insta_pc\posts\post_101_bicep_glue\output\v1_plan.json100%  
+	  Novo Arquivo		  12.6 m	d:\projeto_insta_pc\posts\post_101_bicep_glue\output\v2.mp4100%  
+	  Novo Arquivo		    5591	d:\projeto_insta_pc\posts\post_101_bicep_glue\output\v2_plan.json100%  
+	  Novo Arquivo		  12.9 m	d:\projeto_insta_pc\posts\post_101_bicep_glue\output\v3.mp4100%  
+	  Novo Arquivo		    5961	d:\projeto_insta_pc\posts\post_101_bicep_glue\output\v3_plan.json100%  
+	  Novo Arquivo		  11.4 m	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\output\v1.mp4100%  
+	  Novo Arquivo		    8729	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\output\v1_plan.json100%  
+	  Novo Arquivo		  11.2 m	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\output\v2.mp4100%  
+	  Novo Arquivo		    9340	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\output\v2_plan.json100%  
+	  Novo Arquivo		  13.8 m	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\output\v3.mp4100%  
+	  Novo Arquivo		    6238	d:\projeto_insta_pc\posts\post_102_ben_bîhmer_beyond_beliefs\output\v3_plan.json100%  
+	  Novo Arquivo		  12.8 m	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\output\v1.mp4100%  
+	  Novo Arquivo		    7007	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\output\v1_plan.json100%  
+	  Novo Arquivo		  10.4 m	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\output\v2.mp4100%  
+	  Novo Arquivo		    8433	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\output\v2_plan.json100%  
+	  Novo Arquivo		  10.7 m	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\output\v3.mp4100%  
+	  Novo Arquivo		    4887	d:\projeto_insta_pc\posts\post_103_monolink_return_to_oz_(artbat_remix)\output\v3_plan.json100%  
+	  Novo Arquivo		  11.2 m	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\output\v1.mp4100%  
+	  Novo Arquivo		    6023	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\output\v1_plan.json100%  
+	  Novo Arquivo		  12.0 m	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\output\v2.mp4100%  
+	  Novo Arquivo		    3134	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\output\v2_plan.json100%  
+	  Novo Arquivo		  15.2 m	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\output\v3.mp4100%  
+	  Novo Arquivo		    7658	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\output\v3_plan.json100%  
+	  Novo Arquivo		  12.7 m	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\output\v1.mp4100%  
+	  Novo Arquivo		    9744	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\output\v1_plan.json100%  
+	  Novo Arquivo		  14.7 m	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\output\v2.mp4100%  
+	  Novo Arquivo		    4190	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\output\v2_plan.json100%  
+	  Novo Arquivo		  14.2 m	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\output\v3.mp4100%  
+	  Novo Arquivo		    7005	d:\projeto_insta_pc\posts\post_107_stephan_bodzin_singularity\output\v3_plan.json100%  
+	  Novo Arquivo		  13.4 m	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\output\v1.mp4100%  
+	  Novo Arquivo		    4609	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\output\v1_plan.json100%  
+	  Novo Arquivo		  13.0 m	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\output\v2.mp4100%  
+	  Novo Arquivo		    7864	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\output\v2_plan.json100%  
+	  Novo Arquivo		  13.1 m	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\output\v3.mp4100%  
+	  Novo Arquivo		    8521	d:\projeto_insta_pc\posts\post_106_maceo_plex_solar_detroit\output\v3_plan.json100%  
+	  Novo Arquivo		  11.1 m	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\output\v1.mp4100%  
+	  Novo Arquivo		    5364	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\output\v1_plan.json100%  
+	  Novo Arquivo		   9.2 m	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\output\v2.mp4100%  
+	  Novo Arquivo		    7811	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\output\v2_plan.json100%  
+	  Novo Arquivo		   9.4 m	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\output\v3.mp4100%  
+	  Novo Arquivo		    7083	d:\projeto_insta_pc\posts\post_108_adriatique_home_(mind_against_remix)\output\v3_plan.json100%  
+	  Novo Arquivo		  13.9 m	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\output\v1.mp4100%  
+	  Novo Arquivo		   11555	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\output\v1_plan.json100%  
+	  Novo Arquivo		  12.2 m	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\output\v2.mp4100%  
+	  Novo Arquivo		    9080	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\output\v2_plan.json100%  
+	  Novo Arquivo		  14.3 m	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\output\v3.mp4100%  
+	  Novo Arquivo		    6026	d:\projeto_insta_pc\posts\post_109_adam_beyer_&_bart_skils_your_mind\output\v3_plan.json100%  
+	  Novo Arquivo		  13.6 m	d:\projeto_insta_pc\posts\post_110_four_tet_lush\output\v1.mp4100%  
+	  Novo Arquivo		    5956	d:\projeto_insta_pc\posts\post_110_four_tet_lush\output\v1_plan.json100%  
+	  Novo Arquivo		  12.1 m	d:\projeto_insta_pc\posts\post_110_four_tet_lush\output\v2.mp4100%  
+	  Novo Arquivo		    9912	d:\projeto_insta_pc\posts\post_110_four_tet_lush\output\v2_plan.json100%  
+	  Novo Arquivo		  11.4 m	d:\projeto_insta_pc\posts\post_110_four_tet_lush\output\v3.mp4100%  
+	  Novo Arquivo		    7030	d:\projeto_insta_pc\posts\post_110_four_tet_lush\output\v3_plan.json100%  
+	  Novo Arquivo		  12.5 m	d:\projeto_insta_pc\posts\post_111_burial_archangel\output\v1.mp4100%  
+	  Novo Arquivo		    5922	d:\projeto_insta_pc\posts\post_111_burial_archangel\output\v1_plan.json100%  
+	  Novo Arquivo		  14.2 m	d:\projeto_insta_pc\posts\post_111_burial_archangel\output\v2.mp4100%  
+	  Novo Arquivo		    6245	d:\projeto_insta_pc\posts\post_111_burial_archangel\output\v2_plan.json100%  
+	  Novo Arquivo		  11.0 m	d:\projeto_insta_pc\posts\post_111_burial_archangel\output\v3.mp4100%  
+	  Novo Arquivo		    7872	d:\projeto_insta_pc\posts\post_111_burial_archangel\output\v3_plan.json100%  
+	  Novo Arquivo		  15.2 m	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\output\v1.mp4100%  
+	  Novo Arquivo		    6639	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\output\v1_plan.json100%  
+	  Novo Arquivo		  14.7 m	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\output\v2.mp4100%  
+	  Novo Arquivo		    4557	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\output\v2_plan.json100%  
+	  Novo Arquivo		  12.4 m	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\output\v3.mp4100%  
+	  Novo Arquivo		    7735	d:\projeto_insta_pc\posts\post_112_jamie_xx_gosh\output\v3_plan.json100%  
+	  Novo Arquivo		  14.4 m	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\output_lyrics\tiktok_lyrics.mp4100%  
+	  Novo Arquivo		    9664	d:\projeto_insta_pc\posts\post_104_rÅfÅs_du_sol_innerbloom\output_lyrics\tiktok_lyrics_plan.json100%  
+	  Novo Arquivo		  13.9 m	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\output\v1.mp4100%  
+	  Novo Arquivo		   10150	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\output\v1_plan.json100%  
+	  Novo Arquivo		  13.1 m	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\output\v2.mp4100%  
+	  Novo Arquivo		    9675	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\output\v2_plan.json100%  
+	  Novo Arquivo		  13.1 m	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\output\v3.mp4100%  
+	  Novo Arquivo		    7993	d:\projeto_insta_pc\posts\post_115_jan_blomqvist_the_space_in_between\output\v3_plan.json100%  
+	  Novo Arquivo		  12.2 m	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\output\v1.mp4100%  
+	  Novo Arquivo		    4942	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\output\v1_plan.json100%  
+	  Novo Arquivo		  11.4 m	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\output\v2.mp4100%  
+	  Novo Arquivo		    4293	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\output\v2_plan.json100%  
+	  Novo Arquivo		  11.9 m	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\output\v3.mp4100%  
+	  Novo Arquivo		    6893	d:\projeto_insta_pc\posts\post_118_moderat_bad_kingdom\output\v3_plan.json100%  
+	  Novo Arquivo		  13.6 m	d:\projeto_insta_pc\posts\post_114_solomun_friends\output\v1.mp4100%  
+	  Novo Arquivo		    7546	d:\projeto_insta_pc\posts\post_114_solomun_friends\output\v1_plan.json100%  
+	  Novo Arquivo		  13.6 m	d:\projeto_insta_pc\posts\post_114_solomun_friends\output\v2.mp4100%  
+	  Novo Arquivo		    2991	d:\projeto_insta_pc\posts\post_114_solomun_friends\output\v2_plan.json100%  
+	  Novo Arquivo		  13.5 m	d:\projeto_insta_pc\posts\post_114_solomun_friends\output\v3.mp4100%  
+	  Novo Arquivo		   12082	d:\projeto_insta_pc\posts\post_114_solomun_friends\output\v3_plan.json100%  
+	  Novo Arquivo		  11.4 m	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\output\v1.mp4100%  
+	  Novo Arquivo		    6009	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\output\v1_plan.json100%  
+	  Novo Arquivo		  11.6 m	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\output\v2.mp4100%  
+	  Novo Arquivo		    5669	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\output\v2_plan.json100%  
+	  Novo Arquivo		  10.2 m	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\output\v3.mp4100%  
+	  Novo Arquivo		    7967	d:\projeto_insta_pc\posts\post_117_boris_brejcha_gravity\output\v3_plan.json100%  
+	  Novo Arquivo		  12.4 m	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\output\v1.mp4100%  
+	  Novo Arquivo		    4272	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\output\v1_plan.json100%  
+	  Novo Arquivo		  12.1 m	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\output\v2.mp4100%  
+	  Novo Arquivo		    4584	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\output\v2_plan.json100%  
+	  Novo Arquivo		  13.3 m	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\output\v3.mp4100%  
+	  Novo Arquivo		    6852	d:\projeto_insta_pc\posts\post_201_ultra_natÇ_free\output\v3_plan.json100%  
+	  Novo Arquivo		  10.0 m	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\output\v1.mp4100%  
+	  Novo Arquivo		    7419	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\output\v1_plan.json100%  
+	  Novo Arquivo		  13.2 m	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\output\v2.mp4100%  
+	  Novo Arquivo		    8870	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\output\v2_plan.json100%  
+	  Novo Arquivo		  12.9 m	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\output\v3.mp4100%  
+	  Novo Arquivo		    7493	d:\projeto_insta_pc\posts\post_119_fred_again.._delilah_(pull_me_out_of_this)\output\v3_plan.json100%  
+	  Novo Arquivo		  11.4 m	d:\projeto_insta_pc\posts\post_120_Éme_rej\output\v1.mp4100%  
+	  Novo Arquivo		    6872	d:\projeto_insta_pc\posts\post_120_Éme_rej\output\v1_plan.json100%  
+	  Novo Arquivo		  10.4 m	d:\projeto_insta_pc\posts\post_120_Éme_rej\output\v2.mp4100%  
+	  Novo Arquivo		    5964	d:\projeto_insta_pc\posts\post_120_Éme_rej\output\v2_plan.json100%  
+	  Novo Arquivo		  12.0 m	d:\projeto_insta_pc\posts\post_120_Éme_rej\output\v3.mp4100%  
+	  Novo Arquivo		    4547	d:\projeto_insta_pc\posts\post_120_Éme_rej\output\v3_plan.json100%  
+	  Novo Arquivo		  14.4 m	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\output\v1.mp4100%  
+	  Novo Arquivo		    6854	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\output\v1_plan.json100%  
+	  Novo Arquivo		  10.9 m	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\output\v2.mp4100%  
+	  Novo Arquivo		    3296	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\output\v2_plan.json100%  
+	  Novo Arquivo		  12.5 m	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\output\v3.mp4100%  
+	  Novo Arquivo		    5881	d:\projeto_insta_pc\posts\post_202_crystal_waters_100%_pure_love\output\v3_plan.json100%  
+	  Novo Arquivo		  11.8 m	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\output\v1.mp4100%  
+	  Novo Arquivo		    6498	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\output\v1_plan.json100%  
+	  Novo Arquivo		  13.2 m	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\output\v2.mp4100%  
+	  Novo Arquivo		    4247	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\output\v2_plan.json100%  
+	  Novo Arquivo		  13.2 m	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\output\v3.mp4100%  
+	  Novo Arquivo		    3607	d:\projeto_insta_pc\posts\post_203_soul_ii_soul,_caron_wheeler_back_to_life\output\v3_plan.json100%  
+	  Novo Arquivo		  12.0 m	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\output\v1.mp4100%  
+	  Novo Arquivo		    4265	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\output\v1_plan.json100%  
+	  Novo Arquivo		  13.4 m	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\output\v2.mp4100%  
+	  Novo Arquivo		    4587	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\output\v2_plan.json100%  
+	  Novo Arquivo		  12.4 m	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\output\v3.mp4100%  
+	  Novo Arquivo		    3946	d:\projeto_insta_pc\posts\post_204_danny_tenaglia,_celeda_music_is_the_answer_(dancin'_&_prancin')\output\v3_plan.json100%  
+	  Novo Arquivo		  11.2 m	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\output\v1.mp4100%  
+	  Novo Arquivo		    7816	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\output\v1_plan.json100%  
+	  Novo Arquivo		  13.1 m	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\output\v2.mp4100%  
+	  Novo Arquivo		    4907	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\output\v2_plan.json100%  
+	  Novo Arquivo		  13.0 m	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\output\v3.mp4100%  
+	  Novo Arquivo		    9746	d:\projeto_insta_pc\posts\post_205_everything_but_the_girl,_todd_terry_missing_(todd_terry_remix)\output\v3_plan.json100%  
+	  Novo Arquivo		   3.1 m	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\output_lyrics\205tiktok_lyrics.mp4100%  
+	  Novo Arquivo		   11514	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\output_lyrics\tiktok_lyrics_plan.json100%  
+	  Novo Arquivo		  10.9 m	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\output\v1.mp4100%  
+	  Novo Arquivo		    5474	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\output\v1_plan.json100%  
+	  Novo Arquivo		  11.4 m	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\output\v2.mp4100%  
+	  Novo Arquivo		    4199	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\output\v2_plan.json100%  
+	  Novo Arquivo		   9.8 m	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\output\v3.mp4100%  
+	  Novo Arquivo		    3565	d:\projeto_insta_pc\posts\post_205_missing_desert_lyrics\output\v3_plan.json100%  
+	  Novo Arquivo		  13.4 m	d:\projeto_insta_pc\posts\post_206_sheila_spacer\output\v1.mp4100%  
+	  Novo Arquivo		    7497	d:\projeto_insta_pc\posts\post_206_sheila_spacer\output\v1_plan.json100%  
+	  Novo Arquivo		  14.4 m	d:\projeto_insta_pc\posts\post_206_sheila_spacer\output\v2.mp4100%  
+	  Novo Arquivo		    6521	d:\projeto_insta_pc\posts\post_206_sheila_spacer\output\v2_plan.json100%  
+	  Novo Arquivo		  12.8 m	d:\projeto_insta_pc\posts\post_206_sheila_spacer\output\v3.mp4100%  
+	  Novo Arquivo		   10074	d:\projeto_insta_pc\posts\post_206_sheila_spacer\output\v3_plan.json100%  
+	  Novo Arquivo		  15.1 m	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\output\v1.mp4100%  
+	  Novo Arquivo		    8813	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\output\v1_plan.json100%  
+	  Novo Arquivo		  13.4 m	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\output\v2.mp4100%  
+	  Novo Arquivo		    7513	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\output\v2_plan.json100%  
+	  Novo Arquivo		  11.0 m	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\output\v3.mp4100%  
+	  Novo Arquivo		   10112	d:\projeto_insta_pc\posts\post_207_ministers_de_la_funk,_jocelyn_brown_believe_(ministers_vocal_mix)\output\v3_plan.json100%  
+	  Novo Arquivo		  13.9 m	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\output\v1.mp4100%  
+	  Novo Arquivo		    5231	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\output\v1_plan.json100%  
+	  Novo Arquivo		  12.7 m	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\output\v2.mp4100%  
+	  Novo Arquivo		    6527	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\output\v2_plan.json100%  
+	  Novo Arquivo		  11.9 m	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\output\v3.mp4100%  
+	  Novo Arquivo		    3299	d:\projeto_insta_pc\posts\post_212_robin_s_show_me_love\output\v3_plan.json100%  
+	  Novo Arquivo		  13.3 m	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\output\v1.mp4100%  
+	  Novo Arquivo		    8462	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\output\v1_plan.json100%  
+	  Novo Arquivo		  12.1 m	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\output\v2.mp4100%  
+	  Novo Arquivo		    3296	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\output\v2_plan.json100%  
+	  Novo Arquivo		  12.5 m	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\output\v3.mp4100%  
+	  Novo Arquivo		    5225	d:\projeto_insta_pc\posts\post_213_nightcrawlers,_mk_push_the_feeling_on_(mk_dub_revisited)\output\v3_plan.json100%  
+	  Novo Arquivo		  15.3 m	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\output\v1.mp4100%  
+	  Novo Arquivo		   10404	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\output\v1_plan.json100%  
+	  Novo Arquivo		  13.6 m	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\output\v2.mp4100%  
+	  Novo Arquivo		    8781	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\output\v2_plan.json100%  
+	  Novo Arquivo		  12.1 m	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\output\v3.mp4100%  
+	  Novo Arquivo		    5564	d:\projeto_insta_pc\posts\post_216_inner_city_good_life\output\v3_plan.json100%  
+	  Novo Arquivo		   6.6 m	d:\projeto_insta_pc\posts\post_306_paris_fred_again\output\v1.mp4100%  
+	  Novo Arquivo		    5841	d:\projeto_insta_pc\posts\post_306_paris_fred_again\output\v1_plan.json100%  
+	  Novo Arquivo		   8.3 m	d:\projeto_insta_pc\posts\post_306_paris_fred_again\output\v2.mp4100%  
+	  Novo Arquivo		    7133	d:\projeto_insta_pc\posts\post_306_paris_fred_again\output\v2_plan.json100%  
+	  Novo Arquivo		   5.3 m	d:\projeto_insta_pc\posts\post_306_paris_fred_again\output\v3.mp4100%  
+	  Novo Arquivo		    4564	d:\projeto_insta_pc\posts\post_306_paris_fred_again\output\v3_plan.json100%  
+	  Novo Arquivo		  13.2 m	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\output\v1.mp4100%  
+	  Novo Arquivo		    6852	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\output\v1_plan.json100%  
+	  Novo Arquivo		  13.2 m	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\output\v2.mp4100%  
+	  Novo Arquivo		    5227	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\output\v2_plan.json100%  
+	  Novo Arquivo		  12.3 m	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\output\v3.mp4100%  
+	  Novo Arquivo		    4903	d:\projeto_insta_pc\posts\post_218_junior_jack_stupidisco_(radio_edit)\output\v3_plan.json100%  
+	  Novo Arquivo		   7.1 m	d:\projeto_insta_pc\posts\post_303_ibiza_fisher\output\v1.mp4100%  
+	  Novo Arquivo		    7445	d:\projeto_insta_pc\posts\post_303_ibiza_fisher\output\v1_plan.json100%  
+	  Novo Arquivo		   5.7 m	d:\projeto_insta_pc\posts\post_303_ibiza_fisher\output\v2.mp4100%  
+	  Novo Arquivo		    5838	d:\projeto_insta_pc\posts\post_303_ibiza_fisher\output\v2_plan.json100%  
+	  Novo Arquivo		   3.6 m	d:\projeto_insta_pc\posts\post_303_ibiza_fisher\output\v3.mp4100%  
+	  Novo Arquivo		    2631	d:\projeto_insta_pc\posts\post_303_ibiza_fisher\output\v3_plan.json100%  
+	  Novo Arquivo		   5.3 m	d:\projeto_insta_pc\posts\post_307_paris_jan_blomqvist\output\v1.mp4100%  
+	  Novo Arquivo		    4877	d:\projeto_insta_pc\posts\post_307_paris_jan_blomqvist\output\v1_plan.json100%  
+	  Novo Arquivo		   4.4 m	d:\projeto_insta_pc\posts\post_307_paris_jan_blomqvist\output\v2.mp4100%  
+	  Novo Arquivo		    3608	d:\projeto_insta_pc\posts\post_307_paris_jan_blomqvist\output\v2_plan.json100%  
+	  Novo Arquivo		   5.2 m	d:\projeto_insta_pc\posts\post_307_paris_jan_blomqvist\output\v3.mp4100%  
+	  Novo Arquivo		    4560	d:\projeto_insta_pc\posts\post_307_paris_jan_blomqvist\output\v3_plan.json100%  
+	  Novo Arquivo		   3.0 m	d:\projeto_insta_pc\posts\post_309_roma_boris_brejcha\output\v1.mp4100%  
+	  Novo Arquivo		    2308	d:\projeto_insta_pc\posts\post_309_roma_boris_brejcha\output\v1_plan.json100%  
+	  Novo Arquivo		   4.7 m	d:\projeto_insta_pc\posts\post_309_roma_boris_brejcha\output\v2.mp4100%  
+	  Novo Arquivo		    3916	d:\projeto_insta_pc\posts\post_309_roma_boris_brejcha\output\v2_plan.json100%  
+	  Novo Arquivo		   5.7 m	d:\projeto_insta_pc\posts\post_309_roma_boris_brejcha\output\v3.mp4100%  
+	  Novo Arquivo		    5199	d:\projeto_insta_pc\posts\post_309_roma_boris_brejcha\output\v3_plan.json100%  
+	  Novo Arquivo		   6.1 m	d:\projeto_insta_pc\posts\post_308_roma_kerri_chandler\output\v1.mp4100%  
+	  Novo Arquivo		    6777	d:\projeto_insta_pc\posts\post_308_roma_kerri_chandler\output\v1_plan.json100%  
+	  Novo Arquivo		   5.4 m	d:\projeto_insta_pc\posts\post_308_roma_kerri_chandler\output\v2.mp4100%  
+	  Novo Arquivo		    4548	d:\projeto_insta_pc\posts\post_308_roma_kerri_chandler\output\v2_plan.json100%  
+	  Novo Arquivo		   3.9 m	d:\projeto_insta_pc\posts\post_308_roma_kerri_chandler\output\v3.mp4100%  
+	  Novo Arquivo		    2949	d:\projeto_insta_pc\posts\post_308_roma_kerri_chandler\output\v3_plan.json100%  
+	  Novo Arquivo		   7.0 m	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\output\v1.mp4 42%   84%  100%  
+	  Novo Arquivo		    6489	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\output\v1_plan.json100%  
+	  Novo Arquivo		   6.3 m	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\output\v2.mp4100%  
+	  Novo Arquivo		    6806	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\output\v2_plan.json100%  
+	  Novo Arquivo		   3.8 m	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\output\v3.mp4100%  
+	  Novo Arquivo		    3600	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\output\v3_plan.json100%  
+	  Novo Arquivo		  12.4 m	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\output_lyrics\tiktok_lyrics.mp4 72%   96%  100%  
+	  Novo Arquivo		    5178	d:\projeto_insta_pc\posts\post_304_ibiza_stussy\output_lyrics\tiktok_lyrics_plan.json100%  
+	  Novo Arquivo		   8.1 m	d:\projeto_insta_pc\posts\post_311_ibiza_michael_bibi\output\v1.mp4100%  
+	  Novo Arquivo		    8108	d:\projeto_insta_pc\posts\post_311_ibiza_michael_bibi\output\v1_plan.json100%  
+	  Novo Arquivo		   3.2 m	d:\projeto_insta_pc\posts\post_311_ibiza_michael_bibi\output\v2.mp4100%  
+	  Novo Arquivo		    3922	d:\projeto_insta_pc\posts\post_311_ibiza_michael_bibi\output\v2_plan.json100%  
+	  Novo Arquivo		   4.5 m	d:\projeto_insta_pc\posts\post_311_ibiza_michael_bibi\output\v3.mp4100%  
+	  Novo Arquivo		    3926	d:\projeto_insta_pc\posts\post_311_ibiza_michael_bibi\output\v3_plan.json100%  
+	  Novo Arquivo		    8141	d:\projeto_insta_pc\posts\post_221_womack_&_womack_teardrops\output\v1_plan.json100%  
+	  Novo Arquivo		   5.4 m	d:\projeto_insta_pc\posts\post_305_paris_bicep\output\v1.mp4100%  
+	  Novo Arquivo		    4903	d:\projeto_insta_pc\posts\post_305_paris_bicep\output\v1_plan.json100%  
+	  Novo Arquivo		   9.7 m	d:\projeto_insta_pc\posts\post_305_paris_bicep\output\v2.mp4100%  
+	  Novo Arquivo		    9094	d:\projeto_insta_pc\posts\post_305_paris_bicep\output\v2_plan.json100%  
+	  Novo Arquivo		   8.0 m	d:\projeto_insta_pc\posts\post_305_paris_bicep\output\v3.mp4100%  
+	  Novo Arquivo		    7801	d:\projeto_insta_pc\posts\post_305_paris_bicep\output\v3_plan.json100%  
+	  Novo Arquivo		  14.3 m	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\output\v1.mp4100%  
+	  Novo Arquivo		    4920	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\output\v1_plan.json100%  
+	  Novo Arquivo		  11.5 m	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\output\v2.mp4100%  
+	  Novo Arquivo		    5572	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\output\v2_plan.json100%  
+	  Novo Arquivo		  14.9 m	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\output\v3.mp4100%  
+	  Novo Arquivo		    8807	d:\projeto_insta_pc\posts\post_217_stardust,_benjamin_diamond_music_sounds_better_with_you\output\v3_plan.json100%  
+	  Novo Arquivo		   4.5 m	d:\projeto_insta_pc\posts\post_310_roma_meduza\output\v1.mp4100%  
+	  Novo Arquivo		    3274	d:\projeto_insta_pc\posts\post_310_roma_meduza\output\v1_plan.json100%  
+	  Novo Arquivo		   7.6 m	d:\projeto_insta_pc\posts\post_310_roma_meduza\output\v2.mp4100%  
+	  Novo Arquivo		    6812	d:\projeto_insta_pc\posts\post_310_roma_meduza\output\v2_plan.json100%  
+	  Novo Arquivo		   4.7 m	d:\projeto_insta_pc\posts\post_310_roma_meduza\output\v3.mp4100%  
+	  Novo Arquivo		    3596	d:\projeto_insta_pc\posts\post_310_roma_meduza\output\v3_plan.json100%  
+	  Novo Arquivo		   6.1 m	d:\projeto_insta_pc\posts\post_302_ibiza_peggy_gou\output\v1.mp4100%  
+	  Novo Arquivo		    5532	d:\projeto_insta_pc\posts\post_302_ibiza_peggy_gou\output\v1_plan.json100%  
+	  Novo Arquivo		   6.5 m	d:\projeto_insta_pc\posts\post_302_ibiza_peggy_gou\output\v2.mp4100%  
+	  Novo Arquivo		    6817	d:\projeto_insta_pc\posts\post_302_ibiza_peggy_gou\output\v2_plan.json100%  
+	  Novo Arquivo		   6.2 m	d:\projeto_insta_pc\posts\post_302_ibiza_peggy_gou\output\v3.mp4100%  
+	  Novo Arquivo		    5864	d:\projeto_insta_pc\posts\post_302_ibiza_peggy_gou\output\v3_plan.json100%  
+	  Novo Arquivo		  14.9 m	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\output\v1.mp4 80%  100%  
+	  Novo Arquivo		    3943	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\output\v1_plan.json100%  
+	  Novo Arquivo		  11.7 m	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\output\v2.mp4100%  
+	  Novo Arquivo		    4905	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\output\v2_plan.json100%  
+	  Novo Arquivo		  11.2 m	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\output\v3.mp4100%  
+	  Novo Arquivo		    4590	d:\projeto_insta_pc\posts\post_228_hardrive,_barbara_tucker,_louie_vega_deep_inside\output\v3_plan.json100%  
+	  Novo Arquivo		   4.7 m	d:\projeto_insta_pc\posts\post_301_pdm_rise_ibiza\output\v1.mp4100%  
+	  Novo Arquivo		    4537	d:\projeto_insta_pc\posts\post_301_pdm_rise_ibiza\output\v1_plan.json100%  
+	  Novo Arquivo		   7.6 m	d:\projeto_insta_pc\posts\post_301_pdm_rise_ibiza\output\v2.mp4100%  
+	  Novo Arquivo		    6788	d:\projeto_insta_pc\posts\post_301_pdm_rise_ibiza\output\v2_plan.json100%  
+	  Novo Arquivo		   6.0 m	d:\projeto_insta_pc\posts\post_301_pdm_rise_ibiza\output\v3.mp4100%  
+	  Novo Arquivo		    4545	d:\projeto_insta_pc\posts\post_301_pdm_rise_ibiza\output\v3_plan.json100%  
+	  Novo Arquivo		  10.6 m	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\output\v1.mp4100%  
+	  Novo Arquivo		    5229	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\output\v1_plan.json100%  
+	  Novo Arquivo		  13.7 m	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\output\v2.mp4100%  
+	  Novo Arquivo		    6520	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\output\v2_plan.json100%  
+	  Novo Arquivo		  13.1 m	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\output\v3.mp4100%  
+	  Novo Arquivo		    7173	d:\projeto_insta_pc\posts\post_222_shakedown_at_night\output\v3_plan.json100%  
+	  Novo Arquivo		  11.9 m	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\output\v1.mp4100%  
+	  Novo Arquivo		    8138	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\output\v1_plan.json100%  
+	  Novo Arquivo		  10.7 m	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\output\v2.mp4100%  
+	  Novo Arquivo		    8134	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\output\v2_plan.json100%  
+	  Novo Arquivo		  12.2 m	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\output\v3.mp4 97%  100%  
+	  Novo Arquivo		    7170	d:\projeto_insta_pc\posts\post_226_moloko,_boris_dlugosch,_michael_lange_sing_it_back\output\v3_plan.json100%  
+	  Novo Arquivo		  13.2 m	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\output\v1.mp4100%  
+	  Novo Arquivo		    5897	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\output\v1_plan.json100%  
+	  Novo Arquivo		  13.0 m	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\output\v2.mp4100%  
+	  Novo Arquivo		    8159	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\output\v2_plan.json100%  
+	  Novo Arquivo		  11.6 m	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\output\v3.mp4100%  
+	  Novo Arquivo		    4594	d:\projeto_insta_pc\posts\post_220_rui_da_silva,_cassandra_touch_me_(radio_edit)\output\v3_plan.json100%  
+	  Novo Arquivo		  11.8 m	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\output\v1.mp4100%  
+	  Novo Arquivo		    6201	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\output\v1_plan.json100%  
+	  Novo Arquivo		  14.9 m	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\output\v2.mp4100%  
+	  Novo Arquivo		    7809	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\output\v2_plan.json100%  
+	  Novo Arquivo		  12.8 m	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\output\v3.mp4100%  
+	  Novo Arquivo		    7504	d:\projeto_insta_pc\posts\post_227_marshall_jefferson,_solardo_move_your_body\output\v3_plan.json100%  
+	  Novo Arquivo		  94.6 m	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\bin\ffmpeg.exe 34%   46%   50%   60%   81%  100%  
+	  Novo Arquivo		  96.0 m	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\bin\ffplay.exe100%  
+	  Novo Arquivo		  94.4 m	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\bin\ffprobe.exe100%  
+	  Novo Arquivo		  109483	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\bootstrap.min.css100%  
+	  Novo Arquivo		   13505	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\community.html100%  
+	  Novo Arquivo		    2494	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\default.css100%  
+	  Novo Arquivo		   63493	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\developer.html100%  
+	  Novo Arquivo		   65088	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\faq.html100%  
+	  Novo Arquivo		     227	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\presets\libvpx-1080p.ffpreset100%  
+	  Novo Arquivo		   18146	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\fate.html100%  
+	  Novo Arquivo		   2.8 m	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-all.html100%  
+	  Novo Arquivo		   60991	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-bitstream-filters.html100%  
+	  Novo Arquivo		  342418	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-codecs.html100%  
+	  Novo Arquivo		  112837	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-devices.html100%  
+	  Novo Arquivo		   1.5 m	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-filters.html100%  
+	  Novo Arquivo		  322775	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-formats.html100%  
+	  Novo Arquivo		  111588	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-protocols.html100%  
+	  Novo Arquivo		     227	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\presets\libvpx-1080p50_60.ffpreset100%  
+	  Novo Arquivo		   13818	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-resampler.html100%  
+	  Novo Arquivo		     219	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\presets\libvpx-360p.ffpreset100%  
+	  Novo Arquivo		    9148	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-scaler.html100%  
+	  Novo Arquivo		   55775	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg-utils.html100%  
+	  Novo Arquivo		     227	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\presets\libvpx-720p.ffpreset100%  
+	  Novo Arquivo		  215687	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffmpeg.html100%  
+	  Novo Arquivo		   2.2 m	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffplay-all.html100%  
+	  Novo Arquivo		   41496	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffplay.html100%  
+	  Novo Arquivo		     227	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\presets\libvpx-720p50_60.ffpreset100%  
+	  Novo Arquivo		   2.2 m	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffprobe-all.html100%  
+	  Novo Arquivo		   57470	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\ffprobe.html100%  
+	  Novo Arquivo		  125459	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\general.html100%  
+	  Novo Arquivo		   27737	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\git-howto.html100%  
+	  Novo Arquivo		    3147	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\libavcodec.html100%  
+	  Novo Arquivo		    3026	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\libavdevice.html100%  
+	  Novo Arquivo		    3092	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\libavfilter.html100%  
+	  Novo Arquivo		    3122	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\libavformat.html100%  
+	  Novo Arquivo		    3621	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\libavutil.html100%  
+	  Novo Arquivo		    4005	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\libswresample.html100%  
+	  Novo Arquivo		    3621	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\libswscale.html100%  
+	  Novo Arquivo		   31209	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\mailing-list-faq.html100%  
+	  Novo Arquivo		   11231	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\nut.html100%  
+	  Novo Arquivo		   21174	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\platform.html100%  
+	  Novo Arquivo		    6523	d:\projeto_insta_pc\tools\ffmpeg\ffmpeg-8.0.1-essentials_build\doc\style.min.css100%  
+
+------------------------------------------------------------------------------
+
+               Total   Copiada  IgnoradaIncompatibilidade     FALHA    Extras
+Diret¢rios:       187       179         9         0         0         0
+ Arquivos:       847       847         0         0         0         0
+    Bytes:   3.950 g   3.950 g         0         0         0         0
+N.ß de Vezes:   0:17:57   0:00:33                       0:00:00   0:00:01
+
+
+Velocidade:           127.944.771 Bytes/s.
+Velocidade:              7321,059 MegaBytes/min.
+   Finalizado em: s†bado, 7 de fevereiro de 2026 10:51:07
+
