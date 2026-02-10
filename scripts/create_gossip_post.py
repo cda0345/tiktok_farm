@@ -24,6 +24,7 @@ from urllib.parse import urlparse
 
 import requests
 import random
+import hashlib
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
@@ -286,6 +287,117 @@ def _make_slug(text: str, max_words: int = 5) -> str:
     return "-".join(clean.split()[:max_words])
 
 
+def _smart_truncate_hook(hook_raw: str, max_words: int = 5) -> str:
+    """Trunca o gancho de forma inteligente para não cortar no meio de uma expressão.
+
+    - Permite até max_words palavras (padrão 5).
+    - Se a palavra final escolhida for muito curta (conjunção ou artigo), inclui a próxima palavra para dar completude.
+    - Preserva pontuação final como '?' ou '!' se presente.
+    """
+    if not hook_raw:
+        return ""
+    words = hook_raw.strip().split()
+    if len(words) <= max_words:
+        return " ".join(words)
+
+    chosen = words[:max_words]
+    last = chosen[-1].lower().strip(".?!:,;\"'()")
+    short_starters = {"e", "ou", "o", "a", "do", "da", "dos", "das", "de", "em", "no", "na", "mas"}
+    if len(last) <= 2 or last in short_starters:
+        # include next word if available to avoid truncated feel
+        if len(words) > max_words:
+            chosen.append(words[max_words])
+
+    return " ".join(chosen)
+
+
+def _fix_orphan_pronoun_tail(text: str) -> str:
+    """Detect and merge isolated pronoun at the end (e.g. '... DANÇANDO. ELA.') into the previous segment.
+
+    Returns a cleaned text with the orphan pronoun merged to previous word and ensures terminal punctuation.
+    """
+    if not text:
+        return text
+    parts = text.strip().split()
+    if len(parts) < 2:
+        return text
+
+    # Normalize last token (remove punctuation)
+    last_raw = re.sub(r"[^\w\u00C0-\u00FF]", "", parts[-1]).upper()
+    pronouns = {"ELA", "ELE", "ELAS", "ELES", "A", "O"}
+    if last_raw in pronouns:
+        # Merge last word into previous token
+        parts[-2] = parts[-2] + " " + parts[-1]
+        parts = parts[:-1]
+        out = " ".join(parts).strip()
+        if not re.search(r"[.!?]$", out):
+            out += "."
+        return out
+    return text
+
+
+def _ensure_headline_completeness(text: str, item: NewsItem) -> str:
+    """If the generated headline/body looks like a fragment, try to extend it using available context
+
+    Uses item.title, item.description or the start of the article text to make the phrase self-contained
+    and ensures terminal punctuation. Keeps the result brief.
+    """
+    t = (text or "").strip()
+    if not t:
+        return t
+
+    # clean last token
+    tokens = t.split()
+    last_token = re.sub(r"[^\w\u00C0-\u00FF]", "", tokens[-1]).upper() if tokens else ""
+    short_set = {"E", "OU", "O", "A", "DO", "DA", "DOS", "DAS", "DE", "EM", "NO", "NA", "MAS", "COM", "POR", "PELO", "PELA", "ELA", "ELE"}
+
+    looks_fragment = False
+    if len(tokens) < 6:
+        looks_fragment = True
+    if last_token in short_set:
+        looks_fragment = True
+    if re.search(r"\.{2,}$", t) or t.endswith(","):
+        looks_fragment = True
+
+    if not looks_fragment:
+        # ensure punctuation
+        if not re.search(r"[.!?]$", t):
+            if "?" in t:
+                t = t + "?"
+            else:
+                t = t + "."
+        return t
+
+    # try to assemble a short completion from title/description/article
+    title = _clean_text(item.title or "")
+    desc = _clean_text(item.description or "")
+    art = _extract_article_text(item.link)[:240]
+
+    candidate = ""
+    if title and title.upper() not in t.upper():
+        # pick a compact variant of the title (avoid repeating full title)
+        candidate = " ".join(title.split()[:10])
+    elif desc:
+        candidate = " ".join(desc.split()[:12])
+    elif art:
+        candidate = " ".join(art.split()[:12])
+
+    if candidate:
+        combined = (t + " " + candidate).strip()
+        # keep it short: limit to ~22 words
+        words = combined.split()
+        if len(words) > 22:
+            combined = " ".join(words[:22])
+        if not re.search(r"[.!?]$", combined):
+            combined += "."
+        return combined
+
+    # fallback: just ensure punctuation
+    if not re.search(r"[.!?]$", t):
+        t += "."
+    return t
+
+
 def _select_font() -> str:
     """Pick a bold/condensed font.
 
@@ -414,8 +526,31 @@ def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool 
         clean = clean.upper()
     # Use break_long_words=False para evitar cortar palavras no meio
     wrapped = textwrap.wrap(clean, width=max_chars, break_long_words=False, break_on_hyphens=False)
+
+    # Post-process to avoid lines that end with very short words (articles/conjunctions)
+    def _fix_trailing_short_words(lines: list[str]) -> list[str]:
+        short_set = {"E", "OU", "O", "A", "DO", "DA", "DOS", "DAS", "DE", "EM", "NO", "NA", "MAS", "COM", "POR", "PELO", "PELA"}
+        fixed: list[str] = []
+        for i, line in enumerate(lines):
+            line = line.rstrip()
+            # If line ends with a short word, move that word to the start of the next line
+            parts = line.rsplit(" ", 1)
+            if len(parts) == 2:
+                last = parts[-1].strip()
+                if last.upper() in short_set and i + 1 < len(lines):
+                    # remove last from current line and prepend to next
+                    new_curr = parts[0]
+                    next_line = lines[i + 1].lstrip()
+                    lines[i + 1] = f"{last} {next_line}".strip()
+                    fixed.append(new_curr)
+                    continue
+            fixed.append(line)
+        # Remove empty lines introduced by moving words
+        return [ln for ln in fixed if ln]
+
+    fixed_wrapped = _fix_trailing_short_words(wrapped)
     # We prioritize showing the full message without "..." suffixes
-    return "\n".join(wrapped[:max_lines])
+    return "\n".join(fixed_wrapped[:max_lines])
 
 
 def _pick_pt_hook(headline: str) -> str:
@@ -507,52 +642,64 @@ def _summarize_news_text(item: NewsItem) -> str:
             
             if is_pt:
                 system_instr = (
-                    "Você é um editor de vídeos Curtos/TikTok especializado em fofocas e entretenimento. "
-                    "REGRAS OBRIGATÓRIAS:\n"
-                    "1. GANCHO (HOOK): EXATAMENTE 3-4 PALAVRAS que capturam o CLÍMAX da notícia, TUDO EM MAIÚSCULAS, SEM PONTUAÇÃO.\n"
-                    "   Exemplos: 'POLÊMICA NO BBB', 'FAMOSA GRÁVIDA', 'SEPARAÇÃO CONFIRMADA', 'DECLARAÇÃO EMOCIONANTE'\n"
-                    "2. RESUMO: Em UM ÚNICO PARÁGRAFO de 12-15 PALAVRAS, resuma a notícia completa mantendo a informação principal.\n"
-                    "   Seja DIRETO e INFORMATIVO. Use linguagem simples. TUDO EM MAIÚSCULAS.\n"
-                    "   NÃO divida em múltiplas frases. APENAS UM PARÁGRAFO corrido.\n"
-                    "   Exemplo: 'CLAUDIA RODRIGUES FAZ DECLARAÇÃO EMOCIONANTE PARA ESPOSA NO ANIVERSÁRIO DE CASAMENTO'\n"
-                    "3. CTA (CALL TO ACTION): Uma pergunta ou frase BEM CURTA (4-6 PALAVRAS) relacionada à notícia, TUDO EM MAIÚSCULAS.\n"
-                    "   Exemplos: 'E AÍ O QUE ACHOU?', 'VOCÊ SABIA DISSO?', 'O QUE VOCÊ ACHA?', 'JÁ CONHECIA ESSA?', 'COMENTA AÍ EMBAIXO!'\n"
-                    "   Deve ser RELEVANTE ao contexto da notícia. Não use CTAs genéricos sempre.\n"
-                    "4. HASHTAGS: 3 hashtags relevantes em LETRAS MINÚSCULAS.\n"
-                    "FORMATO FINAL (4 linhas):\n"
-                    "Linha 1: Hook (3-4 palavras)\n"
-                    "Linha 2: Resumo (12-15 palavras em um parágrafo)\n"
-                    "Linha 3: CTA (4-6 palavras)\n"
-                    "Linha 4: Hashtags (lowercase)\n"
-                    "IMPORTANTE: SEM aspas, emojis, símbolos especiais ou caracteres estranhos. Apenas texto limpo."
+                    "Você é um roteirista de Shorts/Reels de fofoca. Sua tarefa é gerar UM ÚNICO post pronto para overlay de vídeo.\n\n"
+                    "FORMATO OBRIGATÓRIO — exatamente 3 linhas de texto puro, nada mais:\n"
+                    "Linha 1 = GANCHO: frase curta (2-4 palavras) TUDO EM MAIÚSCULAS. Já é a fofoca, sem introdução. Pode ser afirmação chocante ou pergunta provocativa.\n"
+                    "Linha 2 = CORPO: UMA frase completa (10-18 palavras) que resume o fato principal. Deve fazer sentido sozinha, sem depender do gancho. Nunca termine no meio de uma ideia.\n"
+                    "Linha 3 = PERGUNTA: Uma pergunta curta de engajamento (4-8 palavras) que provoque opinião.\n\n"
+                    "REGRAS RÍGIDAS:\n"
+                    "- Cada frase deve ser COMPLETA e AUTOCONTIDA. Nunca cortar no meio.\n"
+                    "- Zero hashtags, zero emojis, zero asteriscos, zero aspas.\n"
+                    "- Mencione o nome da pessoa famosa no CORPO (linha 2), não no gancho.\n"
+                    "- Não inclua rótulos como 'Gancho:', 'Corpo:', 'Pergunta:', etc.\n"
+                    "- Não numere as linhas.\n\n"
+                    "EXEMPLOS DE SAÍDA PERFEITA:\n\n"
+                    "THAIS CARLA CHOCA\n"
+                    "Ela surgiu dancando de top e short apos perder 86 kg.\n"
+                    "Transformacao real ou exagero da internet?\n\n"
+                    "---\n\n"
+                    "MUDANCA RADICAL?\n"
+                    "Thais Carla exibiu o novo corpo depois de eliminar 86 kg.\n"
+                    "Isso muda tudo ou nao muda nada?\n\n"
+                    "---\n\n"
+                    "86 KG A MENOS\n"
+                    "Thais Carla apareceu dancando e mostrou o novo corpo.\n"
+                    "Voce achou inspirador ou forcado?\n\n"
+                    "---\n\n"
+                    "SEPARACAO CONFIRMADA\n"
+                    "Joao e Maria anunciaram o fim do casamento apos 10 anos juntos.\n"
+                    "Voce ja esperava ou foi surpresa?\n\n"
+                    "Responda APENAS com as 3 linhas. Nada antes, nada depois."
                 )
-                user_content = f"Resuma esta notícia de forma DIRETA e COMPLETA:\n\n{context}"
+                user_content = f"Noticia:\n{context}"
             else:
                 system_instr = (
-                    "You are a Shorts/TikTok editor specialized in celebrity gossip. "
-                    "MANDATORY RULES:\n"
-                    "1. HOOK: EXACTLY 3-4 WORDS capturing the CLIMAX, ALL CAPS, NO PUNCTUATION.\n"
-                    "   Examples: 'CELEB DIVORCE CONFIRMED', 'SHOCKING ANNOUNCEMENT', 'MAJOR CONTROVERSY', 'EMOTIONAL DECLARATION'\n"
-                    "2. SUMMARY: In ONE SINGLE PARAGRAPH of 12-15 WORDS, summarize the complete news keeping the main information.\n"
-                    "   Be DIRECT and INFORMATIVE. Use simple language. ALL CAPS.\n"
-                    "   DO NOT split into multiple sentences. JUST ONE flowing paragraph.\n"
-                    "   Example: 'CELEB SHARES EMOTIONAL TRIBUTE TO SPOUSE ON WEDDING ANNIVERSARY WITH HEARTFELT PHOTOS'\n"
-                    "3. CTA (CALL TO ACTION): A VERY SHORT question or phrase (4-6 WORDS) related to the news, ALL CAPS.\n"
-                    "   Examples: 'WHAT DO YOU THINK?', 'DID YOU KNOW THIS?', 'YOUR THOUGHTS BELOW?', 'COMMENT YOUR OPINION!'\n"
-                    "   Must be RELEVANT to the news context. Don't always use generic CTAs.\n"
-                    "4. HASHTAGS: 3 relevant hashtags in lowercase.\n"
-                    "FINAL FORMAT (4 lines):\n"
-                    "Line 1: Hook (3-4 words)\n"
-                    "Line 2: Summary (12-15 words in one paragraph)\n"
-                    "Line 3: CTA (4-6 words)\n"
-                    "Line 4: Hashtags (lowercase)\n"
-                    "IMPORTANT: NO quotes, emojis or special characters. Clean text only."
+                    "You are a Shorts/Reels gossip scriptwriter. Generate ONE SINGLE post ready for video overlay.\n\n"
+                    "MANDATORY FORMAT — exactly 3 lines of plain text, nothing else:\n"
+                    "Line 1 = HOOK: short phrase (2-4 words) ALL CAPS. Already IS the gossip, no intro. Can be a shocking statement or provocative question.\n"
+                    "Line 2 = BODY: ONE complete sentence (10-18 words) summarizing the main fact. Must make sense on its own. Never cut mid-thought.\n"
+                    "Line 3 = QUESTION: A short engagement question (4-8 words) that provokes opinion.\n\n"
+                    "STRICT RULES:\n"
+                    "- Every sentence must be COMPLETE and SELF-CONTAINED. Never cut mid-thought.\n"
+                    "- Zero hashtags, zero emojis, zero asterisks, zero quotes.\n"
+                    "- Mention the celebrity name in BODY (line 2), not the hook.\n"
+                    "- Do not include labels like 'Hook:', 'Body:', 'Question:', etc.\n"
+                    "- Do not number the lines.\n\n"
+                    "EXAMPLES OF PERFECT OUTPUT:\n\n"
+                    "SHOCKING TRANSFORMATION\n"
+                    "She showed up dancing in a crop top after losing 190 pounds.\n"
+                    "Real change or internet hype?\n\n"
+                    "---\n\n"
+                    "DIVORCE CONFIRMED\n"
+                    "John and Mary announced the end of their 10 year marriage.\n"
+                    "Did you see it coming or total surprise?\n\n"
+                    "Reply ONLY with the 3 lines. Nothing before, nothing after."
                 )
-                user_content = f"Summarize this news DIRECTLY and COMPLETELY:\n\n{context}"
+                user_content = f"News:\n{context}"
 
             payload = {
                 "model": cfg.model,
-                "temperature": 0.5,
+                "temperature": 0.7,
                 "messages": [
                     {"role": "system", "content": system_instr},
                     {"role": "user", "content": user_content},
@@ -568,7 +715,8 @@ def _summarize_news_text(item: NewsItem) -> str:
                 data = r.json()
                 content = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content")
                 if content:
-                    return _clean_text(str(content)).replace(" | ", "\n").replace("; ", "\n")
+                    # Preserve newlines — the parser needs them to split hook/body/question
+                    return str(content).strip()
         except Exception:
             pass
 
@@ -632,6 +780,25 @@ def _render_short(
     overlay_dir.mkdir(parents=True, exist_ok=True)
     hook_box_color = "0x000000"
 
+    # Palette of colors used to vary background and tarjas per publication.
+    # Deterministic selection based on headline content (so each publication keeps the same color).
+    PALETTE = [
+        "0x1A73E8",  # blue
+        "0xFB8C00",  # orange
+        "0x06B6D4",  # cyan
+        "0x8B5CF6",  # purple
+        "0x16A34A",  # green
+        "0xEF4444",  # red
+        "0xF59E0B",  # amber
+        "0xE11D48",  # rose
+    ]
+
+    # We'll pick a color based on the main headline text so it's repeatable per post.
+    # main_input is computed below; use a temporary seed from the headline file if needed.
+    # Default to black on error.
+    bg_color = "0x000000"
+    tarja_color = "0x000000"
+
     # Make spacing consistent across macOS/Linux builds of FFmpeg/libfreetype.
     # Keep only widely-supported drawtext params.
 
@@ -663,6 +830,32 @@ def _render_short(
 
     # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
+    # Prefer to estimate a background color from the news image so the
+    # pad (background) harmonizes with the photo. Derive tarja color by
+    # darkening that base color. Fall back to deterministic palette
+    # selection based on headline hash when estimation fails.
+    try:
+        # _estimate_logo_bg_color returns a string like '0xRRGGBB'
+        bg_color = _estimate_logo_bg_color(image_path)
+        # Parse hex to RGB
+        hexpart = bg_color[2:] if bg_color.startswith("0x") else bg_color
+        r = int(hexpart[0:2], 16)
+        g = int(hexpart[2:4], 16)
+        b = int(hexpart[4:6], 16)
+        # Darken for tarja (stripes) so text remains readable on top
+        tr, tg, tb = _adjust_color_brightness(r, g, b, factor=0.55)
+        tarja_color = f"0x{tr:02X}{tg:02X}{tb:02X}"
+    except Exception:
+        # Fallback: deterministic palette by headline hash
+        try:
+            seed_text = main_input or headline_file.read_text(encoding="utf-8")
+            h = hashlib.sha1(seed_text.encode("utf-8")).hexdigest()
+            idx = int(h, 16) % len(PALETTE)
+            bg_color = PALETTE[idx]
+            tarja_color = PALETTE[(idx + 3) % len(PALETTE)]
+        except Exception:
+            bg_color = "0x000000"
+            tarja_color = "0x000000"
     main_lines = textwrap.wrap(main_input, width=22, break_long_words=False, break_on_hyphens=False)[:7]
     main_filters = []
 
@@ -687,10 +880,6 @@ def _render_short(
             f"fontcolor=white:fontsize={font_size}:fix_bounds=1:"
             f"x=(w-tw)/2:y={y_pos}"
         )
-
-    # Calculate the background color using the logo path
-    logo_path = Path("path/to/logo.png")  # Update this path as needed
-    bg_color = _estimate_logo_bg_color(logo_path)
 
     vf_layers = [
         "scale=1080:1920:force_original_aspect_ratio=decrease",
@@ -815,58 +1004,64 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
     try:
         image_path = _download_image(item.image_url, post_dir / "news_image")
 
-        # Get the smart summary first to use as hook/headline
+        # ── Parse da IA: espera exatamente 3 linhas (gancho / corpo / pergunta) ──
         raw_script = _summarize_news_text(item)
-        all_lines = [ln.strip() for ln in raw_script.splitlines() if ln.strip()]
-        
-        # Filtro robusto: separa hashtags de qualquer outra linha e força minúsculas
-        hashtags = " ".join([ln.lower() for ln in all_lines if ln.startswith("#")])
-        ai_parts = [ln for ln in all_lines if not ln.startswith("#")]
-        
-        if len(ai_parts) >= 3:
-            # Novo formato: Linha 1 = Hook, Linha 2 = Resumo, Linha 3 = CTA
-            hook_raw = ai_parts[0]
-            hook_words = hook_raw.split()[:4]  # Força máximo de 4 palavras
-            hook = " ".join(hook_words)
-            
-            # Resumo: já vem completo em um parágrafo de 12-15 palavras
-            resumo = ai_parts[1] if len(ai_parts) > 1 else ""
-            
-            # CTA: pergunta/frase curta de 4-6 palavras
-            cta = ai_parts[2] if len(ai_parts) > 2 else ""
-            
-            # Junta Resumo + CTA para formar o headline completo
-            headline_text = f"{resumo}. {cta}" if cta else resumo
-        elif len(ai_parts) >= 2:
-            # Fallback: se não tiver CTA, usa apenas Hook + Resumo
-            hook_raw = ai_parts[0]
-            hook_words = hook_raw.split()[:4]
-            hook = " ".join(hook_words)
-            headline_text = ai_parts[1]
-        else:
-            # Fallback completo: cria hook curto e impactante do título
-            hook, summary = _build_text_layers(item.title, item.source)
-            # Força máximo de 4 palavras no hook
-            hook_words = hook.split()[:4]
-            hook = " ".join(hook_words)
-            headline_text = summary
+        all_lines = [ln.rstrip() for ln in raw_script.splitlines()]
 
-        # IMPORTANTE: Remove TODAS as hashtags e caracteres especiais
-        # Hashtags devem aparecer SOMENTE na caption/legenda
+        # Separa hashtags residuais (caso a IA insira mesmo assim)
+        hashtags = " ".join([ln.lower() for ln in all_lines if ln.strip().startswith("#")])
+
+        # Limpa: remove hashtags, labels ("Variante 1", "Variation 1", etc.), linhas vazias e separadores
+        content_lines: list[str] = []
+        for ln in all_lines:
+            stripped = ln.strip()
+            if not stripped:
+                continue
+            if stripped.startswith("#"):
+                continue
+            if re.match(r"^-{2,}$", stripped):
+                continue
+            if re.match(r"^(variante|variation|vers[ãa]o|version|op[çc][ãa]o|option)\s*\d*\s*[:\-–—]*\s*", stripped, flags=re.I):
+                continue
+            # Remove labels inline como "Gancho:", "Hook:", "Corpo:", "Body:", "Pergunta:", "Question:"
+            cleaned = re.sub(r"^(gancho|hook|corpo|body|pergunta|question)\s*[:\-–—]\s*", "", stripped, flags=re.I).strip()
+            if cleaned:
+                content_lines.append(cleaned)
+
+        # Se a IA devolveu múltiplas variações separadas por '---', pega só a primeira
+        # (as content_lines já removeram '---', mas podem ter linhas de múltiplas variações)
+        # Esperamos 3 linhas (hook, corpo, pergunta). Pegamos as 3 primeiras linhas úteis.
+        if len(content_lines) >= 3:
+            hook = content_lines[0]
+            body = content_lines[1]
+            question = content_lines[2]
+            headline_text = f"{body} {question}"
+        elif len(content_lines) == 2:
+            hook = content_lines[0]
+            headline_text = content_lines[1]
+        elif len(content_lines) == 1:
+            # Fallback: IA devolveu tudo em 1 linha, divide
+            hook, summary = _build_text_layers(item.title, item.source)
+            headline_text = content_lines[0]
+        else:
+            # Fallback completo: IA não devolveu nada útil
+            hook, headline_text = _build_text_layers(item.title, item.source)
+
+        # ── Limpeza leve (sem truncamento agressivo) ──
+        # Remove hashtags residuais e caracteres problemáticos, preserva pontuação
         hook_clean = re.sub(r'#\w+', '', hook).strip()
-        hook_clean = re.sub(r'[^\w\s\u00C0-\u00FF]', '', hook_clean)  # Remove caracteres especiais exceto letras acentuadas
+        hook_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', hook_clean)
         hook_clean = re.sub(r'\s+', ' ', hook_clean).strip()
-        
+
         headline_text_clean = re.sub(r'#\w+', '', headline_text).strip()
-        headline_text_clean = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text_clean)  # Mantém pontuação básica
+        headline_text_clean = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text_clean)
         headline_text_clean = re.sub(r'\s+', ' ', headline_text_clean).strip()
-        
-        # Limita a 21 palavras (15 do resumo + 6 do CTA = ideal para o formato completo)
-        words = headline_text_clean.split()
-        if len(words) > 21:
-            headline_text_clean = " ".join(words[:21]) + "..."
-        
-        # Força caixa alta no corpo/headline
+
+        # Garante pontuação final para sensação de completude
+        if headline_text_clean and not re.search(r"[.!?]$", headline_text_clean):
+            headline_text_clean += "?"  if "?" in headline_text else "."
+
+        # Força caixa alta
         headline_text_clean = headline_text_clean.upper()
         
         # Hook: 20 chars por linha, máximo 2 linhas
