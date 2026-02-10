@@ -298,7 +298,7 @@ def _smart_truncate_hook(hook_raw: str, max_words: int = 5) -> str:
         return ""
     words = hook_raw.strip().split()
     if len(words) <= max_words:
-        return " ".join(words)
+        return _trim_trailing_connectors(" ".join(words))
 
     chosen = words[:max_words]
     last = chosen[-1].lower().strip(".?!:,;\"'()")
@@ -308,7 +308,31 @@ def _smart_truncate_hook(hook_raw: str, max_words: int = 5) -> str:
         if len(words) > max_words:
             chosen.append(words[max_words])
 
-    return " ".join(chosen)
+    return _trim_trailing_connectors(" ".join(chosen))
+
+
+def _trim_trailing_connectors(text: str) -> str:
+    """Remove trailing articles, prepositions, and conjunctions that make a hook look incomplete.
+
+    Repeatedly strips the last word if it's a connector, so 'RAINHA DO SAMBA E' becomes 'RAINHA DO SAMBA'.
+    """
+    if not text:
+        return text
+    connectors = {
+        "E", "OU", "O", "A", "OS", "AS", "DO", "DA", "DOS", "DAS",
+        "DE", "EM", "NO", "NA", "NOS", "NAS", "MAS", "COM", "POR",
+        "PELO", "PELA", "QUE", "SE", "AO", "AOS", "UM", "UMA",
+        "AND", "OR", "THE", "A", "AN", "OF", "IN", "ON", "AT",
+        "FOR", "WITH", "BUT", "TO", "IS", "WAS", "ARE", "HER", "HIS",
+    }
+    words = text.strip().split()
+    while len(words) > 1:
+        last = re.sub(r"[^\w\u00C0-\u00FF]", "", words[-1]).upper()
+        if last in connectors:
+            words.pop()
+        else:
+            break
+    return " ".join(words)
 
 
 def _fix_orphan_pronoun_tail(text: str) -> str:
@@ -549,6 +573,10 @@ def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool 
         return [ln for ln in fixed if ln]
 
     fixed_wrapped = _fix_trailing_short_words(wrapped)
+    # Trim trailing connectors from the last visible line to avoid incomplete phrases
+    if fixed_wrapped:
+        fixed_wrapped[-1] = _trim_trailing_connectors(fixed_wrapped[-1])
+        fixed_wrapped = [ln for ln in fixed_wrapped if ln.strip()]
     # We prioritize showing the full message without "..." suffixes
     return "\n".join(fixed_wrapped[:max_lines])
 
@@ -608,8 +636,10 @@ def _build_text_layers(headline: str, source: str) -> tuple[str, str]:
 
     # Hook: sempre usar chamada temática impactante (estilo TikTok/Shorts)
     hook_text = _pick_pt_hook(clean) if is_pt else _pick_en_hook(clean)
-    # Adiciona o nome do famoso ao hook
-    hook_text = f"{hook_text}: {clean.split()[0].upper()}"
+    # Adiciona o nome do famoso ao hook (primeiras 2 palavras para pegar nome + sobrenome)
+    name_words = [w for w in clean.split()[:2] if w.upper() not in {"O", "A", "OS", "AS", "UM", "UMA", "DE", "DO", "DA"}]
+    if name_words:
+        hook_text = f"{hook_text}: {' '.join(name_words).upper()}"
     hook = _wrap_for_overlay(hook_text, max_chars=20, max_lines=2, upper=True)
 
     # Bottom text: texto completo sem truncar — a renderização cuida do limite visual
@@ -642,33 +672,40 @@ def _summarize_news_text(item: NewsItem) -> str:
             
             if is_pt:
                 system_instr = (
-                    "Você é um roteirista de Shorts/Reels de fofoca. Sua tarefa é gerar UM ÚNICO post pronto para overlay de vídeo.\n\n"
-                    "FORMATO OBRIGATÓRIO — exatamente 3 linhas de texto puro, nada mais:\n"
-                    "Linha 1 = GANCHO: frase curta (2-4 palavras) TUDO EM MAIÚSCULAS. Já é a fofoca, sem introdução. Pode ser afirmação chocante ou pergunta provocativa.\n"
-                    "Linha 2 = CORPO: UMA frase completa (10-18 palavras) que resume o fato principal. Deve fazer sentido sozinha, sem depender do gancho. Nunca termine no meio de uma ideia.\n"
-                    "Linha 3 = PERGUNTA: Uma pergunta curta de engajamento (4-8 palavras) que provoque opinião.\n\n"
-                    "REGRAS RÍGIDAS:\n"
-                    "- Cada frase deve ser COMPLETA e AUTOCONTIDA. Nunca cortar no meio.\n"
+                    "Voce e um roteirista de Shorts/Reels de fofoca brasileira. Gere UM UNICO post pronto para overlay de video vertical.\n\n"
+                    "FORMATO OBRIGATORIO — exatamente 3 linhas de texto puro, nada mais:\n\n"
+                    "Linha 1 = GANCHO: frase CURTA e COMPLETA com no maximo 35 caracteres (2-4 palavras). "
+                    "TUDO EM MAIUSCULAS. Deve resumir o assunto principal de forma impactante e fazer sentido sozinha. "
+                    "NUNCA termine com artigo, preposicao ou conjuncao (e, de, do, da, no, na, com, que, o, a, ou). "
+                    "Pode ser afirmacao chocante ou pergunta provocativa.\n\n"
+                    "Linha 2 = CORPO: UMA frase completa (10-18 palavras) que conta o fato principal com contexto suficiente. "
+                    "DEVE mencionar o nome da celebridade. Deve fazer sentido completo sozinha sem depender do gancho. "
+                    "Nunca termine no meio de uma ideia.\n\n"
+                    "Linha 3 = PERGUNTA: Uma pergunta curta de engajamento (4-8 palavras) que provoque opiniao do espectador.\n\n"
+                    "REGRAS RIGIDAS:\n"
+                    "- O GANCHO deve ser autocontido e fazer sentido COMPLETO em ate 35 caracteres.\n"
+                    "- O GANCHO nunca deve terminar em palavra incompleta, artigo ou preposicao.\n"
+                    "- Cada frase deve ser COMPLETA. Nunca cortar no meio de uma ideia.\n"
                     "- Zero hashtags, zero emojis, zero asteriscos, zero aspas.\n"
-                    "- Mencione o nome da pessoa famosa no CORPO (linha 2), não no gancho.\n"
-                    "- Não inclua rótulos como 'Gancho:', 'Corpo:', 'Pergunta:', etc.\n"
-                    "- Não numere as linhas.\n\n"
-                    "EXEMPLOS DE SAÍDA PERFEITA:\n\n"
-                    "THAIS CARLA CHOCA\n"
-                    "Ela surgiu dancando de top e short apos perder 86 kg.\n"
-                    "Transformacao real ou exagero da internet?\n\n"
-                    "---\n\n"
-                    "MUDANCA RADICAL?\n"
-                    "Thais Carla exibiu o novo corpo depois de eliminar 86 kg.\n"
-                    "Isso muda tudo ou nao muda nada?\n\n"
-                    "---\n\n"
-                    "86 KG A MENOS\n"
-                    "Thais Carla apareceu dancando e mostrou o novo corpo.\n"
+                    "- NAO inclua rotulos como 'Gancho:', 'Corpo:', 'Pergunta:'.\n"
+                    "- NAO numere as linhas.\n"
+                    "- Escreva SEM acentos (nao use acento em nenhuma palavra).\n\n"
+                    "EXEMPLOS DE SAIDA PERFEITA:\n\n"
+                    "PERDEU 86 KG\n"
+                    "Thais Carla surgiu dancando de top e short exibindo o novo corpo apos emagrecer.\n"
                     "Voce achou inspirador ou forcado?\n\n"
                     "---\n\n"
-                    "SEPARACAO CONFIRMADA\n"
-                    "Joao e Maria anunciaram o fim do casamento apos 10 anos juntos.\n"
+                    "FIM DO CASAMENTO\n"
+                    "Joao e Maria anunciaram a separacao apos 10 anos juntos e chocaram os fas.\n"
                     "Voce ja esperava ou foi surpresa?\n\n"
+                    "---\n\n"
+                    "TRETA NO BBB\n"
+                    "O sincerrao do BBB 26 virou uma brincadeira tensa e divertida entre os participantes.\n"
+                    "Quem mandou melhor na dinamica?\n\n"
+                    "---\n\n"
+                    "CORPO NOVO CHOCOU\n"
+                    "A famosa apareceu irreconhecivel depois de uma transformacao radical no visual.\n"
+                    "Mudanca real ou filtro da internet?\n\n"
                     "Responda APENAS com as 3 linhas. Nada antes, nada depois."
                 )
                 user_content = f"Noticia:\n{context}"
@@ -676,22 +713,26 @@ def _summarize_news_text(item: NewsItem) -> str:
                 system_instr = (
                     "You are a Shorts/Reels gossip scriptwriter. Generate ONE SINGLE post ready for video overlay.\n\n"
                     "MANDATORY FORMAT — exactly 3 lines of plain text, nothing else:\n"
-                    "Line 1 = HOOK: short phrase (2-4 words) ALL CAPS. Already IS the gossip, no intro. Can be a shocking statement or provocative question.\n"
-                    "Line 2 = BODY: ONE complete sentence (10-18 words) summarizing the main fact. Must make sense on its own. Never cut mid-thought.\n"
+                    "Line 1 = HOOK: short phrase (2-4 words) ALL CAPS, max 35 characters. Already IS the gossip, no intro. "
+                    "Must make complete sense on its own. NEVER end with an article, preposition, or conjunction (and, of, the, a, or, with). "
+                    "Can be a shocking statement or provocative question.\n"
+                    "Line 2 = BODY: ONE complete sentence (10-18 words) summarizing the main fact. Must mention the celebrity name. "
+                    "Must make sense on its own. Never cut mid-thought.\n"
                     "Line 3 = QUESTION: A short engagement question (4-8 words) that provokes opinion.\n\n"
                     "STRICT RULES:\n"
+                    "- HOOK must be self-contained and make complete sense in max 35 characters.\n"
+                    "- HOOK must never end on an incomplete word, article, or preposition.\n"
                     "- Every sentence must be COMPLETE and SELF-CONTAINED. Never cut mid-thought.\n"
                     "- Zero hashtags, zero emojis, zero asterisks, zero quotes.\n"
-                    "- Mention the celebrity name in BODY (line 2), not the hook.\n"
                     "- Do not include labels like 'Hook:', 'Body:', 'Question:', etc.\n"
                     "- Do not number the lines.\n\n"
                     "EXAMPLES OF PERFECT OUTPUT:\n\n"
-                    "SHOCKING TRANSFORMATION\n"
-                    "She showed up dancing in a crop top after losing 190 pounds.\n"
+                    "LOST 190 POUNDS\n"
+                    "She showed up dancing in a crop top showing her incredible new body transformation.\n"
                     "Real change or internet hype?\n\n"
                     "---\n\n"
                     "DIVORCE CONFIRMED\n"
-                    "John and Mary announced the end of their 10 year marriage.\n"
+                    "John and Mary announced the end of their 10 year marriage shocking all fans.\n"
                     "Did you see it coming or total surprise?\n\n"
                     "Reply ONLY with the 3 lines. Nothing before, nothing after."
                 )
@@ -1054,6 +1095,8 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         hook_clean = re.sub(r'#\w+', '', hook).strip()
         hook_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', hook_clean)
         hook_clean = re.sub(r'\s+', ' ', hook_clean).strip()
+        # Garante que o hook não termina em palavra conectora (artigo/preposição/conjunção)
+        hook_clean = _trim_trailing_connectors(hook_clean)
 
         headline_text_clean = re.sub(r'#\w+', '', headline_text).strip()
         headline_text_clean = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text_clean)

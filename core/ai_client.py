@@ -13,7 +13,7 @@ load_dotenv()
 @dataclass(frozen=True)
 class OpenAIConfig:
     api_key_env: str = "OPENAI_API_KEY"
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-4.1-nano"
     base_url: str = "https://api.openai.com/v1"
 
 
