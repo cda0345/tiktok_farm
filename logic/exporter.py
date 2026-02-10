@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from PIL import Image
 
 from core.config import RenderConfig
 from logic.editor import EditPlan
@@ -23,6 +24,8 @@ def _vf_style(cfg: RenderConfig) -> str:
         "setsar=1",
         f"fps={cfg.fps}",
         "format=yuv420p",
+        # Add a black background color to fill empty areas
+        "color=color=black:size={cfg.width}x{cfg.height}:d=1 [bg]; [bg][0:v] overlay=shortest=1"
     ]
     # Skip expensive filters for faster encoding
     if cfg.contrast != 1.0 or cfg.saturation != 1.0:
@@ -30,6 +33,15 @@ def _vf_style(cfg: RenderConfig) -> str:
     if cfg.enable_grain:
         parts.append(f"noise=alls={cfg.grain_strength}:allf=t")
     return ",".join(parts)
+
+
+def get_dominant_color(image_path: str) -> str:
+    """Calcula a cor predominante de uma imagem e retorna no formato hexadecimal."""
+    with Image.open(image_path) as img:
+        img = img.resize((50, 50))  # Reduz o tamanho para acelerar o cálculo
+        pixels = img.getdata()
+        r, g, b = map(lambda x: int(sum(x) / len(x)), zip(*pixels))
+        return f"#{r:02x}{g:02x}{b:02x}"
 
 
 def export_video(
@@ -57,6 +69,8 @@ def export_video(
         if is_image:
             input_args += ["-loop", "1"]
             
+            bg_color = get_dominant_color(seg.src)
+
         input_args += ["-i", seg.src]
 
     input_args += ["-i", audio_path]
