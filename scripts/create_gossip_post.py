@@ -688,6 +688,10 @@ def _render_short(
             f"x=(w-tw)/2:y={y_pos}"
         )
 
+    # Calculate the background color using the logo path
+    logo_path = Path("path/to/logo.png")  # Update this path as needed
+    bg_color = _estimate_logo_bg_color(logo_path)
+
     vf_layers = [
         "scale=1080:1920:force_original_aspect_ratio=decrease",
         f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color={bg_color}",
