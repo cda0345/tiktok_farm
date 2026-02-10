@@ -836,14 +836,15 @@ def _render_short(
     # selection based on headline hash when estimation fails.
     try:
         # _estimate_logo_bg_color returns a string like '0xRRGGBB'
-        bg_color = _estimate_logo_bg_color(image_path)
+        estimated_bg = _estimate_logo_bg_color(image_path)
         # Parse hex to RGB
-        hexpart = bg_color[2:] if bg_color.startswith("0x") else bg_color
+        hexpart = estimated_bg[2:] if estimated_bg.startswith("0x") else estimated_bg
         r = int(hexpart[0:2], 16)
         g = int(hexpart[2:4], 16)
         b = int(hexpart[4:6], 16)
         # Darken for tarja (stripes) so text remains readable on top
         tr, tg, tb = _adjust_color_brightness(r, g, b, factor=0.55)
+        bg_color = estimated_bg
         tarja_color = f"0x{tr:02X}{tg:02X}{tb:02X}"
     except Exception:
         # Fallback: deterministic palette by headline hash
@@ -854,6 +855,7 @@ def _render_short(
             bg_color = PALETTE[idx]
             tarja_color = PALETTE[(idx + 3) % len(PALETTE)]
         except Exception:
+            # Final fallback: ensure both colors are always defined
             bg_color = "0x000000"
             tarja_color = "0x000000"
     main_lines = textwrap.wrap(main_input, width=22, break_long_words=False, break_on_hyphens=False)[:7]
