@@ -360,8 +360,16 @@ def _ffmpeg_escape_text(text: str) -> str:
     )
 
 
+def _adjust_color_brightness(r: int, g: int, b: int, factor: float = 0.5) -> tuple[int, int, int]:
+    """Adjust the brightness of an RGB color by a given factor."""
+    r = max(0, min(255, int(r * factor)))
+    g = max(0, min(255, int(g * factor)))
+    b = max(0, min(255, int(b * factor)))
+    return r, g, b
+
+
 def _estimate_logo_bg_color(logo_path: Path) -> str:
-    """Estimate a background hex color from logo border pixels."""
+    """Estimate a background hex color from logo border pixels and adjust brightness."""
     try:
         from PIL import Image
 
@@ -387,14 +395,16 @@ def _estimate_logo_bg_color(logo_path: Path) -> str:
 
         if not samples:
             r, g, b = img.convert("RGB").resize((1, 1)).getpixel((0, 0))
-            return f"0x{r:02X}{g:02X}{b:02X}"
+        else:
+            r = sum(c[0] for c in samples) // len(samples)
+            g = sum(c[1] for c in samples) // len(samples)
+            b = sum(c[2] for c in samples) // len(samples)
 
-        r = sum(c[0] for c in samples) // len(samples)
-        g = sum(c[1] for c in samples) // len(samples)
-        b = sum(c[2] for c in samples) // len(samples)
+        # Adjust brightness to make the color darker
+        r, g, b = _adjust_color_brightness(r, g, b, factor=0.5)
         return f"0x{r:02X}{g:02X}{b:02X}"
     except Exception:
-        return "0xC70000"
+        return "0x202020"  # Default to a dark gray color
 
 
 def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool = False) -> str:
