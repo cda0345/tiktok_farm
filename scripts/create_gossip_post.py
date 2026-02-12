@@ -584,41 +584,41 @@ def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool 
 def _pick_pt_hook(headline: str) -> str:
     h = _clean_text(headline).lower()
     if any(k in h for k in ["morre", "morte", "luto", "velório", "velorio", "enterro"]):
-        return "LUTO NO MUNDO FAMOSO"
+        return random.choice(["NINGUEM ACREDITOU", "CHOCOU O BRASIL", "FIM INESPERADO"])
     if any(k in h for k in ["bbb", "big brother", "paredão", "paredao", "eliminação", "eliminacao", "prova do líder", "prova do lider", "anjo"]):
-        return "TRETA NO BBB"
+        return random.choice(["BBB PEGOU FOGO", "PASSOU DO LIMITE?", "FOI JUSTO?", "BBB EXPLODIU"])
     if any(k in h for k in ["a fazenda", "reality", "peão", "peao"]):
-        return "TRETA NO REALITY"
+        return random.choice(["FOI LONGE DEMAIS?", "REALITY EXPLODIU", "PASSOU DO LIMITE?"])
     if any(k in h for k in ["filha", "filho", "bebê", "bebe", "gravidez", "grávida", "gravida", "nasceu"]):
-        return "FOFURA E EMOÇÃO"
+        return random.choice(["NINGUEM ESPERAVA", "SERA VERDADE?", "CHOCOU TODO MUNDO"])
     if any(k in h for k in ["separ", "divórcio", "divorcio", "trai", "affair", "corno"]):
-        return "SEPARAÇÃO CONFIRMADA"
+        return random.choice(["MERECIA ISSO?", "ERA OBVIO?", "FIM MERECIDO?"])
     if any(k in h for k in ["polêmica", "polemica", "briga", "treta", "confusão", "confusao", "desabaf"]):
-        return "DEU O QUE FALAR"
+        return random.choice(["QUEM TEM RAZAO?", "FOI EXAGERO?", "PASSOU DO LIMITE?"])
     if any(k in h for k in ["novela", "personagem", "ator", "atriz", "papel", "cena"]):
-        return "BABADO NA NOVELA"
+        return random.choice(["CONCORDAM?", "FEZ SENTIDO?", "ERA NECESSARIO?"])
     if any(k in h for k in ["cirurgia", "hospital", "internado", "internada", "saúde", "saude", "doença", "doenca"]):
-        return "NOTÍCIA URGENTE"
+        return random.choice(["NINGUEM SABIA", "SERA GRAVE?", "CHOCOU GERAL"])
     if any(k in h for k in ["namoro", "casal", "romance", "casamento", "noivar", "noivo", "noiva"]):
-        return "ROMANCE CONFIRMADO"
+        return random.choice(["COMBINAM?", "VAI DURAR?", "VOCES APROVAM?"])
     if any(k in h for k in ["carnaval", "bloco", "fantasia", "desfile"]):
-        return "BABADO NO CARNAVAL"
-    return "FOFOCA DO MOMENTO"
+        return random.choice(["FOI DEMAIS?", "ARRASOU OU ERROU?", "APROVAM O LOOK?"])
+    return random.choice(["VOCE CONCORDA?", "CHOCOU GERAL", "NINGUEM ESPERAVA"])
 
 
 def _pick_en_hook(headline: str) -> str:
     h = _clean_text(headline).lower()
     if any(k in h for k in ["dies", "death", "dead", "passed away", "funeral"]):
-        return "SHOCKING LOSS"
+        return random.choice(["NO ONE EXPECTED THIS", "GONE TOO SOON?", "SHOCKING LOSS"])
     if any(k in h for k in ["split", "divorce", "cheat", "scandal", "affair"]):
-        return "MAJOR CELEB DRAMA"
+        return random.choice(["WAS IT DESERVED?", "WENT TOO FAR?", "WHO WAS WRONG?"])
     if any(k in h for k in ["baby", "pregnan", "daughter", "son", "born"]):
-        return "BIG FAMILY UPDATE"
+        return random.choice(["DID YOU EXPECT THIS?", "IS THIS REAL?", "NO ONE SAW THIS COMING"])
     if any(k in h for k in ["arrest", "jail", "court", "lawsuit", "sued"]):
-        return "CELEB IN TROUBLE"
+        return random.choice(["DESERVED OR NOT?", "WENT TOO FAR?", "WAS IT FAIR?"])
     if any(k in h for k in ["wedding", "engaged", "dating", "romance", "couple"]):
-        return "LOVE CONFIRMED"
-    return "TRENDING CELEB TEA"
+        return random.choice(["WILL IT LAST?", "DO THEY MATCH?", "DO YOU APPROVE?"])
+    return random.choice(["DO YOU AGREE?", "NO ONE EXPECTED THIS", "IS THIS RIGHT?"])
 
 
 def _is_portuguese_context(source: str, headline: str) -> bool:
@@ -673,68 +673,93 @@ def _summarize_news_text(item: NewsItem) -> str:
             if is_pt:
                 system_instr = (
                     "Voce e um roteirista de Shorts/Reels de fofoca brasileira. Gere UM UNICO post pronto para overlay de video vertical.\n\n"
-                    "FORMATO OBRIGATORIO — exatamente 3 linhas de texto puro, nada mais:\n\n"
-                    "Linha 1 = GANCHO: frase CURTA e COMPLETA com no maximo 35 caracteres (2-4 palavras). "
-                    "TUDO EM MAIUSCULAS. Deve resumir o assunto principal de forma impactante e fazer sentido sozinha. "
-                    "NUNCA termine com artigo, preposicao ou conjuncao (e, de, do, da, no, na, com, que, o, a, ou). "
-                    "Pode ser afirmacao chocante ou pergunta provocativa.\n\n"
+                    "FORMATO OBRIGATORIO — exatamente 4 linhas de texto puro, nada mais:\n\n"
+                    "Linha 1 = GANCHO: frase PROVOCATIVA com no maximo 35 caracteres (2-5 palavras). "
+                    "TUDO EM MAIUSCULAS. DEVE ser uma PROVOCACAO ou PERGUNTA que force o espectador a ter uma opiniao. "
+                    "NAO use afirmacoes neutras como 'Ela esta de volta' ou 'Novidade no BBB'. "
+                    "USE perguntas chocantes ou afirmacoes polemicas como 'ELA MERECIA VOLTAR?', 'PASSOU DO LIMITE', 'BBB PEGOU FOGO'. "
+                    "O cerebro do espectador precisa DECIDIR algo ao ler o gancho. "
+                    "NUNCA termine com artigo, preposicao ou conjuncao.\n\n"
                     "Linha 2 = CORPO: UMA frase completa (10-18 palavras) que conta o fato principal com contexto suficiente. "
                     "DEVE mencionar o nome da celebridade. Deve fazer sentido completo sozinha sem depender do gancho. "
                     "Nunca termine no meio de uma ideia.\n\n"
                     "Linha 3 = PERGUNTA: Uma pergunta curta de engajamento (4-8 palavras) que provoque opiniao do espectador.\n\n"
+                    "Linha 4 = CTA: Uma frase curta (3-6 palavras) pedindo LIKE de forma contextual. "
+                    "DEVE estar conectada com a noticia. NAO use 'inscreva-se' ou 'siga'. "
+                    "Use formatos como: 'CURTE SE CONCORDA', 'LIKE SE FOI INJUSTO', 'CURTE SE ELA MERECIA', "
+                    "'LIKE SE VOCE TAMBEM FICOU CHOCADO', 'CURTE SE ERA OBVIO'. "
+                    "Varie o CTA para cada noticia — sempre relacionado ao tema.\n\n"
                     "REGRAS RIGIDAS:\n"
-                    "- O GANCHO deve ser autocontido e fazer sentido COMPLETO em ate 35 caracteres.\n"
+                    "- O GANCHO deve ser PROVOCATIVO — nunca neutro ou descritivo.\n"
+                    "- O GANCHO deve fazer sentido COMPLETO em ate 35 caracteres.\n"
                     "- O GANCHO nunca deve terminar em palavra incompleta, artigo ou preposicao.\n"
+                    "- O CTA deve pedir LIKE/CURTIDA de forma contextual, nunca generica.\n"
                     "- Cada frase deve ser COMPLETA. Nunca cortar no meio de uma ideia.\n"
                     "- Zero hashtags, zero emojis, zero asteriscos, zero aspas.\n"
-                    "- NAO inclua rotulos como 'Gancho:', 'Corpo:', 'Pergunta:'.\n"
+                    "- NAO inclua rotulos como 'Gancho:', 'Corpo:', 'Pergunta:', 'CTA:'.\n"
                     "- NAO numere as linhas.\n"
                     "- Escreva SEM acentos (nao use acento em nenhuma palavra).\n\n"
                     "EXEMPLOS DE SAIDA PERFEITA:\n\n"
-                    "PERDEU 86 KG\n"
+                    "ELA MERECIA VOLTAR?\n"
                     "Thais Carla surgiu dancando de top e short exibindo o novo corpo apos emagrecer.\n"
-                    "Voce achou inspirador ou forcado?\n\n"
+                    "Transformacao real ou forcada?\n"
+                    "CURTE SE FOI INSPIRADOR\n\n"
                     "---\n\n"
-                    "FIM DO CASAMENTO\n"
+                    "PASSOU DO LIMITE?\n"
                     "Joao e Maria anunciaram a separacao apos 10 anos juntos e chocaram os fas.\n"
-                    "Voce ja esperava ou foi surpresa?\n\n"
+                    "Voce ja esperava isso?\n"
+                    "LIKE SE VOCE JA SABIA\n\n"
                     "---\n\n"
-                    "TRETA NO BBB\n"
-                    "O sincerrao do BBB 26 virou uma brincadeira tensa e divertida entre os participantes.\n"
-                    "Quem mandou melhor na dinamica?\n\n"
+                    "BBB PEGOU FOGO\n"
+                    "O sincerrao do BBB 26 virou uma briga tensa e os participantes perderam o controle.\n"
+                    "Quem mandou melhor na treta?\n"
+                    "CURTE SE FOI EXAGERO\n\n"
                     "---\n\n"
-                    "CORPO NOVO CHOCOU\n"
+                    "NINGUEM ESPERAVA ISSO\n"
                     "A famosa apareceu irreconhecivel depois de uma transformacao radical no visual.\n"
-                    "Mudanca real ou filtro da internet?\n\n"
-                    "Responda APENAS com as 3 linhas. Nada antes, nada depois."
+                    "Mudanca real ou filtro da internet?\n"
+                    "LIKE SE FICOU CHOCADO\n\n"
+                    "Responda APENAS com as 4 linhas. Nada antes, nada depois."
                 )
                 user_content = f"Noticia:\n{context}"
             else:
                 system_instr = (
                     "You are a Shorts/Reels gossip scriptwriter. Generate ONE SINGLE post ready for video overlay.\n\n"
-                    "MANDATORY FORMAT — exactly 3 lines of plain text, nothing else:\n"
-                    "Line 1 = HOOK: short phrase (2-4 words) ALL CAPS, max 35 characters. Already IS the gossip, no intro. "
-                    "Must make complete sense on its own. NEVER end with an article, preposition, or conjunction (and, of, the, a, or, with). "
-                    "Can be a shocking statement or provocative question.\n"
+                    "MANDATORY FORMAT — exactly 4 lines of plain text, nothing else:\n"
+                    "Line 1 = HOOK: short PROVOCATIVE phrase (2-5 words) ALL CAPS, max 35 characters. "
+                    "Must be a PROVOCATION or QUESTION that forces the viewer to form an opinion. "
+                    "DO NOT use neutral statements like 'She is back' or 'Big news'. "
+                    "USE shocking questions or polarizing statements like 'DID SHE DESERVE IT?', 'WENT TOO FAR', 'THIS WAS WRONG'. "
+                    "The viewer's brain must DECIDE something when reading the hook. "
+                    "NEVER end with an article, preposition, or conjunction.\n"
                     "Line 2 = BODY: ONE complete sentence (10-18 words) summarizing the main fact. Must mention the celebrity name. "
                     "Must make sense on its own. Never cut mid-thought.\n"
-                    "Line 3 = QUESTION: A short engagement question (4-8 words) that provokes opinion.\n\n"
+                    "Line 3 = QUESTION: A short engagement question (4-8 words) that provokes opinion.\n"
+                    "Line 4 = CTA: A short phrase (3-6 words) asking for a LIKE in a contextual way. "
+                    "Must be connected to the news. DO NOT use 'subscribe' or 'follow'. "
+                    "Use formats like: 'LIKE IF YOU AGREE', 'LIKE IF IT WAS UNFAIR', 'LIKE IF SHE DESERVED IT', "
+                    "'LIKE IF YOU ARE SHOCKED', 'LIKE IF IT WAS OBVIOUS'. "
+                    "Vary the CTA for each story — always related to the topic.\n\n"
                     "STRICT RULES:\n"
+                    "- HOOK must be PROVOCATIVE — never neutral or descriptive.\n"
                     "- HOOK must be self-contained and make complete sense in max 35 characters.\n"
                     "- HOOK must never end on an incomplete word, article, or preposition.\n"
+                    "- CTA must ask for LIKE in a contextual way, never generic.\n"
                     "- Every sentence must be COMPLETE and SELF-CONTAINED. Never cut mid-thought.\n"
                     "- Zero hashtags, zero emojis, zero asterisks, zero quotes.\n"
-                    "- Do not include labels like 'Hook:', 'Body:', 'Question:', etc.\n"
+                    "- Do not include labels like 'Hook:', 'Body:', 'Question:', 'CTA:'.\n"
                     "- Do not number the lines.\n\n"
                     "EXAMPLES OF PERFECT OUTPUT:\n\n"
-                    "LOST 190 POUNDS\n"
+                    "DID SHE DESERVE IT?\n"
                     "She showed up dancing in a crop top showing her incredible new body transformation.\n"
-                    "Real change or internet hype?\n\n"
+                    "Real change or internet hype?\n"
+                    "LIKE IF SHE EARNED IT\n\n"
                     "---\n\n"
-                    "DIVORCE CONFIRMED\n"
+                    "WENT TOO FAR?\n"
                     "John and Mary announced the end of their 10 year marriage shocking all fans.\n"
-                    "Did you see it coming or total surprise?\n\n"
-                    "Reply ONLY with the 3 lines. Nothing before, nothing after."
+                    "Did you see it coming?\n"
+                    "LIKE IF YOU KNEW ALREADY\n\n"
+                    "Reply ONLY with the 4 lines. Nothing before, nothing after."
                 )
                 user_content = f"News:\n{context}"
 
@@ -1066,29 +1091,39 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
                 continue
             if re.match(r"^(variante|variation|vers[ãa]o|version|op[çc][ãa]o|option)\s*\d*\s*[:\-–—]*\s*", stripped, flags=re.I):
                 continue
-            # Remove labels inline como "Gancho:", "Hook:", "Corpo:", "Body:", "Pergunta:", "Question:"
-            cleaned = re.sub(r"^(gancho|hook|corpo|body|pergunta|question)\s*[:\-–—]\s*", "", stripped, flags=re.I).strip()
+            # Remove labels inline como "Gancho:", "Hook:", "Corpo:", "Body:", "Pergunta:", "Question:", "CTA:"
+            cleaned = re.sub(r"^(gancho|hook|corpo|body|pergunta|question|cta)\s*[:\-–—]\s*", "", stripped, flags=re.I).strip()
             if cleaned:
                 content_lines.append(cleaned)
 
         # Se a IA devolveu múltiplas variações separadas por '---', pega só a primeira
         # (as content_lines já removeram '---', mas podem ter linhas de múltiplas variações)
         # Esperamos 3 linhas (hook, corpo, pergunta). Pegamos as 3 primeiras linhas úteis.
-        if len(content_lines) >= 3:
+        if len(content_lines) >= 4:
             hook = content_lines[0]
             body = content_lines[1]
             question = content_lines[2]
+            cta_from_ai = content_lines[3]
+            headline_text = f"{body} {question}"
+        elif len(content_lines) >= 3:
+            hook = content_lines[0]
+            body = content_lines[1]
+            question = content_lines[2]
+            cta_from_ai = ""
             headline_text = f"{body} {question}"
         elif len(content_lines) == 2:
             hook = content_lines[0]
             headline_text = content_lines[1]
+            cta_from_ai = ""
         elif len(content_lines) == 1:
             # Fallback: IA devolveu tudo em 1 linha, divide
             hook, summary = _build_text_layers(item.title, item.source)
             headline_text = content_lines[0]
+            cta_from_ai = ""
         else:
             # Fallback completo: IA não devolveu nada útil
             hook, headline_text = _build_text_layers(item.title, item.source)
+            cta_from_ai = ""
 
         # ── Limpeza leve (sem truncamento agressivo) ──
         # Remove hashtags residuais e caracteres problemáticos, preserva pontuação
@@ -1145,7 +1180,32 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
 
         slug = _make_slug(item.title)
         output_video = post_dir / "output" / f"gossip_{slug}.mp4"
-        cta_text = "INSCREVA-SE" if _is_portuguese_context(item.source, item.title) else "SUBSCRIBE"
+
+        # CTA contextual: usa o gerado pela IA, ou fallback com variação
+        is_pt = _is_portuguese_context(item.source, item.title)
+        cta_clean = re.sub(r'#\w+', '', cta_from_ai).strip() if cta_from_ai else ""
+        cta_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', cta_clean).strip().upper()
+        if not cta_clean:
+            if is_pt:
+                cta_clean = random.choice([
+                    "CURTE SE CONCORDA",
+                    "LIKE SE FICOU CHOCADO",
+                    "CURTE SE ERA OBVIO",
+                    "LIKE SE FOI EXAGERO",
+                    "CURTE SE VOCE JA SABIA",
+                    "LIKE SE FOI INJUSTO",
+                    "CURTE SE MERECIA",
+                ])
+            else:
+                cta_clean = random.choice([
+                    "LIKE IF YOU AGREE",
+                    "LIKE IF YOU ARE SHOCKED",
+                    "LIKE IF IT WAS OBVIOUS",
+                    "LIKE IF IT WAS UNFAIR",
+                    "LIKE IF YOU KNEW IT",
+                    "LIKE IF SHE DESERVED IT",
+                ])
+        cta_text = cta_clean
         logo_path = None
         if args.logo:
             logo_path = Path(args.logo).expanduser().resolve()

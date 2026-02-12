@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import mimetypes
+import random
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -67,26 +68,46 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     hashtags = " ".join([ln.lower() for ln in all_lines if ln.startswith("#")])
     ai_parts = [ln for ln in all_lines if not ln.startswith("#")]
     
-    if len(ai_parts) >= 3:
-        # Novo formato: Linha 1 = Hook (3-4 palavras), Linha 2 = Resumo (12-15 palavras), Linha 3 = CTA (4-6 palavras)
+    if len(ai_parts) >= 4:
+        # Novo formato: Linha 1 = Hook, Linha 2 = Corpo, Linha 3 = Pergunta, Linha 4 = CTA contextual
         hook_raw = ai_parts[0]
-        hook_words = hook_raw.split()[:4]  # Força máximo de 4 palavras
+        hook_words = hook_raw.split()[:5]  # Permite até 5 palavras para provocações
         hook_raw = " ".join(hook_words)
         
         # Resumo: já vem completo em um parágrafo direto e informativo
         resumo = ai_parts[1] if len(ai_parts) > 1 else ""
         
-        # CTA: pergunta/frase curta relacionada à notícia
-        cta = ai_parts[2] if len(ai_parts) > 2 else ""
+        # Pergunta de engajamento
+        pergunta = ai_parts[2] if len(ai_parts) > 2 else ""
         
-        # Junta Resumo + CTA para formar o headline completo
-        headline_text = f"{resumo}. {cta}" if cta else resumo
+        # CTA contextual gerado pela IA
+        cta_from_ai = ai_parts[3] if len(ai_parts) > 3 else ""
+        
+        # Junta Resumo + Pergunta para formar o headline completo
+        headline_text = f"{resumo}. {pergunta}" if pergunta else resumo
+    elif len(ai_parts) >= 3:
+        # Formato anterior: Linha 1 = Hook, Linha 2 = Resumo, Linha 3 = CTA/Pergunta
+        hook_raw = ai_parts[0]
+        hook_words = hook_raw.split()[:5]
+        hook_raw = " ".join(hook_words)
+        
+        resumo = ai_parts[1] if len(ai_parts) > 1 else ""
+        cta_or_question = ai_parts[2] if len(ai_parts) > 2 else ""
+        
+        # Detecta se a linha 3 é CTA (contém "curte", "like") ou pergunta
+        if re.search(r'\b(curte|like|deixa)\b', cta_or_question, re.I):
+            cta_from_ai = cta_or_question
+            headline_text = resumo
+        else:
+            cta_from_ai = ""
+            headline_text = f"{resumo}. {cta_or_question}" if cta_or_question else resumo
     elif len(ai_parts) >= 2:
         # Fallback: se não tiver CTA, usa apenas Hook + Resumo
         hook_raw = ai_parts[0]
-        hook_words = hook_raw.split()[:4]
+        hook_words = hook_raw.split()[:5]
         hook_raw = " ".join(hook_words)
         headline_text = ai_parts[1]
+        cta_from_ai = ""
     else:
         if hasattr(cgp, "_build_text_layers"):
             hook_raw, gen_summary = cgp._build_text_layers(item.title, item.source)
@@ -94,10 +115,11 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
             hook_raw = cgp._headline_for_overlay(item.title, max_chars=18, max_lines=2)
             gen_summary = cgp._headline_for_overlay(item.title, max_chars=20, max_lines=4)
         
-        # Força máximo de 4 palavras no hook
-        hook_words = hook_raw.split()[:4]
+        # Força máximo de 5 palavras no hook
+        hook_words = hook_raw.split()[:5]
         hook_raw = " ".join(hook_words)
         headline_text = gen_summary
+        cta_from_ai = ""
 
     # Remove TODAS as hashtags e caracteres especiais (para o vídeo)
     # Hashtags devem aparecer SOMENTE na caption
@@ -157,7 +179,30 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     slug = cgp._make_slug(item.title)
     out_video = post_dir / "output" / f"gossip_{slug}.mp4"
     logo_path = _resolve_logo_path(root)
-    cta_text = "INSCREVA-SE" if cgp._is_portuguese_context(item.source, item.title) else "SUBSCRIBE"
+
+    # CTA contextual: usa o gerado pela IA, ou fallback com variação
+    is_pt = cgp._is_portuguese_context(item.source, item.title)
+    cta_clean = re.sub(r'#\w+', '', cta_from_ai).strip() if cta_from_ai else ""
+    cta_clean = re.sub(r'[^\w\s\u00C0-\u00FF?!]', '', cta_clean).strip().upper()
+    if not cta_clean:
+        if is_pt:
+            cta_clean = random.choice([
+                "CURTE SE CONCORDA",
+                "LIKE SE FICOU CHOCADO",
+                "CURTE SE ERA OBVIO",
+                "LIKE SE FOI EXAGERO",
+                "CURTE SE VOCE JA SABIA",
+                "LIKE SE FOI INJUSTO",
+                "CURTE SE MERECIA",
+            ])
+        else:
+            cta_clean = random.choice([
+                "LIKE IF YOU AGREE",
+                "LIKE IF YOU ARE SHOCKED",
+                "LIKE IF IT WAS OBVIOUS",
+                "LIKE IF IT WAS UNFAIR",
+            ])
+    cta_text = cta_clean
     cgp._render_short(
         image_path,
         headline_file,
