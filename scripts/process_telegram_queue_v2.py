@@ -52,7 +52,8 @@ def process_foto_request(request: Dict[str, Any]) -> bool:
             [
                 sys.executable,  # Usa o Python atual
                 str(ROOT_DIR / "scripts" / "create_gossip_post.py"),
-                "--profile", "br"
+                "--profile", "br",
+                "--count", "1"
             ],
             cwd=ROOT_DIR,
             capture_output=True,
