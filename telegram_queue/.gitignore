@@ -1,0 +1,8 @@
+# Ignore temporary files but keep request JSON files
+*.mp4
+*.jpg
+*.png
+*.tmp
+
+# Keep the directory structure
+!.gitkeep

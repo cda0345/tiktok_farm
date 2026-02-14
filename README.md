@@ -1,6 +1,7 @@
 # Short-form video generator (House + Lifestyle)
 
 **Current Status (Feb 2026):**
+- 📱 **NEW: Telegram Bot System**: Create posts by sending messages! (See `GUIA_VISUAL_PT.md`)
 - 🎤 **TikTok Lyrics Mode**: New specialized engine for synchronized chorus videos
 - 📝 **Auto-Lyrics**: Multi-source scraper (LRCLIB, Lyricsify, Megalobiz) for `.lrc` files
 - ✅ 20 working posts (001-013, 016, 018-019, 021-022)
@@ -10,6 +11,40 @@
 - 🔄 Seamless Loops: Perfect infinite loops for Instagram Reels
 - 📚 B-roll library: 120+ videos across 6 categories (Added `city_drive` focus)
 - 🚫 Blacklist: 41 video IDs filtered
+
+## 🆕 Telegram Bot System (NEW!)
+
+✅ **SEU BOT JÁ ESTÁ CONFIGURADO E PRONTO!**
+
+**Bot:** @Gossip_personal_bot  
+**Link Direto:** https://t.me/Gossip_personal_bot
+
+Crie posts enviando mensagens no Telegram! Sistema completo com:
+- ✅ Posts com foto de matérias (scraping automático)
+- ✅ Posts com vídeo do X/Twitter (download + edição)
+- ✅ Processamento via GitHub Actions (gratuito)
+- ✅ Fila de requisições com status
+- ✅ Webhook para processamento instantâneo (opcional)
+
+**🚀 USE AGORA (3 passos):**
+```bash
+# 1. Execute o bot no terminal:
+python3 scripts/telegram_bot.py
+
+# 2. No Telegram (@Gossip_personal_bot), envie:
+/post_foto https://contigo.com.br/noticias/sua-materia
+
+# 3. Processe no GitHub (ou aguarde 15min):
+# Actions → Process Telegram Queue → Run workflow
+```
+
+**📚 Documentação:**
+- 🎯 **USE SEU BOT AGORA:** `SEU_BOT_ESTA_PRONTO.md` ← **COMECE AQUI!**
+- 🇧🇷 **Guia Visual PT:** `GUIA_VISUAL_PT.md`
+- ⚡ Quick Start: `QUICK_START_TELEGRAM.md`
+- 📖 Guia Completo: `TELEGRAM_BOT_GUIDE.md`
+- 🔧 Avançado: `TELEGRAM_ADVANCED.md`
+- ✅ Checklist: `VALIDATION_CHECKLIST.md`
 
 ## Project Architecture (For AI Agents)
 

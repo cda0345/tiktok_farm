@@ -950,18 +950,15 @@ def _render_short(
         )
 
     vf_layers = [
-        "scale=1080:1920:force_original_aspect_ratio=decrease",
-        f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color={bg_color}",
-        "eq=brightness=-0.02:contrast=1.08:saturation=1.02",
-        *hook_filters,
-        # Keep the tarjas, but ensure they start below the hook area visually.
-        f"drawbox=x=0:y=ih*0.56:w=iw:h=ih*0.44:color={tarja_color}@0.22:t=fill",
-        f"drawbox=x=0:y=ih*0.66:w=iw:h=ih*0.34:color={tarja_color}@0.42:t=fill",
-        f"drawbox=x=0:y=ih*0.76:w=iw:h=ih*0.24:color={tarja_color}@0.62:t=fill",
-        *main_filters,
-        # CTA stays above bottom UI
+        "scale=1080:-2",  # Ajusta o vídeo para caber no quadro 9:16
+        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",  # Adiciona padding para manter a proporção
+        "setsar=1",  # Garante pixels quadrados
+        "format=yuv420p",  # Formato de saída correto
+        "eq=brightness=-0.02:contrast=1.08:saturation=1.02",  # Ajustes de cor
+        *hook_filters,  # Filtros para o texto do hook
+        *main_filters,  # Filtros para o texto principal
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
-        "fontsize=53:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",
+        "fontsize=53:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",  # CTA piscante
     ]
     vf = ",".join(vf_layers)
 
@@ -1056,6 +1053,194 @@ def _render_short(
             "-pix_fmt",
             "yuv420p",
             "-shortest",
+            "-movflags",
+            "+faststart",
+            str(out_video),
+        ]
+    run_ffmpeg(ff.ffmpeg, args, stream_output=False)
+
+
+def _render_short_video(
+    video_path: Path,
+    headline_file: Path,
+    source: str,
+    out_video: Path,
+    *,
+    hook_file: Path | None = None,
+    summary_file: Path | None = None,
+    cta_text: str = "INSCREVA-SE",
+    logo_path: Path | None = None,
+    duration_s: float = 20.0,
+) -> None:
+    """Renderiza um post de fofoca usando um vídeo como base ao invés de imagem estática.
+    Corta o vídeo em `duration_s` segundos (default 20s).
+    """
+    ff = ensure_ffmpeg("tools")
+    font = _ffmpeg_escape(_select_font())
+    
+    fade_out_start = max(0.0, duration_s - 1.2)
+    cta_escaped = _ffmpeg_escape_text(cta_text.upper())
+    hook_box_color = "0x000000"
+
+    PALETTE = [
+        "0x1A73E8",  # blue
+        "0xFB8C00",  # orange
+        "0x06B6D4",  # cyan
+        "0x8B5CF6",  # purple
+        "0x16A34A",  # green
+        "0xEF4444",  # red
+        "0xF59E0B",  # amber
+        "0xE11D48",  # rose
+    ]
+
+    SAFE_TOP = 220
+    SAFE_BOTTOM = 1520
+
+    main_path = summary_file or headline_file
+    main_raw = main_path.read_text(encoding="utf-8") if main_path.exists() else ""
+    main_clean = _sanitize_overlay_text(main_raw).replace("\xa0", " ")
+    
+    hook_raw = hook_file.read_text(encoding="utf-8") if hook_file and hook_file.exists() else ""
+    hook_clean = _sanitize_overlay_text(hook_raw).replace("\xa0", " ")
+
+    # Render HOOK
+    hook_lines = textwrap.wrap(hook_clean, width=20, break_long_words=False, break_on_hyphens=False)[:2]
+    hook_filters = []
+
+    hook_base_y = _clamp(560, SAFE_TOP, SAFE_BOTTOM)
+    for i, line in enumerate(hook_lines):
+        line_esc = _ffmpeg_escape_text(line)
+        y_pos = _clamp(hook_base_y + (i * 104), SAFE_TOP, SAFE_BOTTOM)
+        hook_filters.append(
+            f"drawtext=text='{line_esc}':fontfile='{font}':"
+            f"fontcolor=white:fontsize=85:fix_bounds=1:"
+            f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=18:"
+            f"x=(w-tw)/2:y={y_pos}"
+        )
+
+    # Render MAIN HEADLINE
+    main_input = " ".join(main_clean.split())
+    
+    # Seleciona cores determinísticas baseadas no texto
+    try:
+        seed_text = main_input or headline_file.read_text(encoding="utf-8")
+        h = hashlib.sha1(seed_text.encode("utf-8")).hexdigest()
+        idx = int(h, 16) % len(PALETTE)
+        bg_color = PALETTE[idx]
+        tarja_color = PALETTE[(idx + 3) % len(PALETTE)]
+    except Exception:
+        bg_color = "0x000000"
+        tarja_color = "0x000000"
+    
+    main_lines = textwrap.wrap(main_input, width=22, break_long_words=False, break_on_hyphens=False)[:7]
+    main_filters = []
+
+    if len(main_lines) > 5:
+        line_spacing = 85
+        font_size = 69
+    else:
+        line_spacing = 92
+        font_size = 74
+
+    block_h = max(0, (len(main_lines) - 1) * line_spacing)
+    start_y = _clamp(SAFE_BOTTOM - block_h, SAFE_TOP + 520, SAFE_BOTTOM)
+
+    for i, line in enumerate(main_lines):
+        line_esc = _ffmpeg_escape_text(line)
+        y_pos = _clamp(start_y + (i * line_spacing), SAFE_TOP, SAFE_BOTTOM)
+        main_filters.append(
+            f"drawtext=text='{line_esc}':fontfile='{font}':"
+            f"fontcolor=white:fontsize={font_size}:fix_bounds=1:"
+            f"x=(w-tw)/2:y={y_pos}"
+        )
+
+    # Filtros de escala e padding (serão aplicados de forma diferente com ou sem logo)
+    scale_filters = [
+        "scale=1080:-2",  # Escala mantendo aspect ratio
+        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",  # Padding preto
+        "setsar=1",  # Garante pixels quadrados
+        "format=yuv420p",  # Formato de saída
+        "eq=brightness=-0.02:contrast=1.08:saturation=1.02",  # Ajustes de cor
+    ]
+    
+    # Filtros de texto apenas (sem escala/pad quando há logo)
+    text_filters = [
+        *hook_filters,  # Filtros para o texto do hook
+        *main_filters,  # Filtros para o texto principal
+        f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
+        "fontsize=53:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",  # CTA piscante
+    ]
+
+    out_video.parent.mkdir(parents=True, exist_ok=True)
+
+    if logo_path is not None and logo_path.exists():
+        # Com logo: aplica scale/pad no filter_complex, depois texto
+        base_filters = ",".join(scale_filters)
+        text_only = ",".join(text_filters)
+        args = [
+            "-hide_banner",
+            "-y",
+            "-t",
+            str(int(duration_s)),
+            "-i",
+            str(video_path),
+            "-i",
+            str(logo_path),
+            "-filter_complex",
+            # Escala vídeo base para 1080x1920 com aspect ratio preservado
+            f"[0:v]{base_filters},{text_only}[bg];"
+            # Escala logo separadamente com sin wave, mantendo proporção
+            "[1:v]scale='min(360,iw)':-1:eval=frame[logo];"
+            # Overlay logo no topo
+            "[bg][logo]overlay=(W-w)/2:36[v]",
+            "-map",
+            "[v]",
+            "-map",
+            "0:a:0",
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-preset",
+            "medium",
+            "-crf",
+            "20",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            str(out_video),
+        ]
+    else:
+        # Sem logo: aplica tudo junto no vf
+        vf = ",".join(scale_filters + text_filters)
+        args = [
+            "-hide_banner",
+            "-y",
+            "-t",
+            str(int(duration_s)),
+            "-i",
+            str(video_path),
+            "-vf",
+            vf,
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a:0",
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-preset",
+            "medium",
+            "-crf",
+            "20",
+            "-pix_fmt",
+            "yuv420p",
             "-movflags",
             "+faststart",
             str(out_video),
