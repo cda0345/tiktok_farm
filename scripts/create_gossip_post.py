@@ -34,6 +34,38 @@ from core.ffmpeg_utils import ensure_ffmpeg, run_ffmpeg
 from core.ai_client import OpenAIConfig, is_openai_configured
 
 
+# CTAs (Call-to-Action) para rotação aleatória
+CTA_VARIATIONS = [
+    "INSCREVA-SE",           # Original - clássico
+    "👉 SEGUE PRA MAIS",     # Informal + direto
+    "ATIVA O 🔔 AI",         # Foco em notificação
+    "PRÓXIMO É BOMBA 🔥",    # Cria curiosidade
+    "SEGUE AQUI 👇",         # Direto com emoji
+    "QUER MAIS? SEGUE",      # Value proposition
+    "SALVA ESSE POST",       # Engajamento
+    "MARCA UM AMIGO",        # Viralização
+]
+
+
+def _get_random_cta(seed_text: str = "") -> str:
+    """Seleciona um CTA aleatório de forma determinística baseado no seed_text.
+    
+    Se seed_text for fornecido, o mesmo texto sempre retorna o mesmo CTA.
+    Isso garante que re-processar o mesmo post mantém o mesmo CTA.
+    """
+    if seed_text:
+        # Usa hash do texto como seed para ser determinístico
+        hash_value = int(hashlib.md5(seed_text.encode()).hexdigest(), 16)
+        random.seed(hash_value)
+    
+    cta = random.choice(CTA_VARIATIONS)
+    
+    # Reset random seed para não afetar outros randoms
+    random.seed()
+    
+    return cta
+
+
 FEED_PROFILES: dict[str, list[tuple[str, str]]] = {
     "br": [
         ("contigo", "https://contigo.com.br/feed"),
@@ -1366,30 +1398,13 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         slug = _make_slug(item.title)
         output_video = post_dir / "output" / f"gossip_{slug}.mp4"
 
-        # CTA contextual: usa o gerado pela IA, ou fallback com variação
+        # CTA contextual: usa o gerado pela IA, ou fallback com variação aleatória
         is_pt = _is_portuguese_context(item.source, item.title)
         cta_clean = re.sub(r'#\w+', '', cta_from_ai).strip() if cta_from_ai else ""
         cta_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', cta_clean).strip().upper()
         if not cta_clean:
-            if is_pt:
-                cta_clean = random.choice([
-                    "CURTE SE CONCORDA",
-                    "LIKE SE FICOU CHOCADO",
-                    "CURTE SE ERA OBVIO",
-                    "LIKE SE FOI EXAGERO",
-                    "CURTE SE VOCE JA SABIA",
-                    "LIKE SE FOI INJUSTO",
-                    "CURTE SE MERECIA",
-                ])
-            else:
-                cta_clean = random.choice([
-                    "LIKE IF YOU AGREE",
-                    "LIKE IF YOU ARE SHOCKED",
-                    "LIKE IF IT WAS OBVIOUS",
-                    "LIKE IF IT WAS UNFAIR",
-                    "LIKE IF YOU KNEW IT",
-                    "LIKE IF SHE DESERVED IT",
-                ])
+            # Usa o título como seed para ter consistência (mesmo post = mesmo CTA)
+            cta_clean = _get_random_cta(item.title)
         cta_text = cta_clean
         logo_path = None
         if args.logo:

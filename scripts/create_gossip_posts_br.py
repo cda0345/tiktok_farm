@@ -180,28 +180,13 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     out_video = post_dir / "output" / f"gossip_{slug}.mp4"
     logo_path = _resolve_logo_path(root)
 
-    # CTA contextual: usa o gerado pela IA, ou fallback com variação
+    # CTA contextual: usa o gerado pela IA, ou fallback com variação aleatória
     is_pt = cgp._is_portuguese_context(item.source, item.title)
     cta_clean = re.sub(r'#\w+', '', cta_from_ai).strip() if cta_from_ai else ""
     cta_clean = re.sub(r'[^\w\s\u00C0-\u00FF?!]', '', cta_clean).strip().upper()
     if not cta_clean:
-        if is_pt:
-            cta_clean = random.choice([
-                "CURTE SE CONCORDA",
-                "LIKE SE FICOU CHOCADO",
-                "CURTE SE ERA OBVIO",
-                "LIKE SE FOI EXAGERO",
-                "CURTE SE VOCE JA SABIA",
-                "LIKE SE FOI INJUSTO",
-                "CURTE SE MERECIA",
-            ])
-        else:
-            cta_clean = random.choice([
-                "LIKE IF YOU AGREE",
-                "LIKE IF YOU ARE SHOCKED",
-                "LIKE IF IT WAS OBVIOUS",
-                "LIKE IF IT WAS UNFAIR",
-            ])
+        # Usa a função _get_random_cta do módulo base
+        cta_clean = cgp._get_random_cta(item.title)
     cta_text = cta_clean
     cgp._render_short(
         image_path,
