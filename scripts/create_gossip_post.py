@@ -941,6 +941,7 @@ def _render_short(
         hook_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
             f"fontcolor=white:fontsize=85:fix_bounds=1:"
+            f"borderw=3:bordercolor=black:"
             f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=18:"
             f"x=(w-tw)/2:y={y_pos}"
         )
@@ -979,6 +980,7 @@ def _render_short(
         main_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
             f"fontcolor=white:fontsize={font_size}:fix_bounds=1:"
+            f"borderw=3:bordercolor=black:"
             f"x=(w-tw)/2:y={y_pos}"
         )
 
@@ -991,6 +993,7 @@ def _render_short(
         *hook_filters,  # Filtros para o texto do hook
         *main_filters,  # Filtros para o texto principal
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
+        f"borderw=2:bordercolor=black:"
         "fontsize=53:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",  # CTA piscante
     ]
     vf = ",".join(vf_layers)
@@ -1147,6 +1150,7 @@ def _render_short_video(
         hook_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
             f"fontcolor=white:fontsize=85:fix_bounds=1:"
+            f"borderw=3:bordercolor=black:"
             f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=18:"
             f"x=(w-tw)/2:y={y_pos}"
         )
@@ -1194,6 +1198,7 @@ def _render_short_video(
         main_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
             f"fontcolor=white:fontsize={font_size}:fix_bounds=1:"
+            f"borderw=3:bordercolor=black:"
             f"x=(w-tw)/2:y={y_pos}"
         )
 
@@ -1211,6 +1216,7 @@ def _render_short_video(
         *hook_filters,  # Filtros para o texto do hook
         *main_filters,  # Filtros para o texto principal
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
+        f"borderw=2:bordercolor=black:"
         "fontsize=53:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",  # CTA piscante
     ]
 
