@@ -950,24 +950,30 @@ def _render_short(
     main_input = " ".join(main_clean.split())
     
     # Remove reticências automáticas que cortam frases
-    # Se o texto termina com "...", remove para não dar impressão de corte artificial
     if main_input.endswith("..."):
         main_input = main_input[:-3].rstrip()
     
-    # Limita o texto a um máximo de palavras para evitar textos muito longos
-    # Máximo de ~40 palavras (aproximadamente 2-3 frases curtas)
+    # Limita texto de forma inteligente: procura fim de frase dentro do limite
+    # Máximo de ~50 palavras, mas corta na última frase completa antes disso
     words = main_input.split()
-    if len(words) > 40:
-        main_input = " ".join(words[:40]).rstrip()
-        # Adiciona pontuação final se não tiver
-        if not main_input[-1] in '.!?':
-            main_input += "."
+    if len(words) > 50:
+        # Procura o último ponto final, exclamação ou interrogação nas primeiras 50 palavras
+        truncated = " ".join(words[:50])
+        # Encontra última pontuação de fim de frase
+        last_period = max(truncated.rfind('.'), truncated.rfind('!'), truncated.rfind('?'))
+        if last_period > 0 and last_period > len(truncated) * 0.5:  # Se encontrou e não é muito no início
+            main_input = truncated[:last_period + 1]
+        else:
+            # Se não tem pontuação, corta em ~45 palavras e adiciona ponto
+            main_input = " ".join(words[:45])
+            if not main_input[-1] in '.!?':
+                main_input += "."
     
-    # Quebra em linhas - máximo 28 chars por linha e 6 linhas (reduzido de 10 para 6)
+    # Quebra em linhas - máximo 28 chars por linha e 6 linhas
     main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:6]
     main_filters = []
 
-    # Ajuste dinâmico de fonte (reduzido o tamanho para caber melhor)
+    # Ajuste dinâmico de fonte
     if len(main_lines) > 5:
         line_spacing = 68
         font_size = 56
@@ -1167,7 +1173,6 @@ def _render_short_video(
     main_input = " ".join(main_clean.split())
     
     # Remove reticências automáticas que cortam frases
-    # Se o texto termina com "...", remove para não dar impressão de corte artificial
     if main_input.endswith("..."):
         main_input = main_input[:-3].rstrip()
     
@@ -1182,20 +1187,27 @@ def _render_short_video(
         bg_color = "0x000000"
         tarja_color = "0x000000"
     
-    # Limita o texto a um máximo de palavras para evitar textos muito longos
-    # Máximo de ~40 palavras (aproximadamente 2-3 frases curtas)
+    # Limita texto de forma inteligente: procura fim de frase dentro do limite
+    # Máximo de ~50 palavras, mas corta na última frase completa antes disso
     words = main_input.split()
-    if len(words) > 40:
-        main_input = " ".join(words[:40]).rstrip()
-        # Adiciona pontuação final se não tiver
-        if not main_input[-1] in '.!?':
-            main_input += "."
+    if len(words) > 50:
+        # Procura o último ponto final, exclamação ou interrogação nas primeiras 50 palavras
+        truncated = " ".join(words[:50])
+        # Encontra última pontuação de fim de frase
+        last_period = max(truncated.rfind('.'), truncated.rfind('!'), truncated.rfind('?'))
+        if last_period > 0 and last_period > len(truncated) * 0.5:  # Se encontrou e não é muito no início
+            main_input = truncated[:last_period + 1]
+        else:
+            # Se não tem pontuação, corta em ~45 palavras e adiciona ponto
+            main_input = " ".join(words[:45])
+            if not main_input[-1] in '.!?':
+                main_input += "."
     
-    # Quebra em linhas - máximo 28 chars por linha e 6 linhas (reduzido de 10 para 6)
+    # Quebra em linhas - máximo 28 chars por linha e 6 linhas
     main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:6]
     main_filters = []
 
-    # Ajuste dinâmico de fonte (reduzido o tamanho para caber melhor)
+    # Ajuste dinâmico de fonte
     if len(main_lines) > 5:
         line_spacing = 68
         font_size = 56
