@@ -956,38 +956,19 @@ def _render_short(
     if main_input.endswith("..."):
         main_input = main_input[:-3].rstrip()
     
-    # Limita texto de forma inteligente: procura fim de frase dentro do limite
-    # Se houver pergunta (?) no final, sempre mantém ela completa
-    words = main_input.split()
-    if len(words) > 50:
-        # Procura o último ponto final, exclamação ou interrogação nas primeiras 50 palavras
-        truncated = " ".join(words[:50])
-        # Encontra última pontuação de fim de frase
-        last_period = max(truncated.rfind('.'), truncated.rfind('!'), truncated.rfind('?'))
-        if last_period > 0 and last_period > len(truncated) * 0.5:  # Se encontrou e não é muito no início
-            main_input = truncated[:last_period + 1]
-        else:
-            # Se não tem pontuação, corta em ~45 palavras e adiciona ponto
-            main_input = " ".join(words[:45])
-            if not main_input[-1] in '.!?':
-                main_input += "."
+    # Não trunca o texto - use todo o conteúdo disponível
+    # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
+    # Isso garante que frases completas sejam exibidas
     
-    # Se tem pergunta no texto original, tenta incluir ela mesmo que seja um pouco maior
-    if '?' in main_input and not main_input.strip().endswith('?'):
-        # Há uma pergunta mas foi cortada, tenta pegar até o fim da pergunta
-        full_text = " ".join(main_clean.split())
-        question_end = full_text.find('?', len(main_input) - 20)  # Procura próximo ?
-        if question_end > 0 and question_end < len(full_text) * 0.8:  # Não vai muito longe
-            words_extended = full_text[:question_end + 1].split()
-            if len(words_extended) <= 55:  # Aceita um pouco mais para manter pergunta completa
-                main_input = full_text[:question_end + 1]
-    
-    # Quebra em linhas - aumentado para 32 chars por linha (mais largura) e máximo 6 linhas
-    main_lines = textwrap.wrap(main_input, width=32, break_long_words=False, break_on_hyphens=False)[:6]
+    # Quebra em linhas - aumentado para 34 chars por linha e máximo 8 linhas para mostrar mais conteúdo
+    main_lines = textwrap.wrap(main_input, width=34, break_long_words=False, break_on_hyphens=False)[:8]
     main_filters = []
 
-    # Ajuste dinâmico de fonte
-    if len(main_lines) > 5:
+    # Ajuste dinâmico de fonte baseado no número de linhas
+    if len(main_lines) > 7:
+        line_spacing = 62
+        font_size = 52
+    elif len(main_lines) > 5:
         line_spacing = 68
         font_size = 56
     elif len(main_lines) > 3:
@@ -1203,28 +1184,18 @@ def _render_short_video(
         bg_color = "0x000000"
         tarja_color = "0x000000"
     
-    # Limita texto de forma inteligente: procura fim de frase dentro do limite
-    # Máximo de ~50 palavras, mas corta na última frase completa antes disso
-    words = main_input.split()
-    if len(words) > 50:
-        # Procura o último ponto final, exclamação ou interrogação nas primeiras 50 palavras
-        truncated = " ".join(words[:50])
-        # Encontra última pontuação de fim de frase
-        last_period = max(truncated.rfind('.'), truncated.rfind('!'), truncated.rfind('?'))
-        if last_period > 0 and last_period > len(truncated) * 0.5:  # Se encontrou e não é muito no início
-            main_input = truncated[:last_period + 1]
-        else:
-            # Se não tem pontuação, corta em ~45 palavras e adiciona ponto
-            main_input = " ".join(words[:45])
-            if not main_input[-1] in '.!?':
-                main_input += "."
+    # Não trunca o texto - use todo o conteúdo disponível para exibição completa
+    # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
     
-    # Quebra em linhas - aumentado para 32 chars por linha (mais largura) e máximo 6 linhas
-    main_lines = textwrap.wrap(main_input, width=32, break_long_words=False, break_on_hyphens=False)[:6]
+    # Quebra em linhas - aumentado para 34 chars por linha e máximo 8 linhas
+    main_lines = textwrap.wrap(main_input, width=34, break_long_words=False, break_on_hyphens=False)[:8]
     main_filters = []
 
-    # Ajuste dinâmico de fonte
-    if len(main_lines) > 5:
+    # Ajuste dinâmico de fonte baseado no número de linhas
+    if len(main_lines) > 7:
+        line_spacing = 62
+        font_size = 52
+    elif len(main_lines) > 5:
         line_spacing = 68
         font_size = 56
     elif len(main_lines) > 3:
