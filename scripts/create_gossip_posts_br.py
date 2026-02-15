@@ -22,6 +22,8 @@ BR_GOSSIP_FEEDS = [
     ("ofuxico", "https://ofuxico.com.br/wp-json/wp/v2/posts?per_page=10&_embed=1"),
     ("terra_gente", "https://www.terra.com.br/diversao/gente/rss.xml"),
     ("ig_gente", "https://gente.ig.com.br/rss.xml"),
+    ("hugo_gloss", "https://hugogloss.uol.com.br/feed"),
+    ("metropoles", "https://www.metropoles.com/colunas/leo-dias/feed"),
 ]
 
 
@@ -289,7 +291,9 @@ def _download_image_for_post(url: str, out_base: Path) -> Path:
 
 
 def _fetch_from_feed(cgp, source: str, feed_url: str, skip_count: int = 0):
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; GossipPostBotBR/1.0)"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
     resp = requests.get(feed_url, headers=headers, timeout=30)
     resp.raise_for_status()
 
