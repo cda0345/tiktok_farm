@@ -1,4 +1,4 @@
-# Guia de Geração de Posts de Fofoca com Vídeo
+Guia de Geração de Posts de Fofoca com Vídeo
 
 ## 📋 Visão Geral
 

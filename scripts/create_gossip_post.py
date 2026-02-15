@@ -38,7 +38,7 @@ from core.ai_client import OpenAIConfig, is_openai_configured
 CTA_VARIATIONS = [
     "INSCREVA-SE",           # Original - clássico
     "👉 SEGUE PRA MAIS",     # Informal + direto
-    "ATIVA O 🔔 AI",         # Foco em notificação
+    "ATIVA O SININHO 🔔",    # Foco em notificação
     "PRÓXIMO É BOMBA 🔥",    # Cria curiosidade
     "SEGUE AQUI 👇",         # Direto com emoji
     "QUER MAIS? SEGUE",      # Value proposition
