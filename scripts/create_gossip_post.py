@@ -719,18 +719,18 @@ def _is_portuguese_context(source: str, headline: str) -> bool:
 
 
 def _build_text_layers(headline: str, source: str) -> tuple[str, str]:
+    """Cria hook e resumo de fallback quando a IA não gera conteúdo adequado.
+    
+    O hook será uma pergunta impactante relacionada ao tema da notícia.
+    """
     clean = _clean_text(headline)
     is_pt = _is_portuguese_context(source, clean)
 
-    # Hook: sempre usar chamada temática impactante (estilo TikTok/Shorts)
+    # Hook: pergunta temática impactante (sem forçar nome de pessoa)
     hook_text = _pick_pt_hook(clean) if is_pt else _pick_en_hook(clean)
-    # Adiciona o nome do famoso ao hook (primeiras 2 palavras para pegar nome + sobrenome)
-    name_words = [w for w in clean.split()[:2] if w.upper() not in {"O", "A", "OS", "AS", "UM", "UMA", "DE", "DO", "DA"}]
-    if name_words:
-        hook_text = f"{hook_text}: {' '.join(name_words).upper()}"
     hook = _wrap_for_overlay(hook_text, max_chars=20, max_lines=2, upper=True)
 
-    # Bottom text: texto completo sem truncar — a renderização cuida do limite visual
+    # Body: usa o título limpo como resumo
     summary = clean
     return hook, summary
 
@@ -765,18 +765,21 @@ def _summarize_news_text(item: NewsItem) -> str:
 
                     "FORMATO OBRIGATORIO — exatamente 5 linhas de TEXTO PURO, nada antes e nada depois:\n\n"
 
-                    "Linha 1 = HOOK (EVENTO IMEDIATO): PERSONAGEM + VERBO FORTE + CONFLITO. Maximo 8 palavras. TUDO EM CAPS.\n"
+                    "Linha 1 = HOOK (ACAO IMEDIATA): Descreva o evento principal com VERBO FORTE + QUEM + O QUE. Maximo 8 palavras. TUDO EM CAPS.\n"
                     "Linha 2 = FATO DIRETO: O que aconteceu de forma objetiva e curta.\n"
                     "Linha 3 = REACAO: Como a web, participantes ou envolvidos reagiram.\n"
                     "Linha 4 = IMPACTO: Consequencia imediata no jogo, narrativa ou relacao.\n"
                     "Linha 5 = PERGUNTA POLARIZADA: Pergunta que obriga o espectador a escolher um lado.\n\n"
 
-                    "REGRAS DE OURO PARA ALCANCE:\n"
-                    "- O HOOK DEVE mostrar uma ACAO REAL acontecendo. Nada abstrato.\n"
-                    "- Comece o HOOK com VERBO FORTE sempre que possivel.\n"
-                    "- Estrutura obrigatoria do HOOK: [PERSONAGEM] + [ACAO] + [CONFLITO OU CONSEQUENCIA].\n"
+                    "REGRAS DE OURO PARA HOOKS:\n"
+                    "- O HOOK deve ser uma FRASE COMPLETA sobre o evento principal da noticia.\n"
+                    "- Comece com VERBO DE ACAO forte (CHOCOU, REVELOU, EXPLODIU, DESABAFOU, ATACOU, BEIJOU, FLAGROU, etc).\n"
+                    "- Exemplo BOM: 'BRUNA MARQUEZINE FLAGRADA COM NOVO AFFAIR'\n"
+                    "- Exemplo BOM: 'PARTICIPANTE EXPULSO APOS BRIGA NO BBB'\n"
+                    "- Exemplo RUIM: 'VOCE DESPREZA O CARNAVAL E DECIDE' (generico, nao fala do evento real)\n"
+                    "- NUNCA comece com 'VOCE', 'O QUE', 'VEJA', 'CONHECE'.\n"
                     "- Evite palavras vagas como 'clima', 'situacao', 'momento', 'algo por tras'.\n"
-                    "- Evite hooks genericos como 'VOCE CONHECE...', 'O QUE ACONTECEU...', 'VEJA ISSO'.\n"
+                    "- O hook SEMPRE deve dizer QUEM fez O QUE de forma especifica.\n"
                     "- Linhas 2, 3 e 4 devem seguir exatamente: Fato -> Reacao -> Impacto. Sem contexto longo.\n"
                     "- Linguagem direta, ritmo rapido, frases curtas.\n"
                     "- ZERO hashtags.\n"
@@ -790,18 +793,24 @@ def _summarize_news_text(item: NewsItem) -> str:
                 system_instr = (
                     "You are a Shorts/Reels gossip scriptwriter specialized in viral content.\n\n"
                     "MANDATORY FORMAT — exactly 5 lines of plain text, nothing else:\n\n"
-                    "Line 1 = HOOK (IMPACT): [CHARACTER] + [STRONG ACTION] + [CONSEQUENCE] (Max 8 words)\n"
+                    "Line 1 = HOOK (IMMEDIATE ACTION): Describe the main event with STRONG VERB + WHO + WHAT. Max 8 words.\n"
                     "Line 2 = DIRECT FACT: What happened objectively.\n"
                     "Line 3 = REACTION: How the web/house reacted.\n"
                     "Line 4 = IMPACT: The immediate consequence or narrative shift.\n"
                     "Line 5 = POLARIZED QUESTION: A question that forces the viewer to take a stand.\n\n"
-                    "GOLDEN RULES FOR REACH:\n"
-                    "- HOOK must be an IMMEDIATE EVENT (Action + Conflict + Character). Start with a strong verb.\n"
-                    "- HOOK must have max 8 words and explicit tension.\n"
+                    "GOLDEN RULES FOR HOOKS:\n"
+                    "- HOOK must be a COMPLETE PHRASE about the actual news event.\n"
+                    "- Start with STRONG ACTION VERB (SHOCKED, REVEALED, EXPLODED, ATTACKED, CAUGHT, KISSED, etc).\n"
+                    "- Example GOOD: 'BRUNA MARQUEZINE CAUGHT WITH NEW AFFAIR'\n"
+                    "- Example GOOD: 'CONTESTANT EXPELLED AFTER BBB FIGHT'\n"
+                    "- Example BAD: 'YOU DESPISE CARNIVAL AND DECIDE' (generic, not about the real event)\n"
+                    "- NEVER start with 'YOU', 'WHAT', 'SEE', 'CHECK'.\n"
+                    "- Avoid vague words like 'vibe', 'situation', 'moment', 'something behind'.\n"
+                    "- Hook ALWAYS says WHO did WHAT specifically.\n"
                     "- BODY (Lines 2, 3, 4) follows: Fact -> Reaction -> Impact. No fluff.\n"
                     "- FINAL QUESTION must be polarized.\n"
                     "- ALL CAPS, zero hashtags, zero emojis.\n\n"
-                    "Responde ONLY with the 5 lines. Nothing before, nothing after."
+                    "Respond ONLY with the 5 lines. Nothing before, nothing after."
                 )
                 user_content = f"News:\n{context}"
 
@@ -1291,7 +1300,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
     try:
         image_path = _download_image(item.image_url, post_dir / "news_image")
 
-        # ── Parse da IA: espera exatamente 3 linhas (gancho / corpo / pergunta) ──
+        # ── Parse da IA: espera exatamente 5 linhas (gancho / fato / reacao / impacto / pergunta) ──
         raw_script = _summarize_news_text(item)
         all_lines = [ln.rstrip() for ln in raw_script.splitlines()]
 
@@ -1311,7 +1320,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             if re.match(r"^(variante|variation|vers[ãa]o|version|op[çc][ãa]o|option)\s*\d*\s*[:\-–—]*\s*", stripped, flags=re.I):
                 continue
             # Remove labels inline como "Gancho:", "Hook:", "Corpo:", "Body:", "Pergunta:", "Question:", "CTA:"
-            cleaned = re.sub(r"^(gancho|hook|corpo|body|pergunta|question|cta)\s*[:\-–—]\s*", "", stripped, flags=re.I).strip()
+            cleaned = re.sub(r"^(gancho|hook|corpo|body|pergunta|question|cta|linha|line)\s*\d*\s*[:\-–—=]\s*", "", stripped, flags=re.I).strip()
             if cleaned:
                 content_lines.append(cleaned)
 
@@ -1323,33 +1332,26 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             # Combine Fact + Reaction + Impact into body
             body = f"{content_lines[1]} {content_lines[2]} {content_lines[3]}"
             question = content_lines[4]
-            cta_from_ai = "" # Let fallbacks handle the CTA
             headline_text = f"{body} {question}"
         elif len(content_lines) == 4:
             hook = content_lines[0]
             body = f"{content_lines[1]} {content_lines[2]}"
             question = content_lines[3]
-            cta_from_ai = ""
             headline_text = f"{body} {question}"
         elif len(content_lines) == 3:
             hook = content_lines[0]
             body = content_lines[1]
             question = content_lines[2]
-            cta_from_ai = ""
             headline_text = f"{body} {question}"
         elif len(content_lines) == 2:
             hook = content_lines[0]
             headline_text = content_lines[1]
-            cta_from_ai = ""
         elif len(content_lines) == 1:
-            # Fallback: IA devolveu tudo em 1 linha, divide
-            hook, summary = _build_text_layers(item.title, item.source)
-            headline_text = content_lines[0]
-            cta_from_ai = ""
+            # Fallback: IA devolveu tudo em 1 linha, usa fallback completo
+            hook, headline_text = _build_text_layers(item.title, item.source)
         else:
             # Fallback completo: IA não devolveu nada útil
             hook, headline_text = _build_text_layers(item.title, item.source)
-            cta_from_ai = ""
 
         # ── Limpeza leve (sem truncamento agressivo) ──
         # Remove hashtags residuais e caracteres problemáticos, preserva pontuação
@@ -1407,17 +1409,10 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         slug = _make_slug(item.title)
         output_video = post_dir / "output" / f"gossip_{slug}.mp4"
 
-        # CTA contextual: usa o gerado pela IA, ou fallback com variação aleatória
-        is_pt = _is_portuguese_context(item.source, item.title)
-        cta_clean = re.sub(r'#\w+', '', cta_from_ai).strip() if cta_from_ai else ""
-        cta_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', cta_clean).strip().upper()
+        # ── CTA: SEMPRE usa variações da lista predefinida ──
+        # Usa o título como seed para ter consistência (mesmo post = mesmo CTA)
+        cta_text = _get_random_cta(item.title)
         
-        # Força o uso da lista de variações otimizadas em 50% dos casos para garantir CTAs de inscrição
-        if not cta_clean or random.random() < 0.5:
-            # Usa o título como seed para ter consistência (mesmo post = mesmo CTA)
-            cta_clean = _get_random_cta(item.title)
-            
-        cta_text = cta_clean
         logo_path = None
         if args.logo:
             logo_path = Path(args.logo).expanduser().resolve()
