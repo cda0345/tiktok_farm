@@ -11,7 +11,7 @@ Fluxo:
 
 Comandos:
 /post_foto <link_materia> - Cria post com foto e matéria
-/post_video <link_materia> <link_video_x> <duracao_segundos> - Cria post com vídeo
+/post_video <link_video_x> - Cria post com vídeo
 /status - Mostra quantos posts estão na fila
 /help - Mostra ajuda
 """
@@ -113,6 +113,8 @@ class TelegramBot:
         # Processa comandos
         if text.startswith("/"):
             self.handle_command(chat_id, text)
+        elif "x.com" in text or "twitter.com" in text:
+            self.handle_post_video(chat_id, text)
         
     def handle_command(self, chat_id: str, text: str) -> None:
         """Processa comandos do bot."""
@@ -133,7 +135,11 @@ class TelegramBot:
             self.handle_status(chat_id)
         
         else:
-            self.send_message(chat_id, "❌ Comando desconhecido. Use /help para ver os comandos disponíveis.")
+            # Se não for comando mas parecer um link do X, trata como post_video simplificado
+            if "x.com" in text or "twitter.com" in text:
+                self.handle_post_video(chat_id, text)
+            else:
+                self.send_message(chat_id, "❌ Comando desconhecido. Use /help para ver os comandos disponíveis.")
     
     def send_help(self, chat_id: str) -> None:
         """Envia mensagem de ajuda."""
@@ -150,12 +156,12 @@ Exemplo:
 /post_foto https://contigo.com.br/noticias/fulano-beltrano-se-separam
 ```
 
-🎥 `/post_video <link_materia> <link_video_x> <duracao>`
-Cria um post com vídeo do X
+🎥 `/post_video <link_video_x>` ou apenas envie o link do X
+Cria um post automaticamente usando o vídeo do X
 
 Exemplo:
 ```
-/post_video https://contigo.com.br/noticias/treta-bbb https://x.com/fulano/status/123456 15
+https://x.com/analu_comenta/status/123456
 ```
 
 📊 `/status`
@@ -204,49 +210,40 @@ Mostra esta mensagem
         self.send_message(chat_id, msg)
 
     def handle_post_video(self, chat_id: str, args: str) -> None:
-        """Cria requisição de post com vídeo."""
+        """Cria requisição de post com vídeo simplificado."""
         parts = args.split()
         
-        if len(parts) < 3:
-            self.send_message(
-                chat_id,
-                "❌ Formato incorreto.\n\n"
-                "Use: `/post_video <link_materia> <link_video_x> <duracao_segundos>`\n\n"
-                "Exemplo:\n"
-                "`/post_video https://contigo.com.br/news https://x.com/user/status/123 15`"
-            )
+        if not parts:
+            self.send_message(chat_id, "❌ Por favor, envie o link do vídeo do X (Twitter).")
             return
+
+        # Busca link do X/Twitter nos argumentos
+        video_url = None
+        for p in parts:
+            if "x.com" in p or "twitter.com" in p:
+                video_url = p
+                break
         
-        article_url = parts[0]
-        video_url = parts[1]
-        
-        try:
-            duration = int(parts[2])
-            if duration < 5 or duration > 60:
-                raise ValueError("Duração deve estar entre 5 e 60 segundos")
-        except ValueError as e:
-            self.send_message(
-                chat_id,
-                f"❌ Duração inválida: {e}\n\n"
-                "Use um número entre 5 e 60 segundos."
-            )
+        if not video_url:
+            self.send_message(chat_id, "❌ Não encontrei um link do X (Twitter) válido.")
             return
-        
-        if not article_url.startswith("http") or not video_url.startswith("http"):
-            self.send_message(chat_id, "❌ Os links devem começar com http:// ou https://")
-            return
-        
-        # Cria requisição
+
+        # Limpa o link do X (remove trackers)
+        if "?" in video_url:
+            video_url = video_url.split("?")[0]
+
+        # Cria requisição simplify (sem precisar de matéria ou duração manual)
         request_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         request = {
             "id": request_id,
             "type": "video",
-            "article_url": article_url,
+            "article_url": video_url, # Usamos o próprio link do X como referência se não houver matéria
             "video_url": video_url,
-            "duration": duration,
+            "duration": 15, # Default de 15 segundos para vídeos simplificados
             "created_at": datetime.now().isoformat(),
             "chat_id": chat_id,
-            "status": "pending"
+            "status": "pending",
+            "simplified": True
         }
         
         # Salva em arquivo
@@ -257,11 +254,11 @@ Mostra esta mensagem
         # AUTO-PUSH
         pushed = self.push_to_github(request_id)
         
-        msg = f"✅ *Requisição criada!*\n\n📋 ID: `{request_id}`\n🎥 Tipo: Vídeo\n"
+        msg = f"✅ *Vídeo detectado!*\n\n📋 ID: `{request_id}`\n🎬 Link: {video_url}\n"
         if pushed:
-            msg += "\n🚀 *Enviado para o GitHub!*\nO vídeo chegará aqui em ~3 minutos."
+            msg += "\n🚀 *Enviado para o GitHub!*\nO vídeo será gerado automaticamente em ~3 minutos."
         else:
-            msg += "\n⚠️ Erro ao enviar para o GitHub. O processamento pode atrasar."
+            msg += "\n⚠️ Erro ao enviar para o GitHub."
             
         self.send_message(chat_id, msg)
     

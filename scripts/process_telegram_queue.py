@@ -93,9 +93,48 @@ def process_video_request(request: Dict[str, Any]) -> bool:
     print(f"\n🎥 Processando post com vídeo: {request['id']}")
     
     chat_id = request["chat_id"]
-    send_message(chat_id, f"⚠️ Posts com vídeo ainda não implementados. Post `{request['id']}` ignorado.")
+    video_url = request["video_url"]
     
-    return False
+    # Notifica início
+    send_message(chat_id, f"🔄 Gerando post de vídeo para `{request['id']}`...")
+    
+    try:
+        # Se for simplificado, usamos o próprio link do X para "bolar" o post
+        print(f"🎬 Executando create_gossip_post.py para VÍDEO: {video_url}")
+        
+        args = [
+            sys.executable,
+            str(ROOT_DIR / "scripts" / "create_gossip_post.py"),
+            "--video-url", video_url,
+            "--profile", "br"
+        ]
+        
+        # Se houver duração definida na requisição
+        if "duration" in request:
+            args.extend(["--duration", str(request["duration"])])
+
+        result = subprocess.run(
+            args,
+            cwd=ROOT_DIR,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minutos para vídeos
+        )
+        
+        print(f"Return code: {result.returncode}")
+        
+        if result.returncode == 0:
+            send_message(chat_id, f"✅ Vídeo `{request['id']}` processado com sucesso!\n\nEnviando o arquivo...")
+            return True
+        else:
+            print(f"STDERR: {result.stderr}")
+            send_message(chat_id, f"❌ Erro ao processar vídeo: {result.stderr[:200]}")
+            return False
+            
+    except Exception as e:
+        print(f"Erro: {e}")
+        send_message(chat_id, f"❌ Erro: {e}")
+        return False
 
 
 def process_queue() -> int:
