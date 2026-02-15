@@ -954,20 +954,28 @@ def _render_short(
     if main_input.endswith("..."):
         main_input = main_input[:-3].rstrip()
     
-    # Quebra em linhas com mais caracteres por linha para evitar cortes
-    # Aumentado de width=28 para width=32 e limite de 9 para 10 linhas
-    main_lines = textwrap.wrap(main_input, width=32, break_long_words=False, break_on_hyphens=False)[:10]
+    # Limita o texto a um máximo de palavras para evitar textos muito longos
+    # Máximo de ~40 palavras (aproximadamente 2-3 frases curtas)
+    words = main_input.split()
+    if len(words) > 40:
+        main_input = " ".join(words[:40]).rstrip()
+        # Adiciona pontuação final se não tiver
+        if not main_input[-1] in '.!?':
+            main_input += "."
+    
+    # Quebra em linhas - máximo 28 chars por linha e 6 linhas (reduzido de 10 para 6)
+    main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:6]
     main_filters = []
 
-    # Ajuste dinâmico de fonte para textos muito longos (até 10 linhas)
-    if len(main_lines) > 7:
-        line_spacing = 65
-        font_size = 54
-    elif len(main_lines) > 5:
-        line_spacing = 72
-        font_size = 60
+    # Ajuste dinâmico de fonte (reduzido o tamanho para caber melhor)
+    if len(main_lines) > 5:
+        line_spacing = 68
+        font_size = 56
+    elif len(main_lines) > 3:
+        line_spacing = 75
+        font_size = 62
     else:
-        line_spacing = 82
+        line_spacing = 85
         font_size = 68
 
     # Start Y so that the full block ends at SAFE_BOTTOM.
@@ -1174,19 +1182,28 @@ def _render_short_video(
         bg_color = "0x000000"
         tarja_color = "0x000000"
     
-    # Quebra em linhas com mais caracteres por linha para evitar cortes
-    # Aumentado de width=28 para width=32 e limite de 9 para 10 linhas
-    main_lines = textwrap.wrap(main_input, width=32, break_long_words=False, break_on_hyphens=False)[:10]
+    # Limita o texto a um máximo de palavras para evitar textos muito longos
+    # Máximo de ~40 palavras (aproximadamente 2-3 frases curtas)
+    words = main_input.split()
+    if len(words) > 40:
+        main_input = " ".join(words[:40]).rstrip()
+        # Adiciona pontuação final se não tiver
+        if not main_input[-1] in '.!?':
+            main_input += "."
+    
+    # Quebra em linhas - máximo 28 chars por linha e 6 linhas (reduzido de 10 para 6)
+    main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:6]
     main_filters = []
 
-    if len(main_lines) > 7:
-        line_spacing = 65
-        font_size = 54
-    elif len(main_lines) > 5:
-        line_spacing = 72
-        font_size = 60
+    # Ajuste dinâmico de fonte (reduzido o tamanho para caber melhor)
+    if len(main_lines) > 5:
+        line_spacing = 68
+        font_size = 56
+    elif len(main_lines) > 3:
+        line_spacing = 75
+        font_size = 62
     else:
-        line_spacing = 82
+        line_spacing = 85
         font_size = 68
 
     block_h = max(0, (len(main_lines) - 1) * line_spacing)
