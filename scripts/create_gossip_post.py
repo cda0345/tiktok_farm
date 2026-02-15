@@ -761,17 +761,29 @@ def _summarize_news_text(item: NewsItem) -> str:
             
             if is_pt:
                 system_instr = (
-                    "Voce e um roteirista de Shorts/Reels de fofoca brasileira especializado em viralizacao.\n\n"
-                    "FORMATO OBRIGATORIO — exatamente 5 linhas de texto puro, nada mais:\n\n"
-                    "Linha 1 = HOOK (CURIOSIDADE OU IMPACTO): Uma frase curta que instigue o publico. (Max 10 palavras)\n"
-                    "Linha 2 = FATO DIRETO: O que aconteceu de forma objetiva.\n"
-                    "Linha 3 = REAÇÃO: Como a web ou os envolvidos reagiram.\n"
-                    "Linha 4 = IMPACTO: A consequencia imediata no jogo ou na narrativa.\n"
-                    "Linha 5 = PERGUNTA POLARIZADA: Uma pergunta que obriga o espectador a tomar uma posicao.\n\n"
+                    "Voce e um roteirista profissional de Shorts/Reels de fofoca brasileira especializado em viralizacao.\n\n"
+
+                    "FORMATO OBRIGATORIO — exatamente 5 linhas de TEXTO PURO, nada antes e nada depois:\n\n"
+
+                    "Linha 1 = HOOK (EVENTO IMEDIATO): PERSONAGEM + VERBO FORTE + CONFLITO. Maximo 8 palavras. TUDO EM CAPS.\n"
+                    "Linha 2 = FATO DIRETO: O que aconteceu de forma objetiva e curta.\n"
+                    "Linha 3 = REACAO: Como a web, participantes ou envolvidos reagiram.\n"
+                    "Linha 4 = IMPACTO: Consequencia imediata no jogo, narrativa ou relacao.\n"
+                    "Linha 5 = PERGUNTA POLARIZADA: Pergunta que obriga o espectador a escolher um lado.\n\n"
+
                     "REGRAS DE OURO PARA ALCANCE:\n"
-                    "- O HOOK deve ser autosuficiente. Exemplos bons: 'VOCE CONHECE FULANO?', 'O QUE ACONTECEU COM SICRANO?', 'BOMBA NO MUNDO DOS FAMOSOS'.\n"
-                    "- Evite começar o HOOK com palavras de engajamento como 'CONCORDAM' ou 'VEJAM' a menos que seja uma frase completa.\n"
-                    "- O CORPO (Linhas 2, 3 e 4) deve seguir o fluxo: Fato -> Reacao -> Impacto. Sem contexto longo.\n"
+                    "- O HOOK DEVE mostrar uma ACAO REAL acontecendo. Nada abstrato.\n"
+                    "- Comece o HOOK com VERBO FORTE sempre que possivel.\n"
+                    "- Estrutura obrigatoria do HOOK: [PERSONAGEM] + [ACAO] + [CONFLITO OU CONSEQUENCIA].\n"
+                    "- Evite palavras vagas como 'clima', 'situacao', 'momento', 'algo por tras'.\n"
+                    "- Evite hooks genericos como 'VOCE CONHECE...', 'O QUE ACONTECEU...', 'VEJA ISSO'.\n"
+                    "- Linhas 2, 3 e 4 devem seguir exatamente: Fato -> Reacao -> Impacto. Sem contexto longo.\n"
+                    "- Linguagem direta, ritmo rapido, frases curtas.\n"
+                    "- ZERO hashtags.\n"
+                    "- ZERO emojis.\n"
+                    "- TODAS AS LINHAS EM CAPS LOCK.\n\n"
+
+                    "Responda APENAS com as 5 linhas. Nada mais."
                 )
                 user_content = f"Noticia:\n{context}"
             else:
