@@ -19,6 +19,7 @@ Comandos:
 import json
 import os
 import sys
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
@@ -43,6 +44,36 @@ class TelegramBot:
         self.api_url = f"https://api.telegram.org/bot{token}"
         self.last_update_id = 0
     
+    def push_to_github(self, request_id: str) -> bool:
+        """Faz push automático da requisição para o GitHub."""
+        try:
+            print(f"\n🔄 Fazendo push da requisição {request_id} para o GitHub...")
+            
+            # Git Add
+            subprocess.run(["git", "add", "telegram_queue/"], cwd=ROOT_DIR, capture_output=True)
+            
+            # Git Commit
+            commit_msg = f"feat: nova requisição via Telegram ({request_id})"
+            result = subprocess.run(["git", "commit", "-m", commit_msg], cwd=ROOT_DIR, capture_output=True, text=True)
+            
+            if result.returncode != 0 and "nothing to commit" not in result.stdout:
+                print(f"⚠️ Erro no commit: {result.stderr}")
+                return False
+            
+            # Git Push
+            print("📤 Enviando para o GitHub...")
+            result = subprocess.run(["git", "push"], cwd=ROOT_DIR, capture_output=True, timeout=30)
+            
+            if result.returncode == 0:
+                print("✅ Push realizado com sucesso!")
+                return True
+            else:
+                print(f"⚠️ Erro no push: {result.stderr}")
+                return False
+        except Exception as e:
+            print(f"⚠️ Erro ao fazer push: {e}")
+            return False
+
     def send_message(self, chat_id: str, text: str) -> bool:
         """Envia mensagem de texto para o chat."""
         url = f"{self.api_url}/sendMessage"
@@ -161,15 +192,17 @@ Mostra esta mensagem
         with open(request_file, "w", encoding="utf-8") as f:
             json.dump(request, f, indent=2, ensure_ascii=False)
         
-        self.send_message(
-            chat_id,
-            f"✅ *Requisição criada!*\n\n"
-            f"📋 ID: `{request_id}`\n"
-            f"📸 Tipo: Post com foto\n"
-            f"🔗 Link: {args.strip()}\n\n"
-            f"O post será processado em breve pelo GitHub Actions."
-        )
-    
+        # AUTO-PUSH
+        pushed = self.push_to_github(request_id)
+        
+        msg = f"✅ *Requisição criada!*\n\n📋 ID: `{request_id}`\n📸 Tipo: Post com foto\n"
+        if pushed:
+            msg += "\n🚀 *Enviado para o GitHub!*\nO vídeo chegará aqui em ~3 minutos."
+        else:
+            msg += "\n⚠️ Erro ao enviar para o GitHub. O processamento pode atrasar."
+            
+        self.send_message(chat_id, msg)
+
     def handle_post_video(self, chat_id: str, args: str) -> None:
         """Cria requisição de post com vídeo."""
         parts = args.split()
@@ -221,16 +254,16 @@ Mostra esta mensagem
         with open(request_file, "w", encoding="utf-8") as f:
             json.dump(request, f, indent=2, ensure_ascii=False)
         
-        self.send_message(
-            chat_id,
-            f"✅ *Requisição criada!*\n\n"
-            f"📋 ID: `{request_id}`\n"
-            f"🎥 Tipo: Post com vídeo\n"
-            f"📰 Matéria: {article_url}\n"
-            f"🎬 Vídeo: {video_url}\n"
-            f"⏱ Duração: {duration}s\n\n"
-            f"O post será processado em breve pelo GitHub Actions."
-        )
+        # AUTO-PUSH
+        pushed = self.push_to_github(request_id)
+        
+        msg = f"✅ *Requisição criada!*\n\n📋 ID: `{request_id}`\n🎥 Tipo: Vídeo\n"
+        if pushed:
+            msg += "\n🚀 *Enviado para o GitHub!*\nO vídeo chegará aqui em ~3 minutos."
+        else:
+            msg += "\n⚠️ Erro ao enviar para o GitHub. O processamento pode atrasar."
+            
+        self.send_message(chat_id, msg)
     
     def handle_status(self, chat_id: str) -> None:
         """Mostra status da fila."""
