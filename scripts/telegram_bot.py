@@ -156,12 +156,16 @@ Exemplo:
 /post_foto https://contigo.com.br/noticias/fulano-beltrano-se-separam
 ```
 
-🎥 `/post_video <link_video_x>` ou apenas envie o link do X
+🎥 Envie apenas o link do X (Twitter)
 Cria um post automaticamente usando o vídeo do X
 
 Exemplo:
 ```
 https://x.com/analu_comenta/status/123456
+```
+Ou use:
+```
+/post_video https://x.com/analu_comenta/status/123456
 ```
 
 📊 `/status`

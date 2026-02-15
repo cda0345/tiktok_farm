@@ -101,6 +101,11 @@ def handle_webhook_update(update: Dict[str, Any]) -> Dict[str, Any]:
         result = process_command(chat_id, text)
         return {"status": "ok", "result": result}
     
+    # Detecção automática de links do X/Twitter (Gossip simplificado)
+    if "x.com" in text or "twitter.com" in text:
+        result = handle_post_video(chat_id, text)
+        return {"status": "ok", "result": result}
+    
     return {"status": "ok", "message": "Not a command"}
 
 
@@ -174,38 +179,39 @@ def handle_post_foto(chat_id: str, args: str) -> str:
 
 
 def handle_post_video(chat_id: str, args: str) -> str:
-    """Cria requisição de post com vídeo."""
+    """Cria requisição de post com vídeo simplificado."""
     parts = args.split()
     
-    if len(parts) < 3:
-        send_message(
-            chat_id,
-            "❌ Formato incorreto.\n\n"
-            "Use: `/post_video <link_materia> <link_video_x> <duracao_segundos>`"
-        )
-        return "invalid_args"
+    if not parts:
+        send_message(chat_id, "❌ Por favor, envie o link do vídeo do X (Twitter).")
+        return "missing_args"
+
+    # Busca link do X/Twitter nos argumentos
+    video_url = None
+    for p in parts:
+        if "x.com" in p or "twitter.com" in p:
+            video_url = p
+            break
     
-    article_url = parts[0]
-    video_url = parts[1]
-    
-    try:
-        duration = int(parts[2])
-        if duration < 5 or duration > 60:
-            raise ValueError("Duração deve estar entre 5 e 60 segundos")
-    except ValueError as e:
-        send_message(chat_id, f"❌ Duração inválida: {e}")
-        return "invalid_duration"
+    if not video_url:
+        send_message(chat_id, "❌ Não encontrei um link do X (Twitter) válido.")
+        return "invalid_link"
+
+    # Limpa o link do X (remove trackers)
+    if "?" in video_url:
+        video_url = video_url.split("?")[0]
     
     request_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     request = {
         "id": request_id,
         "type": "video",
-        "article_url": article_url,
+        "article_url": video_url,  # Usamos o link do X como referência
         "video_url": video_url,
-        "duration": duration,
+        "duration": 15,            # Duração padrão para o modo simplificado
         "created_at": datetime.now().isoformat(),
         "chat_id": chat_id,
-        "status": "pending"
+        "status": "pending",
+        "simplified": True
     }
     
     request_file = QUEUE_DIR / f"request_{request_id}.json"
@@ -214,11 +220,10 @@ def handle_post_video(chat_id: str, args: str) -> str:
     
     send_message(
         chat_id,
-        f"✅ *Requisição criada!*\n\n"
+        f"✅ *Vídeo detectado!*\n\n"
         f"📋 ID: `{request_id}`\n"
-        f"🎥 Tipo: Post com vídeo\n"
-        f"⏱ Duração: {duration}s\n\n"
-        f"O post será processado em breve."
+        f"🎬 Link: {video_url}\n\n"
+        f"O vídeo será gerado automaticamente em ~3 minutos via GitHub Actions."
     )
     
     trigger_github_workflow()

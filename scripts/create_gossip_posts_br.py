@@ -73,7 +73,7 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     if len(ai_parts) >= 4:
         # Novo formato: Linha 1 = Hook, Linha 2 = Corpo, Linha 3 = Pergunta, Linha 4 = CTA contextual
         hook_raw = ai_parts[0]
-        hook_words = hook_raw.split()[:5]  # Permite até 5 palavras para provocações
+        hook_words = hook_raw.split()[:10]  # Aumentado para 10 para evitar cortes sem sentido
         hook_raw = " ".join(hook_words)
         
         # Resumo: já vem completo em um parágrafo direto e informativo
@@ -90,7 +90,7 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     elif len(ai_parts) >= 3:
         # Formato anterior: Linha 1 = Hook, Linha 2 = Resumo, Linha 3 = CTA/Pergunta
         hook_raw = ai_parts[0]
-        hook_words = hook_raw.split()[:5]
+        hook_words = hook_raw.split()[:10]
         hook_raw = " ".join(hook_words)
         
         resumo = ai_parts[1] if len(ai_parts) > 1 else ""
@@ -106,7 +106,7 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     elif len(ai_parts) >= 2:
         # Fallback: se não tiver CTA, usa apenas Hook + Resumo
         hook_raw = ai_parts[0]
-        hook_words = hook_raw.split()[:5]
+        hook_words = hook_raw.split()[:10]
         hook_raw = " ".join(hook_words)
         headline_text = ai_parts[1]
         cta_from_ai = ""
@@ -117,8 +117,8 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
             hook_raw = cgp._headline_for_overlay(item.title, max_chars=18, max_lines=2)
             gen_summary = cgp._headline_for_overlay(item.title, max_chars=20, max_lines=4)
         
-        # Força máximo de 5 palavras no hook
-        hook_words = hook_raw.split()[:5]
+        # Força máximo de 10 palavras no hook
+        hook_words = hook_raw.split()[:10]
         hook_raw = " ".join(hook_words)
         headline_text = gen_summary
         cta_from_ai = ""

@@ -747,7 +747,8 @@ def _build_display_headline(headline: str) -> str:
 
 
 def _summarize_news_text(item: NewsItem) -> str:
-    is_pt = _is_portuguese_context(item.source, item.title)
+    is_pt = any(profile_name in item.feed_url for profile_name, _ in FEED_PROFILES["br"]) or "contigo" in item.feed_url or "ofuxico" in item.feed_url or "terra" in item.feed_url or "ig" in item.feed_url
+    
     article_text = _extract_article_text(item.link)
     context = _clean_text(f"{item.title}. {item.description}. {article_text}")
     context = context[:2200]
@@ -760,94 +761,35 @@ def _summarize_news_text(item: NewsItem) -> str:
             
             if is_pt:
                 system_instr = (
-                    "Voce e um roteirista de Shorts/Reels de fofoca brasileira. Gere UM UNICO post pronto para overlay de video vertical.\n\n"
-                    "FORMATO OBRIGATORIO — exatamente 4 linhas de texto puro, nada mais:\n\n"
-                    "Linha 1 = GANCHO: frase PROVOCATIVA com no maximo 35 caracteres (2-5 palavras). "
-                    "TUDO EM MAIUSCULAS. DEVE ser uma PROVOCACAO ou PERGUNTA que force o espectador a ter uma opiniao. "
-                    "NAO use afirmacoes neutras como 'Ela esta de volta' ou 'Novidade no BBB'. "
-                    "USE perguntas chocantes ou afirmacoes polemicas como 'ELA MERECIA VOLTAR?', 'PASSOU DO LIMITE', 'BBB PEGOU FOGO'. "
-                    "O cerebro do espectador precisa DECIDIR algo ao ler o gancho. "
-                    "NUNCA termine com artigo, preposicao ou conjuncao.\n\n"
-                    "Linha 2 = CORPO: UMA frase completa (10-18 palavras) que conta o fato principal com contexto suficiente. "
-                    "DEVE mencionar o nome da celebridade. Deve fazer sentido completo sozinha sem depender do gancho. "
-                    "Nunca termine no meio de uma ideia.\n\n"
-                    "Linha 3 = PERGUNTA: Uma pergunta curta de engajamento (4-8 palavras) que provoque opiniao do espectador.\n\n"
-                    "Linha 4 = CTA: Uma frase curta (3-6 palavras) de chamada para acao. "
-                    "DEVE variar entre pedir LIKE, SEGUIR ou INSCREVER-SE. "
-                    "Use formatos como: 'SEGUE PARA MAIS', 'INSCREVA-SE JA', 'CURTE SE CONCORDA', 'LIKE SE FOI INJUSTO', "
-                    "'ATIVA O SININHO', 'SEGUE AQUI PARA NOVIDADES'. "
-                    "Varie o CTA para cada noticia — sempre relacionado ao tema quando possivel.\n\n"
-                    "REGRAS RIGIDAS:\n"
-                    "- O GANCHO deve ser PROVOCATIVO — nunca neutro ou descritivo.\n"
-                    "- O GANCHO deve fazer sentido COMPLETO em ate 35 caracteres.\n"
-                    "- O GANCHO nunca deve terminar em palavra incompleta, artigo ou preposicao.\n"
-                    "- O CTA deve variar entre LIKE, SEGUIR ou INSCREVER-SE, sempre contextual.\n"
-                    "- Cada frase deve ser COMPLETA. Nunca cortar no meio de uma ideia.\n"
-                    "- Zero hashtags, zero emojis, zero asteriscos, zero aspas.\n"
-                    "- NAO inclua rotulos como 'Gancho:', 'Corpo:', 'Pergunta:', 'CTA:'.\n"
-                    "- NAO numere as linhas.\n"
-                    "- Escreva SEM acentos (nao use acento em nenhuma palavra).\n\n"
-                    "EXEMPLOS DE SAIDA PERFEITA:\n\n"
-                    "ELA MERECIA VOLTAR?\n"
-                    "Thais Carla surgiu dancando de top e short exibindo o novo corpo apos emagrecer.\n"
-                    "Transformacao real ou forcada?\n"
-                    "CURTE SE FOI INSPIRADOR\n\n"
-                    "---\n\n"
-                    "PASSOU DO LIMITE?\n"
-                    "Joao e Maria anunciaram a separacao apos 10 anos juntos e chocaram os fas.\n"
-                    "Voce ja esperava isso?\n"
-                    "LIKE SE VOCE JA SABIA\n\n"
-                    "---\n\n"
-                    "BBB PEGOU FOGO\n"
-                    "O sincerrao do BBB 26 virou uma briga tensa e os participantes perderam o controle.\n"
-                    "Quem mandou melhor na treta?\n"
-                    "CURTE SE FOI EXAGERO\n\n"
-                    "---\n\n"
-                    "NINGUEM ESPERAVA ISSO\n"
-                    "A famosa apareceu irreconhecivel depois de uma transformacao radical no visual.\n"
-                    "Mudanca real ou filtro da internet?\n"
-                    "LIKE SE FICOU CHOCADO\n\n"
-                    "Responda APENAS com as 4 linhas. Nada antes, nada depois."
+                    "Voce e um roteirista de Shorts/Reels de fofoca brasileira especializado em viralizacao.\n\n"
+                    "FORMATO OBRIGATORIO — exatamente 5 linhas de texto puro, nada mais:\n\n"
+                    "Linha 1 = HOOK (CURIOSIDADE OU IMPACTO): Uma frase curta que instigue o publico. (Max 10 palavras)\n"
+                    "Linha 2 = FATO DIRETO: O que aconteceu de forma objetiva.\n"
+                    "Linha 3 = REAÇÃO: Como a web ou os envolvidos reagiram.\n"
+                    "Linha 4 = IMPACTO: A consequencia imediata no jogo ou na narrativa.\n"
+                    "Linha 5 = PERGUNTA POLARIZADA: Uma pergunta que obriga o espectador a tomar uma posicao.\n\n"
+                    "REGRAS DE OURO PARA ALCANCE:\n"
+                    "- O HOOK deve ser autosuficiente. Exemplos bons: 'VOCE CONHECE FULANO?', 'O QUE ACONTECEU COM SICRANO?', 'BOMBA NO MUNDO DOS FAMOSOS'.\n"
+                    "- Evite começar o HOOK com palavras de engajamento como 'CONCORDAM' ou 'VEJAM' a menos que seja uma frase completa.\n"
+                    "- O CORPO (Linhas 2, 3 e 4) deve seguir o fluxo: Fato -> Reacao -> Impacto. Sem contexto longo.\n"
                 )
                 user_content = f"Noticia:\n{context}"
             else:
                 system_instr = (
-                    "You are a Shorts/Reels gossip scriptwriter. Generate ONE SINGLE post ready for video overlay.\n\n"
-                    "MANDATORY FORMAT — exactly 4 lines of plain text, nothing else:\n"
-                    "Line 1 = HOOK: short PROVOCATIVE phrase (2-5 words) ALL CAPS, max 35 characters. "
-                    "Must be a PROVOCATION or QUESTION that forces the viewer to form an opinion. "
-                    "DO NOT use neutral statements like 'She is back' or 'Big news'. "
-                    "USE shocking questions or polarizing statements like 'DID SHE DESERVE IT?', 'WENT TOO FAR', 'THIS WAS WRONG'. "
-                    "The viewer's brain must DECIDE something when reading the hook. "
-                    "NEVER end with an article, preposition, or conjunction.\n"
-                    "Line 2 = BODY: ONE complete sentence (10-18 words) summarizing the main fact. Must mention the celebrity name. "
-                    "Must make sense on its own. Never cut mid-thought.\n"
-                    "Line 3 = QUESTION: A short engagement question (4-8 words) that provokes opinion.\n"
-                    "Line 4 = CTA: A short phrase (3-6 words) for call to action. "
-                    "Vary between asking for LIKE, FOLLOW or SUBSCRIBE. "
-                    "Use formats like: 'FOLLOW FOR MORE', 'SUBSCRIBE NOW', 'LIKE IF YOU AGREE', 'LIKE IF IT WAS UNFAIR', "
-                    "'TURN ON NOTIFICATIONS', 'FOLLOW FOR UPDATES'. "
-                    "Vary the CTA for each story — always related to the topic when possible.\n\n"
-                    "STRICT RULES:\n"
-                    "- HOOK must be PROVOCATIVE — never neutral or descriptive.\n"
-                    "- HOOK must be self-contained and make complete sense in max 35 characters.\n"
-                    "- HOOK must never end on an incomplete word, article, or preposition.\n"
-                    "- CTA must vary between LIKE, FOLLOW or SUBSCRIBE, always contextual.\n"
-                    "- Every sentence must be COMPLETE and SELF-CONTAINED. Never cut mid-thought.\n"
-                    "- Zero hashtags, zero emojis, zero asterisks, zero quotes.\n"
-                    "- Do not include labels like 'Hook:', 'Body:', 'Question:', 'CTA:'.\n"
-                    "- Do not number the lines.\n\n"
-                    "EXAMPLES OF PERFECT OUTPUT:\n\n"
-                    "DID SHE DESERVE IT?\n"
-                    "She showed up dancing in a crop top showing her incredible new body transformation.\n"
-                    "Real change or internet hype?\n"
-                    "LIKE IF SHE EARNED IT\n\n"
-                    "---\n\n"
-                    "WENT TOO FAR?\n"
-                    "John and Mary announced the end of their 10 year marriage shocking all fans.\n"
-                    "Did you see it coming?\n"
-                    "LIKE IF YOU KNEW ALREADY\n\n"
-                    "Reply ONLY with the 4 lines. Nothing before, nothing after."
+                    "You are a Shorts/Reels gossip scriptwriter specialized in viral content.\n\n"
+                    "MANDATORY FORMAT — exactly 5 lines of plain text, nothing else:\n\n"
+                    "Line 1 = HOOK (IMPACT): [CHARACTER] + [STRONG ACTION] + [CONSEQUENCE] (Max 8 words)\n"
+                    "Line 2 = DIRECT FACT: What happened objectively.\n"
+                    "Line 3 = REACTION: How the web/house reacted.\n"
+                    "Line 4 = IMPACT: The immediate consequence or narrative shift.\n"
+                    "Line 5 = POLARIZED QUESTION: A question that forces the viewer to take a stand.\n\n"
+                    "GOLDEN RULES FOR REACH:\n"
+                    "- HOOK must be an IMMEDIATE EVENT (Action + Conflict + Character). Start with a strong verb.\n"
+                    "- HOOK must have max 8 words and explicit tension.\n"
+                    "- BODY (Lines 2, 3, 4) follows: Fact -> Reaction -> Impact. No fluff.\n"
+                    "- FINAL QUESTION must be polarized.\n"
+                    "- ALL CAPS, zero hashtags, zero emojis.\n\n"
+                    "Responde ONLY with the 5 lines. Nothing before, nothing after."
                 )
                 user_content = f"News:\n{context}"
 
@@ -985,17 +927,23 @@ def _render_short(
     # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
     
-    # INCREASE width and line count to prevent cutting
-    main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:9]
+    # Remove reticências automáticas que cortam frases
+    # Se o texto termina com "...", remove para não dar impressão de corte artificial
+    if main_input.endswith("..."):
+        main_input = main_input[:-3].rstrip()
+    
+    # Quebra em linhas com mais caracteres por linha para evitar cortes
+    # Aumentado de width=28 para width=32 e limite de 9 para 10 linhas
+    main_lines = textwrap.wrap(main_input, width=32, break_long_words=False, break_on_hyphens=False)[:10]
     main_filters = []
 
-    # Ajuste dinâmico de fonte para textos muito longos (até 9 linhas)
+    # Ajuste dinâmico de fonte para textos muito longos (até 10 linhas)
     if len(main_lines) > 7:
-        line_spacing = 68
-        font_size = 56
+        line_spacing = 65
+        font_size = 54
     elif len(main_lines) > 5:
-        line_spacing = 75
-        font_size = 62
+        line_spacing = 72
+        font_size = 60
     else:
         line_spacing = 82
         font_size = 68
@@ -1185,6 +1133,11 @@ def _render_short_video(
     # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
     
+    # Remove reticências automáticas que cortam frases
+    # Se o texto termina com "...", remove para não dar impressão de corte artificial
+    if main_input.endswith("..."):
+        main_input = main_input[:-3].rstrip()
+    
     # Seleciona cores determinísticas baseadas no texto
     try:
         seed_text = main_input or headline_file.read_text(encoding="utf-8")
@@ -1196,16 +1149,17 @@ def _render_short_video(
         bg_color = "0x000000"
         tarja_color = "0x000000"
     
-    # Aumentando largura para evitar palavras emendadas
-    main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:9]
+    # Quebra em linhas com mais caracteres por linha para evitar cortes
+    # Aumentado de width=28 para width=32 e limite de 9 para 10 linhas
+    main_lines = textwrap.wrap(main_input, width=32, break_long_words=False, break_on_hyphens=False)[:10]
     main_filters = []
 
     if len(main_lines) > 7:
-        line_spacing = 68
-        font_size = 56
+        line_spacing = 65
+        font_size = 54
     elif len(main_lines) > 5:
-        line_spacing = 75
-        font_size = 62
+        line_spacing = 72
+        font_size = 60
     else:
         line_spacing = 82
         font_size = 68
@@ -1351,14 +1305,21 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
 
         # Se a IA devolveu múltiplas variações separadas por '---', pega só a primeira
         # (as content_lines já removeram '---', mas podem ter linhas de múltiplas variações)
-        # Esperamos 3 linhas (hook, corpo, pergunta). Pegamos as 3 primeiras linhas úteis.
-        if len(content_lines) >= 4:
+        # ── Parsing the high-performance 5-line structure ──
+        if len(content_lines) >= 5:
             hook = content_lines[0]
-            body = content_lines[1]
-            question = content_lines[2]
-            cta_from_ai = content_lines[3]
+            # Combine Fact + Reaction + Impact into body
+            body = f"{content_lines[1]} {content_lines[2]} {content_lines[3]}"
+            question = content_lines[4]
+            cta_from_ai = "" # Let fallbacks handle the CTA
             headline_text = f"{body} {question}"
-        elif len(content_lines) >= 3:
+        elif len(content_lines) == 4:
+            hook = content_lines[0]
+            body = f"{content_lines[1]} {content_lines[2]}"
+            question = content_lines[3]
+            cta_from_ai = ""
+            headline_text = f"{body} {question}"
+        elif len(content_lines) == 3:
             hook = content_lines[0]
             body = content_lines[1]
             question = content_lines[2]
