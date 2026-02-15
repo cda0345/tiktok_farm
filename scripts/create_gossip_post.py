@@ -921,6 +921,9 @@ def _render_short(
 
     SAFE_TOP = 220
     SAFE_BOTTOM = 1520
+    # Margens horizontais: pode usar mais espaço lateral (não tem UI do YouTube Shorts nas laterais)
+    SAFE_LEFT = 40   # Margem esquerda pequena
+    SAFE_RIGHT = 40  # Margem direita pequena
 
     main_path = summary_file or headline_file
     main_raw = main_path.read_text(encoding="utf-8") if main_path.exists() else ""
@@ -929,8 +932,8 @@ def _render_short(
     hook_raw = hook_file.read_text(encoding="utf-8") if hook_file and hook_file.exists() else ""
     hook_clean = _sanitize_overlay_text(hook_raw).replace("\xa0", " ")
 
-    # Render HOOK - 2 linhas max, 20 chars por linha
-    hook_lines = textwrap.wrap(hook_clean, width=20, break_long_words=False, break_on_hyphens=False)[:2]
+    # Render HOOK - aumentado para 24 chars por linha (mais largura disponível)
+    hook_lines = textwrap.wrap(hook_clean, width=24, break_long_words=False, break_on_hyphens=False)[:2]
     hook_filters = []
 
     # Keep hook on tarja, but inside safe area.
@@ -954,7 +957,7 @@ def _render_short(
         main_input = main_input[:-3].rstrip()
     
     # Limita texto de forma inteligente: procura fim de frase dentro do limite
-    # Máximo de ~50 palavras, mas corta na última frase completa antes disso
+    # Se houver pergunta (?) no final, sempre mantém ela completa
     words = main_input.split()
     if len(words) > 50:
         # Procura o último ponto final, exclamação ou interrogação nas primeiras 50 palavras
@@ -969,8 +972,18 @@ def _render_short(
             if not main_input[-1] in '.!?':
                 main_input += "."
     
-    # Quebra em linhas - máximo 28 chars por linha e 6 linhas
-    main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:6]
+    # Se tem pergunta no texto original, tenta incluir ela mesmo que seja um pouco maior
+    if '?' in main_input and not main_input.strip().endswith('?'):
+        # Há uma pergunta mas foi cortada, tenta pegar até o fim da pergunta
+        full_text = " ".join(main_clean.split())
+        question_end = full_text.find('?', len(main_input) - 20)  # Procura próximo ?
+        if question_end > 0 and question_end < len(full_text) * 0.8:  # Não vai muito longe
+            words_extended = full_text[:question_end + 1].split()
+            if len(words_extended) <= 55:  # Aceita um pouco mais para manter pergunta completa
+                main_input = full_text[:question_end + 1]
+    
+    # Quebra em linhas - aumentado para 32 chars por linha (mais largura) e máximo 6 linhas
+    main_lines = textwrap.wrap(main_input, width=32, break_long_words=False, break_on_hyphens=False)[:6]
     main_filters = []
 
     # Ajuste dinâmico de fonte
@@ -1145,6 +1158,9 @@ def _render_short_video(
 
     SAFE_TOP = 220
     SAFE_BOTTOM = 1520
+    # Margens horizontais: pode usar mais espaço lateral
+    SAFE_LEFT = 40
+    SAFE_RIGHT = 40
 
     main_path = summary_file or headline_file
     main_raw = main_path.read_text(encoding="utf-8") if main_path.exists() else ""
@@ -1153,8 +1169,8 @@ def _render_short_video(
     hook_raw = hook_file.read_text(encoding="utf-8") if hook_file and hook_file.exists() else ""
     hook_clean = _sanitize_overlay_text(hook_raw).replace("\xa0", " ")
 
-    # Render HOOK
-    hook_lines = textwrap.wrap(hook_clean, width=20, break_long_words=False, break_on_hyphens=False)[:2]
+    # Render HOOK - aumentado para 24 chars
+    hook_lines = textwrap.wrap(hook_clean, width=24, break_long_words=False, break_on_hyphens=False)[:2]
     hook_filters = []
 
     hook_base_y = _clamp(560, SAFE_TOP, SAFE_BOTTOM)
@@ -1203,8 +1219,8 @@ def _render_short_video(
             if not main_input[-1] in '.!?':
                 main_input += "."
     
-    # Quebra em linhas - máximo 28 chars por linha e 6 linhas
-    main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:6]
+    # Quebra em linhas - aumentado para 32 chars por linha (mais largura) e máximo 6 linhas
+    main_lines = textwrap.wrap(main_input, width=32, break_long_words=False, break_on_hyphens=False)[:6]
     main_filters = []
 
     # Ajuste dinâmico de fonte
