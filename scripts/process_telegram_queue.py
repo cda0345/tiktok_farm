@@ -40,19 +40,21 @@ def process_foto_request(request: Dict[str, Any]) -> bool:
     print(f"🔗 Link: {request['article_url']}")
     
     chat_id = request["chat_id"]
+    article_url = request["article_url"]
     
     # Notifica início
     send_message(chat_id, f"🔄 Processando post `{request['id']}`...")
     
     try:
-        # Chama create_gossip_post.py para gerar UM post
-        print("📰 Executando create_gossip_post.py...")
+        # Chama create_gossip_post.py para gerar UM post com a URL específica
+        print(f"📰 Executando create_gossip_post.py para URL: {article_url}")
         
         result = subprocess.run(
             [
                 sys.executable,  # Usa o Python atual
                 str(ROOT_DIR / "scripts" / "create_gossip_post.py"),
-                "--profile", "br"
+                "--profile", "br",
+                "--url", article_url
             ],
             cwd=ROOT_DIR,
             capture_output=True,

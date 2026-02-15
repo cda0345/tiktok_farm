@@ -167,6 +167,54 @@ def _image_from_item(item: ET.Element) -> str | None:
     return None
 
 
+def _fetch_news_from_url(url: str, source_name: str = "custom") -> NewsItem:
+    """Fetch news data from a specific URL instead of RSS."""
+    try:
+        # Tenta extrair informações básicas via OpenGraph ou meta tags se possível
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        r = requests.get(url, headers=headers, timeout=20)
+        r.raise_for_status()
+        
+        # Busca imagem (og:image)
+        img_match = re.search(r'<meta property="og:image" content="([^"]+)"', r.text)
+        image_url = img_match.group(1) if img_match else ""
+        
+        # Busca título (og:title ou <title>)
+        title_match = re.search(r'<meta property="og:title" content="([^"]+)"', r.text)
+        if not title_match:
+            title_match = re.search(r'<title>([^<]+)</title>', r.text)
+        
+        title = title_match.group(1) if title_match else "Sem título"
+        
+        # Busca descrição
+        desc_match = re.search(r'<meta property="og:description" content="([^"]+)"', r.text)
+        desc = desc_match.group(1) if desc_match else ""
+
+        return NewsItem(
+            source=source_name,
+            feed_url=url,
+            title=title.strip(),
+            link=url,
+            published=datetime.now(timezone.utc).isoformat(),
+            image_url=image_url,
+            description=desc.strip()
+        )
+    except Exception as e:
+        print(f"⚠️ Erro ao buscar notícia via URL direta: {e}")
+        # Retorna um item mínimo para tentar processar
+        return NewsItem(
+            source=source_name,
+            feed_url=url,
+            title="Notícia via Telegram",
+            link=url,
+            published=datetime.now(timezone.utc).isoformat(),
+            image_url="",
+            description=""
+        )
+
+
 def _fetch_first_news(feeds: list[tuple[str, str]]) -> NewsItem:
     headers = {"User-Agent": "Mozilla/5.0 (compatible; GossipPostBot/1.0)"}
 
@@ -282,7 +330,10 @@ def _upgrade_image_url(url: str) -> str:
 def _download_image(url: str, out_base: Path) -> Path:
     if not url or not url.startswith("http"):
         raise RuntimeError(f"Invalid image URL provided: '{url}'")
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; GossipPostBot/1.0)"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Referer": "https://www.google.com"
+    }
     candidates = []
     upgraded = _upgrade_image_url(url)
     if upgraded != url:
@@ -503,18 +554,23 @@ def _ffmpeg_escape(path: str) -> str:
 
 def _sanitize_overlay_text(text: str) -> str:
     # Remove hidden/control Unicode chars that may render as small boxes.
-    text = (text or "").replace("\r", "")
-    # Remove caracteres Unicode problemáticos e invisíveis
-    text = re.sub(r"[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]", "", text)
-    # Remove emojis e símbolos especiais que podem causar problemas
-    text = re.sub(r'[\U0001F300-\U0001F9FF]', '', text)  # Emojis
-    text = re.sub(r'[\u2600-\u26FF\u2700-\u27BF]', '', text)  # Dingbats e símbolos
-    # Normaliza espaços em branco
-    text = re.sub(r"[^\S\n]+", " ", text)
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    # Remove caracteres de controle problemáticos
-    text = ''.join(char for char in text if ord(char) >= 32 or char == '\n')
-    return text.strip()
+    # Also replaces accented characters with their non-accented counterparts for better FFmpeg compatibility.
+    import unicodedata
+    
+    if not text:
+        return ""
+    
+    # Converte espaços não-quebráveis (comuns em HTML) em espaços normais
+    text = text.replace('\xa0', ' ')
+    
+    normalized = unicodedata.normalize('NFD', text)
+    sanitized = "".join([c for c in normalized if unicodedata.category(c) != 'Mn'])
+    
+    # Mantém ASCII imprimível (32-126) E também quebras de linha (\n = 10, \r = 13)
+    # Isso evita que as palavras grudem quando há quebra de linha ou espaços especiais
+    sanitized = "".join([c for c in sanitized if 32 <= ord(c) <= 126 or ord(c) in (10, 13)])
+    
+    return sanitized.strip()
 
 
 def _ffmpeg_escape_text(text: str) -> str:
@@ -686,8 +742,8 @@ def _headline_for_overlay(headline: str, max_chars: int = 24, max_lines: int = 5
 
 def _build_display_headline(headline: str) -> str:
     # Portal-style, bold and concise.
-    # Aumentado para 22 chars por linha e 7 linhas para acomodar notícias longas
-    return _wrap_for_overlay(headline, max_chars=22, max_lines=7, upper=True)
+    # Aumentado para 28 chars por linha e 9 linhas para acomodar notícias longas sem cortar
+    return _wrap_for_overlay(headline, max_chars=28, max_lines=9, upper=True)
 
 
 def _summarize_news_text(item: NewsItem) -> str:
@@ -928,45 +984,21 @@ def _render_short(
 
     # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
-    # Prefer to estimate a background color from the news image so the
-    # pad (background) harmonizes with the photo. Derive tarja color by
-    # darkening that base color. Fall back to deterministic palette
-    # selection based on headline hash when estimation fails.
-    try:
-        # _estimate_logo_bg_color returns a string like '0xRRGGBB'
-        estimated_bg = _estimate_logo_bg_color(image_path)
-        # Parse hex to RGB
-        hexpart = estimated_bg[2:] if estimated_bg.startswith("0x") else estimated_bg
-        r = int(hexpart[0:2], 16)
-        g = int(hexpart[2:4], 16)
-        b = int(hexpart[4:6], 16)
-        # Darken for tarja (stripes) so text remains readable on top
-        tr, tg, tb = _adjust_color_brightness(r, g, b, factor=0.55)
-        bg_color = estimated_bg
-        tarja_color = f"0x{tr:02X}{tg:02X}{tb:02X}"
-    except Exception:
-        # Fallback: deterministic palette by headline hash
-        try:
-            seed_text = main_input or headline_file.read_text(encoding="utf-8")
-            h = hashlib.sha1(seed_text.encode("utf-8")).hexdigest()
-            idx = int(h, 16) % len(PALETTE)
-            bg_color = PALETTE[idx]
-            tarja_color = PALETTE[(idx + 3) % len(PALETTE)]
-        except Exception:
-            # Final fallback: ensure both colors are always defined
-            bg_color = "0x000000"
-            tarja_color = "0x000000"
-    main_lines = textwrap.wrap(main_input, width=22, break_long_words=False, break_on_hyphens=False)[:7]
+    
+    # INCREASE width and line count to prevent cutting
+    main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:9]
     main_filters = []
 
-    # Compute top of the lower text block so it never overlaps YouTube bottom UI.
-    # We anchor the last line to SAFE_BOTTOM and build upwards.
-    if len(main_lines) > 5:
-        line_spacing = 85
-        font_size = 69
+    # Ajuste dinâmico de fonte para textos muito longos (até 9 linhas)
+    if len(main_lines) > 7:
+        line_spacing = 68
+        font_size = 56
+    elif len(main_lines) > 5:
+        line_spacing = 75
+        font_size = 62
     else:
-        line_spacing = 92
-        font_size = 74
+        line_spacing = 82
+        font_size = 68
 
     # Start Y so that the full block ends at SAFE_BOTTOM.
     block_h = max(0, (len(main_lines) - 1) * line_spacing)
@@ -1164,15 +1196,19 @@ def _render_short_video(
         bg_color = "0x000000"
         tarja_color = "0x000000"
     
-    main_lines = textwrap.wrap(main_input, width=22, break_long_words=False, break_on_hyphens=False)[:7]
+    # Aumentando largura para evitar palavras emendadas
+    main_lines = textwrap.wrap(main_input, width=28, break_long_words=False, break_on_hyphens=False)[:9]
     main_filters = []
 
-    if len(main_lines) > 5:
-        line_spacing = 85
-        font_size = 69
+    if len(main_lines) > 7:
+        line_spacing = 68
+        font_size = 56
+    elif len(main_lines) > 5:
+        line_spacing = 75
+        font_size = 62
     else:
-        line_spacing = 92
-        font_size = 74
+        line_spacing = 82
+        font_size = 68
 
     block_h = max(0, (len(main_lines) - 1) * line_spacing)
     start_y = _clamp(SAFE_BOTTOM - block_h, SAFE_TOP + 520, SAFE_BOTTOM)
@@ -1429,6 +1465,10 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             logo_path=logo_path,
         )
 
+        # Adiciona um pequeno delay para garantir que o arquivo de vídeo seja liberado pelo SO
+        import time
+        time.sleep(1)
+
         # Telegram Notification with hashtags in caption
         # Clean up hook and headline for better formatting (já estão limpos, sem hashtags)
         hook_telegram = " ".join(hook_clean.split())  # Remove extra spaces/newlines
@@ -1456,15 +1496,29 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Create one gossip short from RSS feeds.")
     p.add_argument("--profile", choices=("br", "intl"), default="br")
+    p.add_argument("--url", default="", help="Direct link to a news article.")
     p.add_argument("--logo", default="", help="Optional logo path (png/webp/jpg).")
     return p.parse_args()
 
 
 def main() -> None:
     args = _parse_args()
-    feeds = FEED_PROFILES[args.profile]
-    item = _fetch_first_news(feeds)
-    create_post_for_item(item, args)
+    
+    if args.url:
+        print(f"🔗 Processando URL direta: {args.url}")
+        # Tenta identificar a fonte pelo domínio
+        source = "custom"
+        for name, _ in FEED_PROFILES["br"] + FEED_PROFILES["intl"]:
+            if name in args.url:
+                source = name
+                break
+        item = _fetch_news_from_url(args.url, source)
+    else:
+        feeds = FEED_PROFILES[args.profile]
+        item = _fetch_first_news(feeds)
+    
+    if item:
+        create_post_for_item(item, args)
 
 
 if __name__ == "__main__":
