@@ -716,16 +716,16 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "DEVE mencionar o nome da celebridade. Deve fazer sentido completo sozinha sem depender do gancho. "
                     "Nunca termine no meio de uma ideia.\n\n"
                     "Linha 3 = PERGUNTA: Uma pergunta curta de engajamento (4-8 palavras) que provoque opiniao do espectador.\n\n"
-                    "Linha 4 = CTA: Uma frase curta (3-6 palavras) pedindo LIKE de forma contextual. "
-                    "DEVE estar conectada com a noticia. NAO use 'inscreva-se' ou 'siga'. "
-                    "Use formatos como: 'CURTE SE CONCORDA', 'LIKE SE FOI INJUSTO', 'CURTE SE ELA MERECIA', "
-                    "'LIKE SE VOCE TAMBEM FICOU CHOCADO', 'CURTE SE ERA OBVIO'. "
-                    "Varie o CTA para cada noticia — sempre relacionado ao tema.\n\n"
+                    "Linha 4 = CTA: Uma frase curta (3-6 palavras) de chamada para acao. "
+                    "DEVE variar entre pedir LIKE, SEGUIR ou INSCREVER-SE. "
+                    "Use formatos como: 'SEGUE PARA MAIS', 'INSCREVA-SE JA', 'CURTE SE CONCORDA', 'LIKE SE FOI INJUSTO', "
+                    "'ATIVA O SININHO', 'SEGUE AQUI PARA NOVIDADES'. "
+                    "Varie o CTA para cada noticia — sempre relacionado ao tema quando possivel.\n\n"
                     "REGRAS RIGIDAS:\n"
                     "- O GANCHO deve ser PROVOCATIVO — nunca neutro ou descritivo.\n"
                     "- O GANCHO deve fazer sentido COMPLETO em ate 35 caracteres.\n"
                     "- O GANCHO nunca deve terminar em palavra incompleta, artigo ou preposicao.\n"
-                    "- O CTA deve pedir LIKE/CURTIDA de forma contextual, nunca generica.\n"
+                    "- O CTA deve variar entre LIKE, SEGUIR ou INSCREVER-SE, sempre contextual.\n"
                     "- Cada frase deve ser COMPLETA. Nunca cortar no meio de uma ideia.\n"
                     "- Zero hashtags, zero emojis, zero asteriscos, zero aspas.\n"
                     "- NAO inclua rotulos como 'Gancho:', 'Corpo:', 'Pergunta:', 'CTA:'.\n"
@@ -767,16 +767,16 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "Line 2 = BODY: ONE complete sentence (10-18 words) summarizing the main fact. Must mention the celebrity name. "
                     "Must make sense on its own. Never cut mid-thought.\n"
                     "Line 3 = QUESTION: A short engagement question (4-8 words) that provokes opinion.\n"
-                    "Line 4 = CTA: A short phrase (3-6 words) asking for a LIKE in a contextual way. "
-                    "Must be connected to the news. DO NOT use 'subscribe' or 'follow'. "
-                    "Use formats like: 'LIKE IF YOU AGREE', 'LIKE IF IT WAS UNFAIR', 'LIKE IF SHE DESERVED IT', "
-                    "'LIKE IF YOU ARE SHOCKED', 'LIKE IF IT WAS OBVIOUS'. "
-                    "Vary the CTA for each story — always related to the topic.\n\n"
+                    "Line 4 = CTA: A short phrase (3-6 words) for call to action. "
+                    "Vary between asking for LIKE, FOLLOW or SUBSCRIBE. "
+                    "Use formats like: 'FOLLOW FOR MORE', 'SUBSCRIBE NOW', 'LIKE IF YOU AGREE', 'LIKE IF IT WAS UNFAIR', "
+                    "'TURN ON NOTIFICATIONS', 'FOLLOW FOR UPDATES'. "
+                    "Vary the CTA for each story — always related to the topic when possible.\n\n"
                     "STRICT RULES:\n"
                     "- HOOK must be PROVOCATIVE — never neutral or descriptive.\n"
                     "- HOOK must be self-contained and make complete sense in max 35 characters.\n"
                     "- HOOK must never end on an incomplete word, article, or preposition.\n"
-                    "- CTA must ask for LIKE in a contextual way, never generic.\n"
+                    "- CTA must vary between LIKE, FOLLOW or SUBSCRIBE, always contextual.\n"
                     "- Every sentence must be COMPLETE and SELF-CONTAINED. Never cut mid-thought.\n"
                     "- Zero hashtags, zero emojis, zero asterisks, zero quotes.\n"
                     "- Do not include labels like 'Hook:', 'Body:', 'Question:', 'CTA:'.\n"
@@ -1402,9 +1402,12 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         is_pt = _is_portuguese_context(item.source, item.title)
         cta_clean = re.sub(r'#\w+', '', cta_from_ai).strip() if cta_from_ai else ""
         cta_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', cta_clean).strip().upper()
-        if not cta_clean:
+        
+        # Força o uso da lista de variações otimizadas em 50% dos casos para garantir CTAs de inscrição
+        if not cta_clean or random.random() < 0.5:
             # Usa o título como seed para ter consistência (mesmo post = mesmo CTA)
             cta_clean = _get_random_cta(item.title)
+            
         cta_text = cta_clean
         logo_path = None
         if args.logo:

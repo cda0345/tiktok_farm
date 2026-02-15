@@ -184,9 +184,12 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     is_pt = cgp._is_portuguese_context(item.source, item.title)
     cta_clean = re.sub(r'#\w+', '', cta_from_ai).strip() if cta_from_ai else ""
     cta_clean = re.sub(r'[^\w\s\u00C0-\u00FF?!]', '', cta_clean).strip().upper()
-    if not cta_clean:
+    
+    # Força uso da lista de variações otimizadas (50% de chance) para garantir diversidade de CTAs
+    if not cta_clean or random.random() < 0.5:
         # Usa a função _get_random_cta do módulo base
         cta_clean = cgp._get_random_cta(item.title)
+        
     cta_text = cta_clean
     cgp._render_short(
         image_path,
