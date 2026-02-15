@@ -6,6 +6,8 @@
   "duration": 15,
   "created_at": "2026-02-15T06:24:36.535902",
   "chat_id": "1015015823",
-  "status": "pending",
-  "simplified": true
+  "status": "failed",
+  "simplified": true,
+  "processing_started": "2026-02-15T09:25:26.157704",
+  "processing_finished": "2026-02-15T09:25:27.109056"
 }
