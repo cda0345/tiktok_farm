@@ -51,6 +51,13 @@ jobs:
           pip install -r requirements.txt
           pip install yt-dlp
 
+      - name: Poll Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          echo "🔍 Verificando se há novas mensagens no Telegram..."
+          python scripts/poll_telegram_to_queue.py
+
       - name: Check queue
         id: check_queue
         run: |
@@ -82,21 +89,20 @@ jobs:
           path: |
             gossip_post/output/*.mp4
 
-      - name: Commit processed requests
-        if: steps.check_queue.outputs.has_requests == 'true'
+      - name: Commit changes
+        if: always()
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           
-          # Adiciona mudanças nos arquivos de requisição
+          # Adiciona fila e logs de ID
           git add telegram_queue/
           
-          # Commit apenas se houver mudanças
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update telegram queue status [skip ci]"
+            git commit -m "chore: update telegram queue and last_id [skip ci]"
             git push
           else
-            echo "Sem mudanças para commitar"
+            echo "Nenhuma mudança para commitar"
           fi
 
       - name: Cleanup videos
