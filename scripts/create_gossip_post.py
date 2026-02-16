@@ -66,6 +66,40 @@ def _get_random_cta(seed_text: str = "") -> str:
     return cta
 
 
+def _sanitize_cta_text(cta: str) -> str:
+    """Remove emoji/symbol chars that often render as tofu (a square with X) in FFmpeg drawtext."""
+    t = _clean_text(cta)
+    # Keep latin letters (incl. accents), digits, spaces and common punctuation.
+    # This intentionally removes arrows/emojis like 👇 🔥 🔔 etc.
+    t = re.sub(r"[^\w\s\u00C0-\u00FF.,!?\-–—'\"()\[\]/\\+&:#@]", "", t)
+    return _clean_text(t)
+
+
+def _truncate_at_sentence_boundary(text: str, *, max_chars: int = 220) -> str:
+    """Truncate without cutting the last phrase in the middle.
+
+    Prefers '.', '!' or '?' boundaries. Falls back to ',', ';', ':' and finally last-space + '...'.
+    """
+    t = _clean_text(text)
+    if len(t) <= max_chars:
+        return t
+
+    cand = t[:max_chars].rstrip()
+
+    for sep in ("?", "!", "."):
+        idx = cand.rfind(sep)
+        if idx >= int(max_chars * 0.55):
+            return cand[: idx + 1].strip()
+
+    for sep in (";", ",", ":"):
+        idx = cand.rfind(sep)
+        if idx >= int(max_chars * 0.65):
+            return cand[: idx + 1].strip()
+
+    cut = cand.rsplit(" ", 1)[0].strip()
+    return (cut + "...") if cut else (cand + "...")
+
+
 FEED_PROFILES: dict[str, list[tuple[str, str]]] = {
     "br": [
         ("contigo", "https://contigo.com.br/feed"),
@@ -114,7 +148,7 @@ def _extract_first_img_from_html(html: str) -> str | None:
         r"<img[^>]+src=[\"']([^\"']+)",
     ]
     for pattern in patterns:
-        match = re.search(pattern, html, re.IGNORECASE)
+        match = re.search(pattern, html or "", re.IGNORECASE)
         if match:
             url = match.group(1).strip()
             if url.startswith("http"):
@@ -215,8 +249,9 @@ def _fetch_news_from_url(url: str, source_name: str = "custom") -> NewsItem:
         )
 
 
-def _fetch_first_news(feeds: list[tuple[str, str]]) -> NewsItem:
+def _fetch_first_news(feeds: list[tuple[str, str]], skip_titles: list[str] | None = None) -> NewsItem:
     headers = {"User-Agent": "Mozilla/5.0 (compatible; GossipPostBot/1.0)"}
+    skip_titles = skip_titles or []
 
     for source_name, feed_url in feeds:
         try:
@@ -240,6 +275,8 @@ def _fetch_first_news(feeds: list[tuple[str, str]]) -> NewsItem:
                 if not isinstance(post, dict):
                     continue
                 title = _strip_html((post.get("title") or {}).get("rendered") or "")
+                if title in skip_titles:
+                    continue
                 link = _clean_text(post.get("link") or "")
                 published = _clean_text(post.get("date") or "")
                 description = _strip_html((post.get("excerpt") or {}).get("rendered") or "")
@@ -280,6 +317,8 @@ def _fetch_first_news(feeds: list[tuple[str, str]]) -> NewsItem:
         items = root.findall("./channel/item")
         for item in items:
             title = _clean_text(item.findtext("title"))
+            if title in skip_titles:
+                continue
             link = _clean_text(item.findtext("link"))
             published = _clean_text(item.findtext("pubDate"))
             description = _strip_html(item.findtext("description") or "")
@@ -395,27 +434,8 @@ def _smart_truncate_hook(hook_raw: str, max_words: int = 5) -> str:
 
 
 def _trim_trailing_connectors(text: str) -> str:
-    """Remove trailing articles, prepositions, and conjunctions that make a hook look incomplete.
-
-    Repeatedly strips the last word if it's a connector, so 'RAINHA DO SAMBA E' becomes 'RAINHA DO SAMBA'.
-    """
-    if not text:
-        return text
-    connectors = {
-        "E", "OU", "O", "A", "OS", "AS", "DO", "DA", "DOS", "DAS",
-        "DE", "EM", "NO", "NA", "NOS", "NAS", "MAS", "COM", "POR",
-        "PELO", "PELA", "QUE", "SE", "AO", "AOS", "UM", "UMA",
-        "AND", "OR", "THE", "A", "AN", "OF", "IN", "ON", "AT",
-        "FOR", "WITH", "BUT", "TO", "IS", "WAS", "ARE", "HER", "HIS",
-    }
-    words = text.strip().split()
-    while len(words) > 1:
-        last = re.sub(r"[^\w\u00C0-\u00FF]", "", words[-1]).upper()
-        if last in connectors:
-            words.pop()
-        else:
-            break
-    return " ".join(words)
+    """Disabled to avoid cutting off meaningful parts of the headline."""
+    return text
 
 
 def _fix_orphan_pronoun_tail(text: str) -> str:
@@ -554,21 +574,16 @@ def _ffmpeg_escape(path: str) -> str:
 
 def _sanitize_overlay_text(text: str) -> str:
     # Remove hidden/control Unicode chars that may render as small boxes.
-    # Also replaces accented characters with their non-accented counterparts for better FFmpeg compatibility.
-    import unicodedata
-    
+    # We DO NOT remove accents anymore for better readability in Portuguese.
     if not text:
         return ""
     
     # Converte espaços não-quebráveis (comuns em HTML) em espaços normais
     text = text.replace('\xa0', ' ')
     
-    normalized = unicodedata.normalize('NFD', text)
-    sanitized = "".join([c for c in normalized if unicodedata.category(c) != 'Mn'])
-    
-    # Mantém ASCII imprimível (32-126) E também quebras de linha (\n = 10, \r = 13)
-    # Isso evita que as palavras grudem quando há quebra de linha ou espaços especiais
-    sanitized = "".join([c for c in sanitized if 32 <= ord(c) <= 126 or ord(c) in (10, 13)])
+    # Remove apenas caracteres de controle, mantém UTF-8 (acentos, emojis básicos etc)
+    # se o FFmpeg/fonte suportar. Caso contrário, apenas removemos caracteres invisíveis.
+    sanitized = "".join(c for c in text if ord(c) >= 32 or c in "\n\r")
     
     return sanitized.strip()
 
@@ -639,34 +654,7 @@ def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool 
     # Use break_long_words=False para evitar cortar palavras no meio
     wrapped = textwrap.wrap(clean, width=max_chars, break_long_words=False, break_on_hyphens=False)
 
-    # Post-process to avoid lines that end with very short words (articles/conjunctions)
-    def _fix_trailing_short_words(lines: list[str]) -> list[str]:
-        short_set = {"E", "OU", "O", "A", "DO", "DA", "DOS", "DAS", "DE", "EM", "NO", "NA", "MAS", "COM", "POR", "PELO", "PELA"}
-        fixed: list[str] = []
-        for i, line in enumerate(lines):
-            line = line.rstrip()
-            # If line ends with a short word, move that word to the start of the next line
-            parts = line.rsplit(" ", 1)
-            if len(parts) == 2:
-                last = parts[-1].strip()
-                if last.upper() in short_set and i + 1 < len(lines):
-                    # remove last from current line and prepend to next
-                    new_curr = parts[0]
-                    next_line = lines[i + 1].lstrip()
-                    lines[i + 1] = f"{last} {next_line}".strip()
-                    fixed.append(new_curr)
-                    continue
-            fixed.append(line)
-        # Remove empty lines introduced by moving words
-        return [ln for ln in fixed if ln]
-
-    fixed_wrapped = _fix_trailing_short_words(wrapped)
-    # Trim trailing connectors from the last visible line to avoid incomplete phrases
-    if fixed_wrapped:
-        fixed_wrapped[-1] = _trim_trailing_connectors(fixed_wrapped[-1])
-        fixed_wrapped = [ln for ln in fixed_wrapped if ln.strip()]
-    # We prioritize showing the full message without "..." suffixes
-    return "\n".join(fixed_wrapped[:max_lines])
+    return "\n".join(wrapped[:max_lines])
 
 
 def _pick_pt_hook(headline: str) -> str:
@@ -892,7 +880,7 @@ def _render_short(
     font = _ffmpeg_escape(_select_font())
     duration_s = 5
     fade_out_start = max(0.0, duration_s - 1.2)
-    cta_escaped = _ffmpeg_escape_text(cta_text.upper())
+    cta_escaped = _ffmpeg_escape_text(_sanitize_cta_text(cta_text.upper()))
     overlay_dir = out_video.parent / "_overlay_text"
     overlay_dir.mkdir(parents=True, exist_ok=True)
     hook_box_color = "0x000000"
@@ -1123,7 +1111,7 @@ def _render_short_video(
     font = _ffmpeg_escape(_select_font())
     
     fade_out_start = max(0.0, duration_s - 1.2)
-    cta_escaped = _ffmpeg_escape_text(cta_text.upper())
+    cta_escaped = _ffmpeg_escape_text(_sanitize_cta_text(cta_text.upper()))
     hook_box_color = "0x000000"
 
     PALETTE = [
@@ -1387,9 +1375,13 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         headline_text_clean = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text_clean)
         headline_text_clean = re.sub(r'\s+', ' ', headline_text_clean).strip()
 
+        # Evita corpo gigante e NÃO corta no meio da última frase
+        # (limite pensado para caber em ~7-8 linhas na overlay)
+        headline_text_clean = _truncate_at_sentence_boundary(headline_text_clean, max_chars=220)
+
         # Garante pontuação final para sensação de completude
         if headline_text_clean and not re.search(r"[.!?]$", headline_text_clean):
-            headline_text_clean += "?"  if "?" in headline_text else "."
+            headline_text_clean += "?" if "?" in headline_text else "."
 
         # Força caixa alta
         headline_text_clean = headline_text_clean.upper()
@@ -1433,7 +1425,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
 
         # ── CTA: SEMPRE usa variações da lista predefinida ──
         # Usa o título como seed para ter consistência (mesmo post = mesmo CTA)
-        cta_text = _get_random_cta(item.title)
+        cta_text = _sanitize_cta_text(_get_random_cta(item.title))
         
         logo_path = None
         if args.logo:
@@ -1484,10 +1476,11 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
 
 
 def _parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Create one gossip short from RSS feeds.")
+    p = argparse.ArgumentParser(description="Create gossip shorts from RSS feeds.")
     p.add_argument("--profile", choices=("br", "intl"), default="br")
     p.add_argument("--url", default="", help="Direct link to a news article.")
     p.add_argument("--logo", default="", help="Optional logo path (png/webp/jpg).")
+    p.add_argument("--count", type=int, default=1, help="Number of posts to generate.")
     return p.parse_args()
 
 
@@ -1503,12 +1496,28 @@ def main() -> None:
                 source = name
                 break
         item = _fetch_news_from_url(args.url, source)
+        if item:
+            create_post_for_item(item, args)
     else:
         feeds = FEED_PROFILES[args.profile]
-        item = _fetch_first_news(feeds)
-    
-    if item:
-        create_post_for_item(item, args)
+        processed_titles = []
+        count = getattr(args, "count", 1)
+        
+        for i in range(count):
+            try:
+                item = _fetch_first_news(feeds, skip_titles=processed_titles)
+                if item:
+                    print(f"🚀 Processando item {i+1}/{count}: {item.title}")
+                    if create_post_for_item(item, args):
+                        processed_titles.append(item.title)
+                    else:
+                        print(f"⚠️ Falha ao criar post {i+1}")
+                else:
+                    print("🏁 Não há mais notícias novas nos feeds.")
+                    break
+            except Exception as e:
+                print(f"❌ Erro no loop de geração: {e}")
+                break
 
 
 if __name__ == "__main__":
