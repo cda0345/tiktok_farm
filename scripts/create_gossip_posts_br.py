@@ -70,23 +70,25 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     hashtags = " ".join([ln.lower() for ln in all_lines if ln.startswith("#")])
     ai_parts = [ln for ln in all_lines if not ln.startswith("#")]
     
-    if len(ai_parts) >= 4:
-        # Novo formato: Linha 1 = Hook, Linha 2 = Corpo, Linha 3 = Pergunta, Linha 4 = CTA contextual
+    if len(ai_parts) >= 5:
+        # Novo formato de 5 linhas: Hook / Fato / Reação / Impacto / CTA
         hook_raw = ai_parts[0]
-        hook_words = hook_raw.split()[:10]  # Aumentado para 10 para evitar cortes sem sentido
+        hook_words = hook_raw.split()[:10]
         hook_raw = " ".join(hook_words)
         
-        # Resumo: já vem completo em um parágrafo direto e informativo
-        resumo = ai_parts[1] if len(ai_parts) > 1 else ""
+        # Combina Fato + Reação + Impacto no body
+        headline_text = f"{ai_parts[1]} {ai_parts[2]} {ai_parts[3]}"
         
-        # Pergunta de engajamento
-        pergunta = ai_parts[2] if len(ai_parts) > 2 else ""
+        # CTA emocional gerado pela IA
+        cta_from_ai = ai_parts[4]
+    elif len(ai_parts) >= 4:
+        # Formato: Hook / Fato / Reação-Impacto / CTA
+        hook_raw = ai_parts[0]
+        hook_words = hook_raw.split()[:10]
+        hook_raw = " ".join(hook_words)
         
-        # CTA contextual gerado pela IA
-        cta_from_ai = ai_parts[3] if len(ai_parts) > 3 else ""
-        
-        # Junta Resumo + Pergunta para formar o headline completo
-        headline_text = f"{resumo}. {pergunta}" if pergunta else resumo
+        headline_text = f"{ai_parts[1]} {ai_parts[2]}"
+        cta_from_ai = ai_parts[3]
     elif len(ai_parts) >= 3:
         # Formato anterior: Linha 1 = Hook, Linha 2 = Resumo, Linha 3 = CTA/Pergunta
         hook_raw = ai_parts[0]
@@ -123,14 +125,20 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
         headline_text = gen_summary
         cta_from_ai = ""
 
+    # Normaliza pontuação que costuma virar "caixinha" (como o símbolo de reticências único)
+    hook_raw = hook_raw.replace('…', '...')
+    headline_text = headline_text.replace('…', '...')
+    cta_from_ai = (cta_from_ai or "").replace('…', '...')
+
     # Remove TODAS as hashtags e caracteres especiais (para o vídeo)
-    # Hashtags devem aparecer SOMENTE na caption
+    # Mantém pontuação essencial para o novo estilo narrativo (.. e ...)
     hook = re.sub(r'#\w+', '', hook_raw).strip()
-    hook = re.sub(r'[^\w\s\u00C0-\u00FF]', '', hook)  # Remove caracteres especiais exceto acentos
+    hook = re.sub(r'[^\w\s\u00C0-\u00FF!?.]', '', hook)  # Adicionado . ! e ?
     hook = re.sub(r'\s+', ' ', hook).strip()
     
     headline_text = re.sub(r'#\w+', '', headline_text).strip()
     headline_text = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text)  # Mantém pontuação básica
+    # IMPORTANTE: Não removemos múltiplos pontos aqui para preservar .. e ...
     headline_text = re.sub(r'\s+', ' ', headline_text).strip()
     
     # Limita a 21 palavras (15 do resumo + 6 do CTA = ideal para o formato completo)
@@ -182,15 +190,15 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     out_video = post_dir / "output" / f"gossip_{slug}.mp4"
     logo_path = _resolve_logo_path(root)
 
-    # CTA contextual: usa o gerado pela IA, ou fallback com variação aleatória
+    # CTA contextual: usa o gerado pela IA, ou fallback com variação temática
     is_pt = cgp._is_portuguese_context(item.source, item.title)
     cta_clean = re.sub(r'#\w+', '', cta_from_ai).strip() if cta_from_ai else ""
-    cta_clean = re.sub(r'[^\w\s\u00C0-\u00FF?!]', '', cta_clean).strip().upper()
+    cta_clean = re.sub(r'[^\w\s\u00C0-\u00FF?!.,]', '', cta_clean).strip().upper() # Adicionado . , ! e ?
     
-    # Força uso da lista de variações otimizadas (50% de chance) para garantir diversidade de CTAs
-    if not cta_clean or random.random() < 0.5:
-        # Usa a função _get_random_cta do módulo base
-        cta_clean = cgp._get_random_cta(item.title)
+    # Se o CTA da IA for válido (5-45 chars), usa ele; senão, gera CTA temático
+    if not cta_clean or len(cta_clean) < 5 or len(cta_clean) > 45:
+        # Usa a função _get_random_cta do módulo base com tema
+        cta_clean = cgp._get_random_cta(item.title, headline=headline_text)
         
     cta_text = cta_clean
     cgp._render_short(

@@ -35,30 +35,113 @@ from core.ai_client import OpenAIConfig, is_openai_configured
 
 
 # CTAs (Call-to-Action) para rotação aleatória
-CTA_VARIATIONS = [
-    "INSCREVA-SE",           # Original - clássico
-    "👉 SEGUE PRA MAIS",     # Informal + direto
-    "ATIVA O SININHO 🔔",    # Foco em notificação
-    "PRÓXIMO É BOMBA 🔥",    # Cria curiosidade
-    "SEGUE AQUI 👇",         # Direto com emoji
-    "QUER MAIS? SEGUE",      # Value proposition
-    "SALVA ESSE POST",       # Engajamento
-    "MARCA UM AMIGO",        # Viralização
+# Baseados nos posts de maior performance do canal:
+# - "COMENTA O QUE ACHOU!" (engajamento direto, Post Travadinha)
+# - "SALVA ESSE POST" (bookmark, Post Ana Paula)
+# - "CURTE SE GOSTA DE EMOCAO NO BBB" (condicional, Post Babu)
+CTA_VARIATIONS_GENERIC = [
+    "COMENTA O QUE ACHOU!",
+    "SALVA ESSE POST",
+    "MARCA QUEM PRECISA VER ISSO",
+    "COMENTA SUA OPINIAO!",
+    "SEGUE PRA NAO PERDER NADA",
+    "CONTA NOS COMENTARIOS!",
+    "MANDA PRO AMIGO QUE AMA FOFOCA",
+    "SALVA E MANDA PRA ALGUEM",
 ]
 
+# CTAs temáticos - selecionados automaticamente por contexto da notícia
+CTA_BY_THEME = {
+    "bbb": [
+        "CURTE SE GOSTA DE EMOCAO NO BBB",
+        "COMENTA QUEM VOCE APOIA!",
+        "SALVA PRA ACOMPANHAR O BBB",
+        "QUEM MERECE SAIR? COMENTA!",
+        "CURTE SE CONCORDA!",
+    ],
+    "separacao": [
+        "COMENTA SE JA SABIA!",
+        "ACHA QUE VOLTA? COMENTA!",
+        "CURTE SE FICOU CHOCADO!",
+        "COMENTA O QUE ACHOU!",
+    ],
+    "namoro": [
+        "COMENTA SE SHIPPA!",
+        "COMBINAM? COMENTA!",
+        "CURTE SE APROVA O CASAL!",
+        "COMENTA O QUE ACHOU!",
+    ],
+    "morte": [
+        "SALVA ESSE POST",
+        "DEIXA SEU COMENTARIO",
+        "MANDA FORCA NOS COMENTARIOS",
+    ],
+    "treta": [
+        "QUEM TEM RAZAO? COMENTA!",
+        "CURTE SE FICOU CHOCADO!",
+        "COMENTA SUA OPINIAO!",
+        "FOI JUSTO? COMENTA!",
+    ],
+    "carnaval": [
+        "COMENTA O QUE ACHOU!",
+        "CURTE SE AMOU O LOOK!",
+        "ARRASOU OU ERROU? COMENTA!",
+        "MANDA PRA QUEM AMA CARNAVAL",
+    ],
+    "gravidez": [
+        "COMENTA SE JA SABIA!",
+        "CURTE PRA DESEJAR FELICIDADES!",
+        "SALVA ESSE POST",
+    ],
+    "policia": [
+        "CURTE SE FICOU CHOCADO!",
+        "COMENTA O QUE ACHOU!",
+        "SALVA ESSE POST",
+    ],
+}
 
-def _get_random_cta(seed_text: str = "") -> str:
-    """Seleciona um CTA aleatório de forma determinística baseado no seed_text.
+
+def _detect_news_theme(headline: str) -> str:
+    """Detecta o tema da notícia para selecionar CTA e hook adequados."""
+    h = headline.lower()
+    if any(k in h for k in ["bbb", "big brother", "paredão", "paredao", "eliminação", "eliminacao",
+                             "prova do líder", "prova do lider", "anjo", "confinamento"]):
+        return "bbb"
+    if any(k in h for k in ["morre", "morte", "luto", "velório", "velorio", "enterro", "falece"]):
+        return "morte"
+    if any(k in h for k in ["separ", "divórcio", "divorcio", "trai", "affair", "corno", "termina"]):
+        return "separacao"
+    if any(k in h for k in ["namoro", "casal", "romance", "casamento", "noivar", "noivo", "noiva",
+                             "juntinhos", "flagrad", "beij"]):
+        return "namoro"
+    if any(k in h for k in ["polêmica", "polemica", "briga", "treta", "confusão", "confusao",
+                             "desabaf", "atac", "xing", "vingança", "vinganca"]):
+        return "treta"
+    if any(k in h for k in ["carnaval", "bloco", "fantasia", "desfile", "abadá", "abada"]):
+        return "carnaval"
+    if any(k in h for k in ["filha", "filho", "bebê", "bebe", "gravidez", "grávida", "gravida", "nasceu"]):
+        return "gravidez"
+    if any(k in h for k in ["pres", "detenção", "detencao", "cadeia", "processo", "policia", "policial"]):
+        return "policia"
+    return "generic"
+
+
+def _get_random_cta(seed_text: str = "", headline: str = "") -> str:
+    """Seleciona um CTA temático de forma determinística baseado no seed_text.
     
+    Usa o tema da notícia para escolher CTAs mais relevantes (padrão dos posts top).
     Se seed_text for fornecido, o mesmo texto sempre retorna o mesmo CTA.
-    Isso garante que re-processar o mesmo post mantém o mesmo CTA.
     """
+    theme = _detect_news_theme(headline or seed_text)
+    
+    # Pega CTAs do tema ou genéricos
+    cta_pool = CTA_BY_THEME.get(theme, CTA_VARIATIONS_GENERIC)
+    
     if seed_text:
-        # Usa hash do texto como seed para ser determinístico
         hash_value = int(hashlib.md5(seed_text.encode()).hexdigest(), 16)
         random.seed(hash_value)
     
-    cta = random.choice(CTA_VARIATIONS)
+    cta = random.choice(cta_pool)
     
     # Reset random seed para não afetar outros randoms
     random.seed()
@@ -581,8 +664,16 @@ def _sanitize_overlay_text(text: str) -> str:
     # Converte espaços não-quebráveis (comuns em HTML) em espaços normais
     text = text.replace('\xa0', ' ')
     
-    # Remove apenas caracteres de controle, mantém UTF-8 (acentos, emojis básicos etc)
-    # se o FFmpeg/fonte suportar. Caso contrário, apenas removemos caracteres invisíveis.
+    # Normaliza caracteres problemáticos que FFmpeg/Fontes costumam falhar em renderizar
+    # Substitui reticências (single char) por três pontos normais
+    text = text.replace('…', '...')
+    # Substitui aspas curvas por retas
+    text = text.replace('“', '"').replace('”', '"').replace('‘', "'").replace('’', "'")
+    # Substitui traços longos por hífens simples
+    text = text.replace('—', '-').replace('–', '-')
+
+    # Remove apenas caracteres de controle, mantém UTF-8 (acentos, pontuação básica)
+    # Filtro rigoroso para evitar caixinhas com X
     sanitized = "".join(c for c in text if ord(c) >= 32 or c in "\n\r")
     
     return sanitized.strip()
@@ -658,43 +749,59 @@ def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool 
 
 
 def _pick_pt_hook(headline: str) -> str:
+    """Gera hooks curtos e impactantes no estilo dos posts top-performers.
+    
+    Padrão identificado nos 3 posts de maior performance:
+    - "TRAVADINHA!" (1 palavra, gíria, impacto emocional)
+    - "JOGO SUJO" (2 palavras, expressão popular)
+    - "ANA PAULA PLANEJA VINGANÇA E COLOCA DUAS" (nome + ação forte - usado como fallback pela IA)
+    
+    Prioriza: gírias, expressões populares, frases curtíssimas de 1-3 palavras.
+    """
     h = _clean_text(headline).lower()
-    if any(k in h for k in ["morre", "morte", "luto", "velório", "velorio", "enterro"]):
-        return random.choice(["NINGUEM ACREDITOU", "CHOCOU O BRASIL", "FIM INESPERADO"])
+    if any(k in h for k in ["morre", "morte", "luto", "velório", "velorio", "enterro", "falece"]):
+        return random.choice(["PARTIU CEDO!", "PERDA BRUTAL!", "LUTO!", "CHOCANTE!", "IRREPARAVEL!"])
     if any(k in h for k in ["bbb", "big brother", "paredão", "paredao", "eliminação", "eliminacao", "prova do líder", "prova do lider", "anjo"]):
-        return random.choice(["BBB PEGOU FOGO", "PASSOU DO LIMITE?", "FOI JUSTO?", "BBB EXPLODIU"])
+        return random.choice(["JOGO SUJO", "PEGOU FOGO!", "TRETA NO BBB!", "PASSOU DOS LIMITES!", "SURREAL!", "APELOU!"])
     if any(k in h for k in ["a fazenda", "reality", "peão", "peao"]):
-        return random.choice(["FOI LONGE DEMAIS?", "REALITY EXPLODIU", "PASSOU DO LIMITE?"])
+        return random.choice(["APELOU!", "PEGOU PESADO!", "SURREAL!", "FOI LONGE!"])
     if any(k in h for k in ["filha", "filho", "bebê", "bebe", "gravidez", "grávida", "gravida", "nasceu"]):
-        return random.choice(["NINGUEM ESPERAVA", "SERA VERDADE?", "CHOCOU TODO MUNDO"])
-    if any(k in h for k in ["separ", "divórcio", "divorcio", "trai", "affair", "corno"]):
-        return random.choice(["MERECIA ISSO?", "ERA OBVIO?", "FIM MERECIDO?"])
+        return random.choice(["BOMBA!", "REVELACAO!", "SURPRESA!", "NINGUEM SABIA!"])
+    if any(k in h for k in ["separ", "divórcio", "divorcio", "trai", "affair", "corno", "termina"]):
+        return random.choice(["ACABOU!", "FIM!", "ERA OBVIO!", "TRISTE FIM!", "MERECEU?"])
     if any(k in h for k in ["polêmica", "polemica", "briga", "treta", "confusão", "confusao", "desabaf"]):
-        return random.choice(["QUEM TEM RAZAO?", "FOI EXAGERO?", "PASSOU DO LIMITE?"])
+        return random.choice(["TRETA!", "BARRACO!", "PESOU!", "EITA!", "FOI FEIO!"])
     if any(k in h for k in ["novela", "personagem", "ator", "atriz", "papel", "cena"]):
-        return random.choice(["CONCORDAM?", "FEZ SENTIDO?", "ERA NECESSARIO?"])
+        return random.choice(["CHOCANTE!", "REVIRAVOLTA!", "NINGUEM ESPERAVA!"])
     if any(k in h for k in ["cirurgia", "hospital", "internado", "internada", "saúde", "saude", "doença", "doenca"]):
-        return random.choice(["NINGUEM SABIA", "SERA GRAVE?", "CHOCOU GERAL"])
-    if any(k in h for k in ["namoro", "casal", "romance", "casamento", "noivar", "noivo", "noiva"]):
-        return random.choice(["COMBINAM?", "VAI DURAR?", "VOCES APROVAM?"])
-    if any(k in h for k in ["carnaval", "bloco", "fantasia", "desfile"]):
-        return random.choice(["FOI DEMAIS?", "ARRASOU OU ERROU?", "APROVAM O LOOK?"])
-    return random.choice(["VOCE CONCORDA?", "CHOCOU GERAL", "NINGUEM ESPERAVA"])
+        return random.choice(["PREOCUPANTE!", "GRAVE!", "ALERTA!", "FORCA!"])
+    if any(k in h for k in ["namoro", "casal", "romance", "casamento", "noivar", "noivo", "noiva", "juntinhos", "flagrad", "beij"]):
+        return random.choice(["TRAVADINHA!", "SHIPPO!", "ASSUMIRAM!", "QUE CASAL!", "FLAGRADOS!"])
+    if any(k in h for k in ["carnaval", "bloco", "fantasia", "desfile", "abadá", "abada"]):
+        return random.choice(["TRAVADINHA!", "LACROU!", "ARRASOU!", "QUE ISSO!", "CARNAVAL!"])
+    if any(k in h for k in ["pres", "cadeia", "processo", "policia", "policial", "detido", "detida"]):
+        return random.choice(["PRESO!", "PESADO!", "CHOCANTE!", "INACREDITAVEL!"])
+    if any(k in h for k in ["vingança", "vinganca", "estratégia", "estrategia", "articul", "plano"]):
+        return random.choice(["JOGO SUJO", "CALCULISTA!", "FRIEZA!", "APELOU!"])
+    return random.choice(["CHOCANTE!", "EITA!", "BOMBA!", "SURREAL!", "PESOU!"])
 
 
 def _pick_en_hook(headline: str) -> str:
+    """Generates short, impactful English hooks matching the top-performer style."""
     h = _clean_text(headline).lower()
     if any(k in h for k in ["dies", "death", "dead", "passed away", "funeral"]):
-        return random.choice(["NO ONE EXPECTED THIS", "GONE TOO SOON?", "SHOCKING LOSS"])
+        return random.choice(["GONE!", "DEVASTATING!", "HEARTBREAKING!", "SHOCKING LOSS!"])
     if any(k in h for k in ["split", "divorce", "cheat", "scandal", "affair"]):
-        return random.choice(["WAS IT DESERVED?", "WENT TOO FAR?", "WHO WAS WRONG?"])
+        return random.choice(["ITS OVER!", "CAUGHT!", "SCANDAL!", "EXPOSED!", "BETRAYED!"])
     if any(k in h for k in ["baby", "pregnan", "daughter", "son", "born"]):
-        return random.choice(["DID YOU EXPECT THIS?", "IS THIS REAL?", "NO ONE SAW THIS COMING"])
+        return random.choice(["BOMBSHELL!", "SURPRISE!", "NO WAY!", "REVEALED!"])
     if any(k in h for k in ["arrest", "jail", "court", "lawsuit", "sued"]):
-        return random.choice(["DESERVED OR NOT?", "WENT TOO FAR?", "WAS IT FAIR?"])
+        return random.choice(["BUSTED!", "SHOCKING!", "ARRESTED!", "JUSTICE!"])
     if any(k in h for k in ["wedding", "engaged", "dating", "romance", "couple"]):
-        return random.choice(["WILL IT LAST?", "DO THEY MATCH?", "DO YOU APPROVE?"])
-    return random.choice(["DO YOU AGREE?", "NO ONE EXPECTED THIS", "IS THIS RIGHT?"])
+        return random.choice(["CAUGHT!", "LOVE!", "OFFICIAL!", "TOGETHER!"])
+    if any(k in h for k in ["fight", "feud", "clash", "drama", "beef"]):
+        return random.choice(["DRAMA!", "BEEF!", "MESSY!", "WILD!"])
+    return random.choice(["SHOCKING!", "WILD!", "BOMBSHELL!", "NO WAY!", "EXPOSED!"])
 
 
 def _is_portuguese_context(source: str, headline: str) -> bool:
@@ -749,27 +856,32 @@ def _summarize_news_text(item: NewsItem) -> str:
             
             if is_pt:
                 system_instr = (
-                    "Voce e um roteirista profissional de Shorts/Reels de fofoca brasileira especializado em viralizacao.\n\n"
+                    "Voce e um roteirista viral de Shorts/Reels de fofoca brasileira. Seu estilo e inspirado nos posts que mais performam:\n\n"
 
-                    "FORMATO OBRIGATORIO — exatamente 5 linhas de TEXTO PURO, nada antes e nada depois:\n\n"
+                    "EXEMPLOS DE POSTS TOP (use como referencia de tom e estrutura):\n"
+                    "Post 1: Hook='TRAVADINHA!' Body='BRUNA MARQUEZINE E SHAWN MENDES CURTEM CARNAVAL JUNTINHOS'\n"
+                    "Post 2: Hook='JOGO SUJO' Body='BABU COBROU JOGO LIMPO E A TRETA EXPLODIU NA PROVA DO LIDER DO BBB 26, COM DISCUSSAO E ELIMINACOES.. VOCE APOIA...'\n"
+                    "Post 3: Hook='ANA PAULA PLANEJA VINGANCA E COLOCA DUAS' Body='ELA ARTICULA PARA ELIMINAR SAMIRA E OUTROS ADVERSARIOS.. A WEB REAGE COM CHOQUE E CRITICAS AS ESTRATEGIAS AGRESSIVAS.'\n\n"
 
-                    "Linha 1 = HOOK (ACAO IMEDIATA): Descreva o evento principal com VERBO FORTE + QUEM + O QUE. Maximo 8 palavras. TUDO EM CAPS.\n"
-                    "Linha 2 = FATO DIRETO: O que aconteceu de forma objetiva e curta.\n"
-                    "Linha 3 = REACAO: Como a web, participantes ou envolvidos reagiram.\n"
-                    "Linha 4 = IMPACTO: Consequencia imediata no jogo, narrativa ou relacao.\n"
-                    "Linha 5 = PERGUNTA POLARIZADA: Pergunta que obriga o espectador a escolher um lado.\n\n"
+                    "FORMATO OBRIGATORIO — exatamente 5 linhas de TEXTO PURO:\n\n"
 
-                    "REGRAS DE OURO PARA HOOKS:\n"
-                    "- O HOOK deve ser uma FRASE COMPLETA sobre o evento principal da noticia.\n"
-                    "- Comece com VERBO DE ACAO forte (CHOCOU, REVELOU, EXPLODIU, DESABAFOU, ATACOU, BEIJOU, FLAGROU, etc).\n"
-                    "- Exemplo BOM: 'BRUNA MARQUEZINE FLAGRADA COM NOVO AFFAIR'\n"
-                    "- Exemplo BOM: 'PARTICIPANTE EXPULSO APOS BRIGA NO BBB'\n"
-                    "- Exemplo RUIM: 'VOCE DESPREZA O CARNAVAL E DECIDE' (generico, nao fala do evento real)\n"
-                    "- NUNCA comece com 'VOCE', 'O QUE', 'VEJA', 'CONHECE'.\n"
-                    "- Evite palavras vagas como 'clima', 'situacao', 'momento', 'algo por tras'.\n"
-                    "- O hook SEMPRE deve dizer QUEM fez O QUE de forma especifica.\n"
-                    "- Linhas 2, 3 e 4 devem seguir exatamente: Fato -> Reacao -> Impacto. Sem contexto longo.\n"
-                    "- Linguagem direta, ritmo rapido, frases curtas.\n"
+                    "Linha 1 = HOOK: Palavra ou expressao CURTISSIMA de impacto (1 a 3 palavras). "
+                    "Use girias, expressoes populares, exclamacoes. Ex: 'TRAVADINHA!', 'JOGO SUJO', 'TRETA!', 'ACABOU!', 'BOMBA!', 'EITA!', 'PESOU!'. "
+                    "Se o evento for muito especifico, pode usar NOME + ACAO (max 6 palavras). Ex: 'ANA PAULA PLANEJA VINGANCA'\n"
+                    "Linha 2 = FATO PRINCIPAL: O que aconteceu. Direto, com NOMES dos envolvidos. Max 2 frases.\n"
+                    "Linha 3 = SUSPENSE/REACAO: Como a web ou os envolvidos reagiram. USE '..' (dois pontos) antes de revelar a reacao para criar suspense. Ex: '.. A WEB REAGIU COM CHOQUE'\n"
+                    "Linha 4 = IMPACTO: Consequencia ou desdobramento. Se possivel termine com '...' (reticencias) para gerar curiosidade.\n"
+                    "Linha 5 = CTA EMOCIONAL: Uma frase que pede ACAO ESPECIFICA conectada ao tema. "
+                    "Ex: 'COMENTA O QUE ACHOU!', 'CURTE SE GOSTA DE EMOCAO NO BBB', 'SALVA ESSE POST', 'QUEM TEM RAZAO? COMENTA!', 'MANDA PRA QUEM AMA FOFOCA'\n\n"
+
+                    "REGRAS DE OURO:\n"
+                    "- Hook DEVE ser CURTISSIMO e de IMPACTO. Preferencia por 1-3 palavras.\n"
+                    "- Body (linhas 2-4) deve ser NARRATIVO, como se estivesse contando pra um amigo.\n"
+                    "- Use '..' (dois pontos seguidos) para criar PAUSAS DRAMATICAS no meio do texto.\n"
+                    "- Use '...' (reticencias) no FINAL para gerar curiosidade.\n"
+                    "- Frases CURTAS e DIRETAS. Sem enrolacao.\n"
+                    "- NUNCA comece o hook com 'VOCE', 'O QUE', 'VEJA', 'CONHECE'.\n"
+                    "- Linguagem INFORMAL, como se falasse com amigo no WhatsApp.\n"
                     "- ZERO hashtags.\n"
                     "- ZERO emojis.\n"
                     "- TODAS AS LINHAS EM CAPS LOCK.\n\n"
@@ -779,24 +891,31 @@ def _summarize_news_text(item: NewsItem) -> str:
                 user_content = f"Noticia:\n{context}"
             else:
                 system_instr = (
-                    "You are a Shorts/Reels gossip scriptwriter specialized in viral content.\n\n"
-                    "MANDATORY FORMAT — exactly 5 lines of plain text, nothing else:\n\n"
-                    "Line 1 = HOOK (IMMEDIATE ACTION): Describe the main event with STRONG VERB + WHO + WHAT. Max 8 words.\n"
-                    "Line 2 = DIRECT FACT: What happened objectively.\n"
-                    "Line 3 = REACTION: How the web/house reacted.\n"
-                    "Line 4 = IMPACT: The immediate consequence or narrative shift.\n"
-                    "Line 5 = POLARIZED QUESTION: A question that forces the viewer to take a stand.\n\n"
-                    "GOLDEN RULES FOR HOOKS:\n"
-                    "- HOOK must be a COMPLETE PHRASE about the actual news event.\n"
-                    "- Start with STRONG ACTION VERB (SHOCKED, REVEALED, EXPLODED, ATTACKED, CAUGHT, KISSED, etc).\n"
-                    "- Example GOOD: 'BRUNA MARQUEZINE CAUGHT WITH NEW AFFAIR'\n"
-                    "- Example GOOD: 'CONTESTANT EXPELLED AFTER BBB FIGHT'\n"
-                    "- Example BAD: 'YOU DESPISE CARNIVAL AND DECIDE' (generic, not about the real event)\n"
-                    "- NEVER start with 'YOU', 'WHAT', 'SEE', 'CHECK'.\n"
-                    "- Avoid vague words like 'vibe', 'situation', 'moment', 'something behind'.\n"
-                    "- Hook ALWAYS says WHO did WHAT specifically.\n"
-                    "- BODY (Lines 2, 3, 4) follows: Fact -> Reaction -> Impact. No fluff.\n"
-                    "- FINAL QUESTION must be polarized.\n"
+                    "You are a viral Shorts/Reels gossip scriptwriter. Your style is inspired by top-performing posts.\n\n"
+
+                    "TOP POST EXAMPLES (use as tone/structure reference):\n"
+                    "Post 1: Hook='CAUGHT!' Body='BRUNA MARQUEZINE AND SHAWN MENDES SPOTTED TOGETHER AT CARNIVAL'\n"
+                    "Post 2: Hook='DIRTY GAME' Body='BABU DEMANDED FAIR PLAY AND THE FIGHT EXPLODED AT BBB 26 LEADER CHALLENGE, WITH ARGUMENTS AND ELIMINATIONS.. DO YOU SUPPORT...'\n"
+                    "Post 3: Hook='REVENGE PLAN' Body='SHE PLOTS TO ELIMINATE SAMIRA AND OTHER RIVALS.. THE WEB REACTS WITH SHOCK AND CRITICISM.'\n\n"
+
+                    "MANDATORY FORMAT — exactly 5 lines of plain text:\n\n"
+                    "Line 1 = HOOK: Ultra-short impact word or phrase (1-3 words). "
+                    "Use slang, popular expressions, exclamations. Ex: 'CAUGHT!', 'DIRTY GAME', 'DRAMA!', 'ITS OVER!', 'BOMBSHELL!'. "
+                    "If the event is very specific, can use NAME + ACTION (max 6 words).\n"
+                    "Line 2 = MAIN FACT: What happened. Direct, with NAMES. Max 2 sentences.\n"
+                    "Line 3 = SUSPENSE/REACTION: How the web or people reacted. USE '..' before revealing the reaction for suspense. Ex: '.. THE WEB REACTED WITH SHOCK'\n"
+                    "Line 4 = IMPACT: Consequence or follow-up. End with '...' (ellipsis) to create curiosity.\n"
+                    "Line 5 = EMOTIONAL CTA: A phrase requesting SPECIFIC ACTION connected to the topic. "
+                    "Ex: 'COMMENT WHAT YOU THINK!', 'LIKE IF THIS SHOCKED YOU', 'SAVE THIS POST', 'WHO IS RIGHT? COMMENT!'\n\n"
+
+                    "GOLDEN RULES:\n"
+                    "- Hook MUST be ULTRA-SHORT and IMPACTFUL. Prefer 1-3 words.\n"
+                    "- Body (lines 2-4) must be NARRATIVE, like telling a friend.\n"
+                    "- Use '..' for DRAMATIC PAUSES in the middle of text.\n"
+                    "- Use '...' at the END to create curiosity.\n"
+                    "- Short, direct sentences. No fluff.\n"
+                    "- NEVER start hook with 'YOU', 'WHAT', 'SEE', 'CHECK'.\n"
+                    "- Informal language, like texting a friend.\n"
                     "- ALL CAPS, zero hashtags, zero emojis.\n\n"
                     "Respond ONLY with the 5 lines. Nothing before, nothing after."
                 )
@@ -1337,30 +1456,30 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         # Se a IA devolveu múltiplas variações separadas por '---', pega só a primeira
         # (as content_lines já removeram '---', mas podem ter linhas de múltiplas variações)
         # ── Parsing the high-performance 5-line structure ──
+        # Linha 5 agora é CTA emocional (não mais pergunta polarizada)
+        ai_cta = ""
         if len(content_lines) >= 5:
             hook = content_lines[0]
             # Combine Fact + Reaction + Impact into body
             body = f"{content_lines[1]} {content_lines[2]} {content_lines[3]}"
-            question = content_lines[4]
-            headline_text = f"{body} {question}"
+            ai_cta = content_lines[4]  # CTA sugerido pela IA
+            headline_text = body
         elif len(content_lines) == 4:
             hook = content_lines[0]
             body = f"{content_lines[1]} {content_lines[2]}"
-            question = content_lines[3]
-            headline_text = f"{body} {question}"
+            ai_cta = content_lines[3]
+            headline_text = body
         elif len(content_lines) == 3:
             hook = content_lines[0]
             body = content_lines[1]
-            question = content_lines[2]
-            headline_text = f"{body} {question}"
+            ai_cta = content_lines[2]
+            headline_text = body
         elif len(content_lines) == 2:
             hook = content_lines[0]
             headline_text = content_lines[1]
         elif len(content_lines) == 1:
-            # Fallback: IA devolveu tudo em 1 linha, usa fallback completo
             hook, headline_text = _build_text_layers(item.title, item.source)
         else:
-            # Fallback completo: IA não devolveu nada útil
             hook, headline_text = _build_text_layers(item.title, item.source)
 
         # ── Limpeza leve (sem truncamento agressivo) ──
@@ -1372,6 +1491,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         hook_clean = _trim_trailing_connectors(hook_clean)
 
         headline_text_clean = re.sub(r'#\w+', '', headline_text).strip()
+        # Preserva '..' (suspense) e '...' (curiosidade) - padrão dos posts top
         headline_text_clean = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text_clean)
         headline_text_clean = re.sub(r'\s+', ' ', headline_text_clean).strip()
 
@@ -1423,9 +1543,14 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         slug = _make_slug(item.title)
         output_video = post_dir / "output" / f"gossip_{slug}.mp4"
 
-        # ── CTA: SEMPRE usa variações da lista predefinida ──
-        # Usa o título como seed para ter consistência (mesmo post = mesmo CTA)
-        cta_text = _sanitize_cta_text(_get_random_cta(item.title))
+        # ── CTA: Prefere CTA da IA (linha 5), fallback para CTA temático ──
+        # A IA agora gera CTAs emocionais como "COMENTA O QUE ACHOU!", "CURTE SE GOSTA DE EMOCAO NO BBB"
+        if ai_cta and len(ai_cta) >= 5 and len(ai_cta) <= 45:
+            # Usa o CTA gerado pela IA (já otimizado para o tema)
+            cta_text = _sanitize_cta_text(ai_cta.upper())
+        else:
+            # Fallback: CTA temático baseado no conteúdo da notícia
+            cta_text = _sanitize_cta_text(_get_random_cta(item.title, headline=headline_text_clean))
         
         logo_path = None
         if args.logo:
