@@ -549,11 +549,31 @@ def _fix_orphan_pronoun_tail(text: str) -> str:
     return text
 
 
-def _ensure_headline_completeness(text: str, item: NewsItem) -> str:
-    """If the generated headline/body looks like a fragment, try to extend it using available context
+def _fix_web_fragment(text: str) -> str:
+    """Fix fragment endings like '... A WEB.' which feel truncated in PT-BR overlays."""
+    if not text:
+        return text
+    t = re.sub(r"\s+", " ", text.strip())
 
-    Uses item.title, item.description or the start of the article text to make the phrase self-contained
-    and ensures terminal punctuation. Keeps the result brief.
+    # If ends with 'A WEB.' or 'A WEB' with no verb, complete it.
+    if re.search(r"\bA WEB\b\s*\.?$", t, flags=re.I):
+        # If there's already a 'A WEB' reaction earlier, just drop the tail.
+        # Example: '... A WEB PIRÔU ... A WEB.' -> remove last fragment.
+        t = re.sub(r"(\bA WEB\b)\s*\.?$", "A WEB REAGIU.", t, flags=re.I)
+        return t
+
+    # Also handle '.. A WEB.'
+    if re.search(r"\.\.\s*A WEB\s*\.?$", t, flags=re.I):
+        t = re.sub(r"\.\.\s*A WEB\s*\.?$", ".. A WEB REAGIU.", t, flags=re.I)
+        return t
+
+    return t
+
+
+def _ensure_headline_completeness(text: str, item: NewsItem) -> str:
+    """If the generated headline/body looks like a fragment, try to extend it using available context.
+
+    Uses item.title, item.description or the start of the article text to make the phrase self-contained.
     """
     t = (text or "").strip()
     if not t:
@@ -562,7 +582,7 @@ def _ensure_headline_completeness(text: str, item: NewsItem) -> str:
     # clean last token
     tokens = t.split()
     last_token = re.sub(r"[^\w\u00C0-\u00FF]", "", tokens[-1]).upper() if tokens else ""
-    short_set = {"E", "OU", "O", "A", "DO", "DA", "DOS", "DAS", "DE", "EM", "NO", "NA", "MAS", "COM", "POR", "PELO", "PELA", "ELA", "ELE"}
+    short_set = {"E", "OU", "O", "A", "DO", "DA", "DOS", "DAS", "DE", "EM", "NO", "NA", "MAS", "COM", "POR", "PELO", "PELA", "ELA", "ELE", "QUE"}
 
     looks_fragment = False
     if len(tokens) < 6:
@@ -572,13 +592,20 @@ def _ensure_headline_completeness(text: str, item: NewsItem) -> str:
     if re.search(r"\.{2,}$", t) or t.endswith(","):
         looks_fragment = True
 
+    # Special-case: ends with a dangling named-entity only (e.g. '... DISSE QUE BABU.')
+    if re.search(r"\bDISSE\s+QUE\s+[A-ZÀ-Ü]{2,}\.?$", t, flags=re.I):
+        looks_fragment = True
+
     if not looks_fragment:
-        # ensure punctuation
         if not re.search(r"[.!?]$", t):
-            if "?" in t:
-                t = t + "?"
-            else:
-                t = t + "."
+            t += "?" if "?" in t else "."
+        return t
+
+    # If we have a typical dangling pattern, prefer a short closure instead of appending random words
+    if re.search(r"\bDISSE\s+QUE\b\s*[A-ZÀ-Ü]{2,}\.?$", t, flags=re.I):
+        t = re.sub(r"\bDISSE\s+QUE\s+[A-ZÀ-Ü]{2,}\.?$", "DISSE TUDO.", t, flags=re.I).strip()
+        if not re.search(r"[.!?]$", t):
+            t += "."
         return t
 
     # try to assemble a short completion from title/description/article
@@ -588,7 +615,6 @@ def _ensure_headline_completeness(text: str, item: NewsItem) -> str:
 
     candidate = ""
     if title and title.upper() not in t.upper():
-        # pick a compact variant of the title (avoid repeating full title)
         candidate = " ".join(title.split()[:10])
     elif desc:
         candidate = " ".join(desc.split()[:12])
@@ -601,11 +627,18 @@ def _ensure_headline_completeness(text: str, item: NewsItem) -> str:
         words = combined.split()
         if len(words) > 22:
             combined = " ".join(words[:22])
+
+        # Avoid ending on connectors / too-short last token
+        end_tokens = combined.split()
+        if end_tokens:
+            end_last = re.sub(r"[^\w\u00C0-\u00FF]", "", end_tokens[-1]).upper()
+            if end_last in short_set or len(end_last) <= 2:
+                combined = " ".join(end_tokens[:-1]).strip()
+
         if not re.search(r"[.!?]$", combined):
             combined += "."
         return combined
 
-    # fallback: just ensure punctuation
     if not re.search(r"[.!?]$", t):
         t += "."
     return t
@@ -895,7 +928,7 @@ def _summarize_news_text(item: NewsItem) -> str:
     context = context[:2200]
 
     cfg = OpenAIConfig()
-    summary_model = os.getenv("GOSSIP_SUMMARY_MODEL", "gpt-4.1").strip() or cfg.model
+    summary_model = os.getenv("GOSSIP_SUMMARY_MODEL", cfg.model).strip()
     if is_openai_configured(cfg):
         try:
             api_key = os.getenv(cfg.api_key_env, "").strip()
@@ -923,6 +956,7 @@ def _summarize_news_text(item: NewsItem) -> str:
 
                     "REGRAS DE OURO:\n"
                     "- Hook DEVE ser CURTISSIMO e de IMPACTO. Preferencia por 1-3 palavras.\n"
+                    "- Evite repetir hooks genericos como 'EITA!'. So use se nao houver alternativa especifica.\n"
                     "- Body (linhas 2-4) deve ser NARRATIVO, como se estivesse contando pra um amigo.\n"
                     "- Linhas 2, 3 e 4 juntas devem ter entre 20 e 32 palavras no total.\n"
                     "- Cada uma das linhas 2, 3 e 4 deve ter no maximo 11 palavras.\n"
@@ -959,6 +993,7 @@ def _summarize_news_text(item: NewsItem) -> str:
 
                     "GOLDEN RULES:\n"
                     "- Hook MUST be ULTRA-SHORT and IMPACTFUL. Prefer 1-3 words.\n"
+                    "- Avoid repetitive generic hooks like 'WOW!'; prefer context-specific hooks.\n"
                     "- Body (lines 2-4) must be NARRATIVE, like telling a friend.\n"
                     "- Lines 2, 3 and 4 combined must have 20 to 32 words total.\n"
                     "- Each of lines 2, 3 and 4 must have at most 11 words.\n"
@@ -1036,6 +1071,97 @@ def _send_text_to_telegram(text: str) -> bool:
         return False
 
 
+def _rewrite_overlay_body_if_needed(text: str, *, item: NewsItem) -> str:
+    """Rewrite body to fit overlay constraints when it would overflow or looks fragmentary."""
+    t = " ".join((text or "").split())
+    if not t:
+        return t
+
+    # rewrite triggers
+    needs = False
+
+    # common fragment patterns that look truncated on overlay
+    if re.search(r"\bA WEB\b\s*\.?\s*$", t, flags=re.I):
+        needs = True
+    if re.search(r"\bA WEB\b\s*\.?\s*", t, flags=re.I) and len(t) < 180:
+        # short texts containing 'A WEB' often end up as a dangling stub after wrapping
+        needs = True
+    if re.search(r"\b(ELE|ELA|ELES|ELAS)\s*$", t, flags=re.I):
+        needs = True
+    if re.search(r"\b(NAO|NÃO)\.$", t, flags=re.I):
+        needs = True
+    if t.endswith("..") or t.endswith(","):
+        needs = True
+    if len(t) > 200:
+        needs = True
+
+    if not needs:
+        return t
+
+    cfg = OpenAIConfig()
+    if not is_openai_configured(cfg):
+        # local fallback: remove dangling 'A WEB' and trailing stubs
+        t2 = re.sub(r"\s*\bA WEB\b\s*\.?\s*$", "", t, flags=re.I).strip()
+        t2 = re.sub(r"\s+\bNAO\.$", ".", t2, flags=re.I).strip()
+        return t2 or t
+
+    try:
+        api_key = os.getenv(cfg.api_key_env, "").strip()
+        url = f"{cfg.base_url.rstrip('/')}/chat/completions"
+
+        context = _clean_text(f"{item.title}. {item.description}")
+        context = context[:1600]
+
+        payload = {
+            "model": os.getenv("GOSSIP_OVERLAY_MODEL", os.getenv("GOSSIP_SUMMARY_MODEL", cfg.model)).strip() or cfg.model,
+            "temperature": 0.6,
+            "max_completion_tokens": 120,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "Voce escreve TEXTO DE TELA (overlay) para shorts de fofoca BR. "
+                        "Precisa ficar CURTO e com sentido completo. Sem emojis. Sem hashtags. "
+                        "Nao termine com frase quebrada tipo 'A WEB.'."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Reescreva o corpo abaixo para caber em no max 5 linhas na tela.\n"
+                        "Regras:\n"
+                        "- 1 paragrafo unico, 120 a 160 caracteres (ideal).\n"
+                        "- Comece com o fato principal (nomes).\n"
+                        "- Inclua reacao da web ou consequencia, mas em frase completa.\n"
+                        "- Pode usar '..' para pausa dramatica.\n"
+                        "- Termine com ponto final ou reticencias '...'.\n\n"
+                        f"Contexto da noticia: {context}\n\n"
+                        f"Corpo atual: {t}"
+                    ),
+                },
+            ],
+        }
+
+        r = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=60,
+        )
+        if r.status_code >= 400:
+            return t
+        data = r.json()
+        out = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content")
+        if not out:
+            return t
+        out = " ".join(str(out).split())
+        # final guardrails
+        out = re.sub(r"\s*\bA WEB\b\s*\.?\s*$", "", out, flags=re.I).strip()
+        return out or t
+    except Exception:
+        return t
+
+
 def _render_short(
     image_path: Path,
     headline_file: Path,
@@ -1110,7 +1236,47 @@ def _render_short(
 
     # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
-    
+
+    # Fit strategy:
+    # 1) Try to fit into max 5 lines by scaling font more aggressively.
+    # 2) If still too long, rewrite via IA to a short overlay-friendly body.
+    main_lines, font_size, line_spacing = _layout_main_body_text(
+        main_input,
+        base_width=34,
+        max_lines=5,
+        min_scale=0.72,
+    )
+    # If the last wrapped line becomes a dangling stub (ex.: 'WEB.'), rewrite and relayout.
+    if (len(main_lines) > 5) or (main_lines and re.fullmatch(r"(A\s+)?WEB\.?", main_lines[-1].strip(), flags=re.I)):
+        # rewrite text to fit and recompute layout
+        try:
+            # load item metadata to help rewrite (news.json is written before render)
+            meta_path = out_video.parent / "news.json"
+            item_for_rewrite = None
+            if meta_path.exists():
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                # best-effort reconstruction
+                item_for_rewrite = NewsItem(
+                    source=meta.get("source") or source,
+                    feed_url=meta.get("feed_url") or "",
+                    title=meta.get("title") or "",
+                    link=meta.get("link") or "",
+                    published=meta.get("published") or "",
+                    image_url=meta.get("image_url") or "",
+                    description=meta.get("description") or "",
+                )
+            if item_for_rewrite:
+                main_input2 = _rewrite_overlay_body_if_needed(main_input, item=item_for_rewrite)
+                main_lines, font_size, line_spacing = _layout_main_body_text(
+                    main_input2,
+                    base_width=34,
+                    max_lines=5,
+                    min_scale=0.70,
+                )
+                main_input = main_input2
+        except Exception:
+            pass
+
     # Não trunca o texto - use todo o conteúdo disponível
     # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
     # Isso garante que frases completas sejam exibidas
@@ -1314,7 +1480,40 @@ def _render_short_video(
 
     # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
-    
+
+    main_lines, font_size, line_spacing = _layout_main_body_text(
+        main_input,
+        base_width=34,
+        max_lines=5,
+        min_scale=0.72,
+    )
+    if (len(main_lines) > 5) or (main_lines and re.fullmatch(r"(A\s+)?WEB\.?", main_lines[-1].strip(), flags=re.I)):
+        try:
+            meta_path = out_video.parent / "news.json"
+            item_for_rewrite = None
+            if meta_path.exists():
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                item_for_rewrite = NewsItem(
+                    source=meta.get("source") or source,
+                    feed_url=meta.get("feed_url") or "",
+                    title=meta.get("title") or "",
+                    link=meta.get("link") or "",
+                    published=meta.get("published") or "",
+                    image_url=meta.get("image_url") or "",
+                    description=meta.get("description") or "",
+                )
+            if item_for_rewrite:
+                main_input2 = _rewrite_overlay_body_if_needed(main_input, item=item_for_rewrite)
+                main_lines, font_size, line_spacing = _layout_main_body_text(
+                    main_input2,
+                    base_width=34,
+                    max_lines=5,
+                    min_scale=0.70,
+                )
+                main_input = main_input2
+        except Exception:
+            pass
+
     # Seleciona cores determinísticas baseadas no texto
     try:
         seed_text = main_input or headline_file.read_text(encoding="utf-8")
@@ -1446,6 +1645,72 @@ def _render_short_video(
     run_ffmpeg(ff.ffmpeg, args, stream_output=False)
 
 
+def _normalize_pt_hook(hook: str, headline: str) -> str:
+    """Fixes odd/rare PT-BR hooks produced by the model.
+
+    - Avoids uncommon verb-only hooks like 'CONFISSOU!'
+    - Avoids weird constructions like 'EITA CONFISSOU!'
+    """
+    if not hook:
+        return hook
+
+    h = _clean_text(hook).upper().strip()
+    h = re.sub(r"\s+", " ", h)
+
+    hh = _clean_text(headline).lower()
+
+    def _fallback() -> str:
+        if any(k in hh for k in ["bbb", "pared", "big brother", "lider", "anjo"]):
+            return random.choice(["ABRIU O JOGO!", "EITA!", "JOGO SUJO", "PEGOU FOGO!"])
+        if any(k in hh for k in ["confiss", "revel", "segredo", "abriu o jogo"]):
+            return random.choice(["ABRIU O JOGO!", "BOMBA!", "EITA!"])
+        return random.choice(["EITA!", "BOMBA!", "PESOU!"])
+
+    # Case 1: verb-only hook (sounds unnatural in BR gossip overlay)
+    verb_only_bad = {"CONFISSOU!", "REVELOU!", "ASSUMIU!", "DESABAFOU!"}
+    if h in verb_only_bad:
+        return _fallback()
+
+    # Case 2: 'EITA X!'
+    m = re.match(r"^(EITA)\s+([A-ZÀ-Ü]+)\!$", h)
+    if m:
+        word = m.group(2)
+        banned = {"CONFISSOU", "REVELOU", "ASSUMIU", "DESABAFOU"}
+        if word in banned:
+            return _fallback()
+
+    # Generic cleanup
+    h = h.rstrip(".")
+    if h.endswith("..."):
+        h = h[:-3].strip() + "!"
+    return h
+
+
+def _specialize_pt_hook(hook: str, headline: str) -> str:
+    """Reduce generic PT hooks by replacing broad hooks with context-aware alternatives."""
+    h = _clean_text(hook).upper().strip()
+    title = _clean_text(headline).lower()
+    generic = {"EITA!", "BOMBA!", "CHOCANTE!", "SURREAL!", "PESOU!"}
+
+    if h and h not in generic:
+        return h
+
+    if any(k in title for k in ["confiss", "revel", "abriu o jogo", "segredo", "assum"]):
+        return "ABRIU O JOGO!"
+    if any(k in title for k in ["bbb", "paredão", "paredao", "elimina", "votação", "votacao"]):
+        return "NO ALVO!"
+    if any(k in title for k in ["briga", "treta", "discuss", "barraco", "bate-boca"]):
+        return "TRETA NO AR!"
+    if any(k in title for k in ["beij", "romance", "casal", "namoro"]):
+        return "CLIMA ESQUENTOU!"
+    if any(k in title for k in ["pris", "polic", "process", "detid"]):
+        return "CASO PESADO!"
+
+    options = ["ABRIU O JOGO!", "PEGOU FOGO!", "TRETA NO AR!", "CLIMA TENSO!"]
+    idx = int(hashlib.md5((headline or "").encode("utf-8")).hexdigest(), 16) % len(options)
+    return options[idx]
+
+
 def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
     """Função centralizada para criar um post a partir de um NewsItem."""
     root = Path(__file__).resolve().parents[1]
@@ -1504,7 +1769,13 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             hook = content_lines[0]
             headline_text = content_lines[1]
         elif len(content_lines) == 1:
-            hook, headline_text = _build_text_layers(item.title, item.source)
+            single_line = content_lines[0]
+            if len(single_line.split()) <= 5 and re.search(r"[!?]$", single_line):
+                hook = single_line
+                _, headline_text = _build_text_layers(item.title, item.source)
+            else:
+                hook, _ = _build_text_layers(item.title, item.source)
+                headline_text = single_line
         else:
             hook, headline_text = _build_text_layers(item.title, item.source)
 
@@ -1513,6 +1784,10 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         hook_clean = re.sub(r'#\w+', '', hook).strip()
         hook_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', hook_clean)
         hook_clean = re.sub(r'\s+', ' ', hook_clean).strip()
+        # Ajuste PT-BR: evita hooks estranhos (ex.: 'EITA CONFISSOU!')
+        if _is_portuguese_context(item.source, item.title):
+            hook_clean = _normalize_pt_hook(hook_clean, item.title)
+            hook_clean = _specialize_pt_hook(hook_clean, item.title)
         # Garante que o hook não termina em palavra conectora (artigo/preposição/conjunção)
         hook_clean = _trim_trailing_connectors(hook_clean)
 
@@ -1520,14 +1795,24 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         # Preserva '..' (suspense) e '...' (curiosidade) - padrão dos posts top
         headline_text_clean = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text_clean)
         headline_text_clean = re.sub(r'\s+', ' ', headline_text_clean).strip()
-
+        headline_text_clean = _fix_orphan_pronoun_tail(headline_text_clean)
+        # Normaliza o marcador dramático: evita ' . .. ' e garante apenas '..' com espaços ao redor
+        headline_text_clean = re.sub(r"\s*\.{1,2}\s*\.\.\s*", " .. ", headline_text_clean)
+        headline_text_clean = re.sub(r"\s*\.\.\s*", " .. ", headline_text_clean)
+        headline_text_clean = re.sub(r"\s{2,}", " ", headline_text_clean).strip()
+        # Evita finais truncados tipo 'A WEB.'
+        headline_text_clean = _fix_web_fragment(headline_text_clean)
+        # Se o corpo aparentar fragmento (ex.: termina com 'TEM QUE SABER O MEU...'), tenta completar
+        headline_text_clean = _ensure_headline_completeness(headline_text_clean, item)
+        # Passo final anti-fragmento para overlays curtos.
+        headline_text_clean = _rewrite_overlay_body_if_needed(headline_text_clean, item=item)
         # Evita corpo gigante e NÃO corta no meio da última frase
         # (limite pensado para caber em ~7-8 linhas na overlay)
         headline_text_clean = _truncate_at_sentence_boundary(headline_text_clean, max_chars=320)
 
         # Garante pontuação final para sensação de completude
         if headline_text_clean and not re.search(r"[.!?]$", headline_text_clean):
-            headline_text_clean += "?" if "?" in headline_text else "."
+            headline_text_clean += "?" if "?" in headline_text_clean else "."
 
         # Força caixa alta
         headline_text_clean = headline_text_clean.upper()
@@ -1587,6 +1872,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
                 if candidate.exists():
                     logo_path = candidate
                     break
+
         _render_short(
             image_path,
             headline_file,

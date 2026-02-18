@@ -135,11 +135,26 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     hook = re.sub(r'#\w+', '', hook_raw).strip()
     hook = re.sub(r'[^\w\s\u00C0-\u00FF!?.]', '', hook)  # Adicionado . ! e ?
     hook = re.sub(r'\s+', ' ', hook).strip()
+    if hasattr(cgp, "_is_portuguese_context") and cgp._is_portuguese_context(item.source, item.title):
+        if hasattr(cgp, "_normalize_pt_hook"):
+            hook = cgp._normalize_pt_hook(hook, item.title)
+        if hasattr(cgp, "_specialize_pt_hook"):
+            hook = cgp._specialize_pt_hook(hook, item.title)
     
     headline_text = re.sub(r'#\w+', '', headline_text).strip()
     headline_text = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text)  # Mantém pontuação básica
     # IMPORTANTE: Não removemos múltiplos pontos aqui para preservar .. e ...
     headline_text = re.sub(r'\s+', ' ', headline_text).strip()
+    if hasattr(cgp, "_fix_web_fragment"):
+        headline_text = cgp._fix_web_fragment(headline_text)
+    if hasattr(cgp, "_ensure_headline_completeness"):
+        headline_text = cgp._ensure_headline_completeness(headline_text, item)
+    if hasattr(cgp, "_rewrite_overlay_body_if_needed"):
+        headline_text = cgp._rewrite_overlay_body_if_needed(headline_text, item=item)
+    if hasattr(cgp, "_truncate_at_sentence_boundary"):
+        headline_text = cgp._truncate_at_sentence_boundary(headline_text, max_chars=320)
+    if headline_text and not re.search(r"[.!?]$", headline_text):
+        headline_text += "."
     
     # Limita a 21 palavras (15 do resumo + 6 do CTA = ideal para o formato completo)
     words = headline_text.split()
