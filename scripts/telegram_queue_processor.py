@@ -70,16 +70,15 @@ def _extract_video_metadata(video_url: str) -> tuple[str, str]:
     return "Flagra no X", ""
 
 
-def _build_video_copy(raw_title: str) -> tuple[str, str]:
-    """Monta hook/headline curtos para render de vídeo."""
-    clean = raw_title.split("|")[0]
+def _normalize_video_text(raw: str) -> str:
+    clean = (raw or "").split("|")[0]
     clean = re.sub(r"\(@[^)]+\)", "", clean)
     clean = re.sub(r"\bon\s+x\b", "", clean, flags=re.IGNORECASE)
     clean = re.sub(r"https?://\S+", "", clean)
     clean = clean.replace("—", "-").replace("–", "-")
 
     if " - " in clean:
-        left, right = clean.split(" - ", 1)
+        _, right = clean.split(" - ", 1)
         if len(right.split()) >= 4:
             clean = right
 
@@ -91,7 +90,19 @@ def _build_video_copy(raw_title: str) -> tuple[str, str]:
             filtered_chars.append(ch)
     clean = "".join(filtered_chars)
 
-    clean = re.sub(r"\s+", " ", clean).strip(" -|")
+    return re.sub(r"\s+", " ", clean).strip(" -|")
+
+
+def _build_video_copy(raw_title: str, raw_description: str = "") -> tuple[str, str]:
+    """Monta hook/headline curtos para render de vídeo."""
+    clean = _normalize_video_text(raw_title)
+    desc_clean = _normalize_video_text(raw_description)
+
+    # Alguns títulos do X chegam truncados com reticências.
+    # Se houver descrição útil, prefere o começo dela para evitar palavra cortada.
+    if clean.endswith("...") and desc_clean and len(desc_clean.split()) >= 6:
+        clean = desc_clean
+
     clean = clean or "Flagra que deu o que falar"
 
     lowered = clean.lower()
@@ -190,7 +201,7 @@ def process_video_request(request: Dict[str, Any]) -> bool:
     try:
         print(f"🎬 Executando create_new_video_post.py para VÍDEO: {video_url}")
         raw_title, raw_description = _extract_video_metadata(video_url)
-        hook, headline = _build_video_copy(raw_title)
+        hook, headline = _build_video_copy(raw_title, raw_description)
         duration = float(request.get("duration", 15))
         telegram_title = _clean_telegram_text(raw_title, 180) or headline
         telegram_description = _clean_telegram_text(raw_description, 700) or headline

@@ -1108,10 +1108,6 @@ def _render_short(
     # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
     
-    # Remove reticências automáticas que cortam frases
-    if main_input.endswith("..."):
-        main_input = main_input[:-3].rstrip()
-    
     # Não trunca o texto - use todo o conteúdo disponível
     # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
     # Isso garante que frases completas sejam exibidas
@@ -1315,10 +1311,6 @@ def _render_short_video(
 
     # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
-    
-    # Remove reticências automáticas que cortam frases
-    if main_input.endswith("..."):
-        main_input = main_input[:-3].rstrip()
     
     # Seleciona cores determinísticas baseadas no texto
     try:

@@ -13,6 +13,31 @@ ID_FILE = QUEUE_DIR / "last_update_id.txt"
 # Token via env var
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or "8519683231:AAH1RsrgaYmo3v99hd_yfktgoFWHU2AWrP0"
 
+
+def send_message(chat_id: str, text: str) -> bool:
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    try:
+        response = requests.post(url, json={"chat_id": chat_id, "text": text}, timeout=20)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+def find_existing_request(chat_id: str, video_url: str) -> str | None:
+    for req_file in sorted(QUEUE_DIR.glob("request_*.json"), reverse=True):
+        try:
+            req = json.loads(req_file.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+
+        if (
+            str(req.get("chat_id", "")) == chat_id
+            and str(req.get("video_url", "")).strip() == video_url
+            and str(req.get("status", "")).strip() in {"pending", "processing"}
+        ):
+            return str(req.get("id", "")).strip() or None
+    return None
+
 def get_last_id():
     if ID_FILE.exists():
         try:
@@ -65,6 +90,17 @@ def poll():
                 if video_url:
                     if "?" in video_url:
                         video_url = video_url.split("?")[0]
+
+                    existing_id = find_existing_request(chat_id, video_url)
+                    if existing_id:
+                        send_message(
+                            chat_id,
+                            (
+                                f"🔁 Link já está na fila (ID: {existing_id}).\n"
+                                "⚡ Processamento em andamento, não precisa reenviar."
+                            ),
+                        )
+                        continue
                     
                     request_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
                     req = {
@@ -83,6 +119,13 @@ def poll():
                         json.dump(req, f, indent=2)
                     
                     print(f"✅ Requisição {request_id} salva!")
+                    send_message(
+                        chat_id,
+                        (
+                            f"✅ Link recebido! ID: {request_id}\n"
+                            "⚡ Vou processar agora. Não precisa enviar o link de novo."
+                        ),
+                    )
                     new_requests += 1
         
         return new_requests
