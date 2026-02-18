@@ -79,6 +79,8 @@ Exemplos:
     parser.add_argument("--name", default="video_post", help="Nome do arquivo (sem extensão)")
     parser.add_argument("--skip-preview", action="store_true", help="Pula o preview do texto")
     parser.add_argument("--skip-telegram", action="store_true", help="Não envia para o Telegram")
+    parser.add_argument("--telegram-title", default="", help="Título para caption do Telegram")
+    parser.add_argument("--telegram-description", default="", help="Descrição para caption do Telegram")
     
     args = parser.parse_args()
     
@@ -156,7 +158,15 @@ Exemplos:
     
     # Enviar para Telegram
     if not args.skip_telegram:
-        caption = f"🔥 {args.hook}\n\n{args.headline}\n\n#Fofoca #Gossip"
+        title = (args.telegram_title or args.headline).strip()
+        description = (args.telegram_description or args.headline).strip()
+        if len(description) > 700:
+            description = description[:700].rsplit(" ", 1)[0] + "..."
+        caption = (
+            f"🎬 Título: {title}\n"
+            f"📝 Descrição: {description}\n\n"
+            f"🔗 Fonte: {args.url}"
+        )
         print("\n📱 Enviando para Telegram...")
         
         try:

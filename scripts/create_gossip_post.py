@@ -1399,7 +1399,7 @@ def _render_short_video(
             "-map",
             "[v]",
             "-map",
-            "0:a:0",
+            "0:a?",
             "-c:v",
             "libx264",
             "-c:a",
@@ -1431,7 +1431,7 @@ def _render_short_video(
             "-map",
             "0:v:0",
             "-map",
-            "0:a:0",
+            "0:a?",
             "-c:v",
             "libx264",
             "-c:a",
@@ -1612,10 +1612,13 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         hook_telegram = " ".join(hook_clean.split())  # Remove extra spaces/newlines
         headline_telegram = " ".join(headline_text_clean.split())  # Single line
         
+        telegram_title = " ".join(_clean_text(item.title).split()) or headline_telegram
+        telegram_description = f"{hook_telegram} {headline_telegram}".strip()
+        if len(telegram_description) > 700:
+            telegram_description = telegram_description[:700].rsplit(" ", 1)[0] + "..."
         telegram_caption = (
-            f"🔥 {hook_telegram}\n\n"
-            f"{headline_telegram}\n\n"
-            f"{hashtags}\n\n"
+            f"📰 Título: {telegram_title}\n"
+            f"📝 Descrição: {telegram_description}\n\n"
             f"📍 Fonte: {item.source.upper()}\n"
             f"🔗 {item.link}"
         )
@@ -1635,25 +1638,42 @@ def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Create gossip shorts from RSS feeds.")
     p.add_argument("--profile", choices=("br", "intl"), default="br")
     p.add_argument("--url", default="", help="Direct link to a news article.")
+    p.add_argument(
+        "--video-url",
+        default="",
+        help="Backward-compatible alias for --url used by Telegram video queue.",
+    )
+    p.add_argument(
+        "--duration",
+        type=float,
+        default=0.0,
+        help="Legacy Telegram argument kept for compatibility (currently unused).",
+    )
     p.add_argument("--logo", default="", help="Optional logo path (png/webp/jpg).")
     p.add_argument("--count", type=int, default=1, help="Number of posts to generate.")
     return p.parse_args()
 
 
-def main() -> None:
+def main() -> int:
     args = _parse_args()
-    
-    if args.url:
-        print(f"🔗 Processando URL direta: {args.url}")
+
+    input_url = args.url or args.video_url
+
+    if input_url:
+        print(f"🔗 Processando URL direta: {input_url}")
         # Tenta identificar a fonte pelo domínio
         source = "custom"
         for name, _ in FEED_PROFILES["br"] + FEED_PROFILES["intl"]:
-            if name in args.url:
+            if name in input_url:
                 source = name
                 break
-        item = _fetch_news_from_url(args.url, source)
-        if item:
-            create_post_for_item(item, args)
+        item = _fetch_news_from_url(input_url, source)
+        if not item:
+            print("❌ Não foi possível obter conteúdo da URL informada.")
+            return 1
+        if not create_post_for_item(item, args):
+            return 1
+        return 0
     else:
         feeds = FEED_PROFILES[args.profile]
         processed_titles = []
@@ -1674,7 +1694,8 @@ def main() -> None:
             except Exception as e:
                 print(f"❌ Erro no loop de geração: {e}")
                 break
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
