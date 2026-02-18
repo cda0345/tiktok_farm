@@ -20,6 +20,28 @@ sys.path.insert(0, str(Path(__file__).parent))
 from create_gossip_post import _render_short_video, _send_video_to_telegram, _get_random_cta
 
 
+def _send_document_to_telegram(file_path: Path, caption: str) -> bool:
+    """Envia um arquivo (document) para o Telegram (ex: vídeo original)."""
+    # Importa do create_gossip_post para manter token/chat id centralizados.
+    import os
+    import requests
+
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or ""
+    TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID") or ""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID não configurados")
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
+    try:
+        with open(file_path, "rb") as f:
+            files = {"document": f}
+            data = {"chat_id": TELEGRAM_CHAT_ID, "caption": caption}
+            r = requests.post(url, files=files, data=data, timeout=180)
+            return r.status_code == 200
+    except Exception:
+        return False
+
+
 def preview_text(text: str):
     """Mostra preview de como o texto será quebrado."""
     if text.endswith("..."):
@@ -81,6 +103,11 @@ Exemplos:
     parser.add_argument("--skip-telegram", action="store_true", help="Não envia para o Telegram")
     parser.add_argument("--telegram-title", default="", help="Título para caption do Telegram")
     parser.add_argument("--telegram-description", default="", help="Descrição para caption do Telegram")
+    parser.add_argument(
+        "--send-original",
+        action="store_true",
+        help="Após enviar o post, envia também o vídeo original na sequência",
+    )
     
     args = parser.parse_args()
 
@@ -110,12 +137,24 @@ Exemplos:
     # Baixar vídeo
     print("\n📥 Baixando vídeo do Twitter...")
     try:
-        subprocess.run([
-            "yt-dlp",
-            "-f", "mp4",
-            "-o", str(video_raw),
-            args.url
-        ], check=True)
+        # Evita '-f mp4' (gera warning e pode pegar qualidade baixa/inexistente).
+        # Preferir melhor vídeo+áudio e fazer merge para mp4 quando possível.
+        subprocess.run(
+            [
+                "yt-dlp",
+                "-S",
+                "res,ext:mp4:m4a",
+                "-f",
+                "bv*+ba/best",
+                "--merge-output-format",
+                "mp4",
+                "--no-warning",
+                "-o",
+                str(video_raw),
+                args.url,
+            ],
+            check=True,
+        )
         print(f"✅ Vídeo baixado: {video_raw}")
     except subprocess.CalledProcessError as e:
         print(f"❌ Erro ao baixar vídeo: {e}")
@@ -175,6 +214,16 @@ Exemplos:
         try:
             if _send_video_to_telegram(output_video, caption):
                 print("✅ Vídeo enviado com sucesso!")
+                if args.send_original:
+                    print("\n📎 Enviando vídeo original na sequência...")
+                    sent = _send_document_to_telegram(
+                        video_raw,
+                        f"📎 VÍDEO ORIGINAL\n\n🔗 Fonte: {args.url}",
+                    )
+                    if sent:
+                        print("✅ Original enviado!")
+                    else:
+                        print("⚠️ Não foi possível enviar o original")
             else:
                 print("⚠️ Erro ao enviar para Telegram")
         except Exception as e:

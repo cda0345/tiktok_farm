@@ -106,14 +106,29 @@ def _build_video_copy(raw_title: str, raw_description: str = "") -> tuple[str, s
     clean = clean or "Flagra que deu o que falar"
 
     lowered = clean.lower()
-    if any(k in lowered for k in ("beijo", "beij", "casal", "romance", "apaixon")):
+    # Variar hooks por tema para evitar repetição.
+    # Mantém curto e em CAPS (1 linha), mas com mais diversidade no fallback.
+    if any(k in lowered for k in ("beijo", "beij", "casal", "romance", "apaixon", "ficou")):
         hook = "NAO E MAIS SEGREDO!"
-    elif any(k in lowered for k in ("treta", "briga", "discuss", "barraco")):
+    elif any(k in lowered for k in ("trai", "traica", "chifre", "ex", "termin", "separ")):
+        hook = "DEU RUIM!"
+    elif any(k in lowered for k in ("treta", "briga", "discuss", "barraco", "clim", "grit")):
         hook = "A TRETA EXPLODIU!"
-    elif any(k in lowered for k in ("bbb", "paredao", "elimin")):
+    elif any(k in lowered for k in ("bbb", "paredao", "elimin", "prova", "lider", "confession")):
         hook = "PEGOU FOGO!"
+    elif any(k in lowered for k in ("flagra", "aparece", "vazou", "video", "imagens", "registro")):
+        hook = "EXCLUSIVO!"
     else:
-        hook = "VEJA O FLAGRANTE!"
+        # Fallback variado e determinístico (baseado no texto) para reduzir "VEJA O FLAGRANTE".
+        options = [
+            "OLHA ISSO!",
+            "CHOCANTE!",
+            "INACREDITAVEL!",
+            "BOMBA!",
+            "FOI AGORA!",
+            "NINGUEM ESPERAVA!",
+        ]
+        hook = options[abs(hash(clean)) % len(options)]
 
     headline = clean.upper()
     if len(headline) > 120:
@@ -220,6 +235,7 @@ def process_video_request(request: Dict[str, Any]) -> bool:
             "--name",
             f"telegram_{request['id']}",
             "--skip-preview",
+            "--send-original",
             "--telegram-title",
             telegram_title,
             "--telegram-description",
