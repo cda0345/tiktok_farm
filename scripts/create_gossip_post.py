@@ -100,6 +100,29 @@ CTA_BY_THEME = {
     ],
 }
 
+HOOK_HISTORY_FILE = "hook_history.json"
+HOOK_HISTORY_WINDOW = 12
+HOOK_HISTORY_MAX = 120
+
+# Estruturas com maior risco de parecer "reused/inauthentic" quando repetidas em sequência.
+HOOK_REPEAT_MARKERS_PT = [
+    "VIROU TRETA",
+    "REAGE ASSIM",
+    "NINGUEM ESPERAVA",
+    "MEXEU COM A WEB",
+    "CHOCOU A WEB",
+    "PEGOU FOGO",
+    "DEU O QUE FALAR",
+    "SURGE COM NOVA",
+]
+HOOK_REPEAT_MARKERS_EN = [
+    "TURNED INTO DRAMA",
+    "NOBODY EXPECTED",
+    "SHOCKED THE INTERNET",
+    "REACTS LIKE THIS",
+    "WENT VIRAL",
+]
+
 
 def _detect_news_theme(headline: str) -> str:
     """Detecta o tema da notícia para selecionar CTA e hook adequados."""
@@ -520,8 +543,58 @@ def _smart_truncate_hook(hook_raw: str, max_words: int = 5) -> str:
 
 
 def _trim_trailing_connectors(text: str) -> str:
-    """Disabled to avoid cutting off meaningful parts of the headline."""
-    return text
+    """Remove trailing connectors/articles that make hooks look cut off."""
+    if not text:
+        return text
+    connectors = {
+        "E", "OU", "O", "A", "OS", "AS", "UM", "UMA", "UNS", "UMAS",
+        "DE", "DO", "DA", "DOS", "DAS", "NO", "NA", "NOS", "NAS",
+        "EM", "COM", "POR", "PARA", "PELO", "PELA", "SEM",
+        "THE", "A", "AN", "OF", "TO", "IN", "ON", "AT", "FOR", "WITH", "AND", "OR",
+    }
+
+    words = [w for w in text.split() if w]
+    while words:
+        last_clean = re.sub(r"[^\w\u00C0-\u00FF]", "", words[-1]).upper()
+        if not last_clean:
+            words.pop()
+            continue
+        if last_clean in connectors:
+            words.pop()
+            continue
+        break
+    return " ".join(words).strip()
+
+
+def _fit_hook_to_overlay(hook: str, *, max_chars: int = 24, max_lines: int = 2, min_words: int = 6) -> str:
+    """Fit hook into overlay without truncating in awkward places."""
+    words = [w for w in _clean_text(hook).split() if w]
+    if not words:
+        return ""
+
+    def _wrap_count(text: str) -> int:
+        return len(textwrap.wrap(text, width=max_chars, break_long_words=False, break_on_hyphens=False))
+
+    candidate_words = words[:]
+    candidate = _trim_trailing_connectors(" ".join(candidate_words))
+    while _wrap_count(candidate) > max_lines and len(candidate_words) > min_words:
+        candidate_words.pop()
+        candidate = _trim_trailing_connectors(" ".join(candidate_words))
+
+    # Last-resort hard cap to avoid line clipping by _wrap_for_overlay.
+    if _wrap_count(candidate) > max_lines:
+        budget = max_chars * max_lines
+        picked: list[str] = []
+        used = 0
+        for w in candidate_words:
+            add = len(w) + (1 if picked else 0)
+            if used + add > budget:
+                break
+            picked.append(w)
+            used += add
+        candidate = _trim_trailing_connectors(" ".join(picked))
+
+    return candidate.strip()
 
 
 def _fix_orphan_pronoun_tail(text: str) -> str:
@@ -568,6 +641,107 @@ def _fix_web_fragment(text: str) -> str:
         return t
 
     return t
+
+
+def _polish_body_punctuation(text: str) -> str:
+    """Normalize punctuation artifacts produced by model rewrites."""
+    if not text:
+        return text
+    t = re.sub(r"\s+", " ", text.strip())
+    # Remove comma before period/exclamation/question.
+    t = re.sub(r",\s*([.!?])", r"\1", t)
+    # Remove duplicated commas.
+    t = re.sub(r",\s*,+", ", ", t)
+    # Avoid ending with a dangling comma.
+    t = re.sub(r",\s*$", "", t)
+    # Avoid abrupt pronoun+verb tails (e.g., '... ELA DISSE.').
+    t = re.sub(r"\b(ELA|ELE)\s+DISSE\s*\.?$", r"\1 DISSE TUDO.", t, flags=re.I)
+    return t
+
+
+def _normalize_hook_text(text: str) -> str:
+    import unicodedata
+
+    base = unicodedata.normalize("NFKD", (text or "")).encode("ascii", "ignore").decode("ascii")
+    base = re.sub(r"[^\w\s]", " ", base.upper())
+    return re.sub(r"\s+", " ", base).strip()
+
+
+def _load_recent_hook_history(history_path: Path, *, window: int = HOOK_HISTORY_WINDOW) -> list[str]:
+    if not history_path.exists():
+        return []
+    try:
+        raw = json.loads(history_path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+    hooks = raw.get("hooks") if isinstance(raw, dict) else None
+    if not isinstance(hooks, list):
+        return []
+
+    recent: list[str] = []
+    for entry in hooks[-window:]:
+        if isinstance(entry, dict):
+            h = _normalize_hook_text(str(entry.get("hook") or ""))
+            if h:
+                recent.append(h)
+    return recent
+
+
+def _save_hook_to_history(history_path: Path, hook_text: str, *, title: str = "", source: str = "") -> None:
+    payload: dict[str, object]
+    hooks: list[dict[str, str]]
+    if history_path.exists():
+        try:
+            payload = json.loads(history_path.read_text(encoding="utf-8"))
+        except Exception:
+            payload = {"version": 1, "hooks": []}
+    else:
+        payload = {"version": 1, "hooks": []}
+
+    existing = payload.get("hooks")
+    hooks = existing if isinstance(existing, list) else []
+    hooks.append(
+        {
+            "created_at_utc": datetime.now(timezone.utc).isoformat(),
+            "hook": hook_text,
+            "normalized": _normalize_hook_text(hook_text),
+            "title": _clean_text(title),
+            "source": _clean_text(source),
+        }
+    )
+    payload["hooks"] = hooks[-HOOK_HISTORY_MAX:]
+    history_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _hook_has_repeated_marker(candidate: str, recent_hooks: list[str], *, is_pt: bool) -> bool:
+    c = _normalize_hook_text(candidate)
+    if not c:
+        return False
+
+    if c in set(recent_hooks):
+        return True
+
+    markers = HOOK_REPEAT_MARKERS_PT if is_pt else HOOK_REPEAT_MARKERS_EN
+    for marker in markers:
+        m = _normalize_hook_text(marker)
+        if m in c and any(m in rh for rh in recent_hooks):
+            return True
+    return False
+
+
+def _diversify_hook_if_reused(hook: str, *, headline: str, source: str, recent_hooks: list[str]) -> str:
+    is_pt = _is_portuguese_context(source, headline)
+    candidate = hook
+
+    for _ in range(4):
+        if not _hook_has_repeated_marker(candidate, recent_hooks, is_pt=is_pt):
+            return candidate
+        replacement = _pick_pt_hook(headline) if is_pt else _pick_en_hook(headline)
+        replacement = _fit_hook_to_overlay(replacement, max_chars=24, max_lines=2, min_words=6)
+        candidate = _trim_trailing_connectors(replacement)
+
+    return candidate
 
 
 def _ensure_headline_completeness(text: str, item: NewsItem) -> str:
@@ -828,59 +1002,54 @@ def _layout_main_body_text(
 
 
 def _pick_pt_hook(headline: str) -> str:
-    """Gera hooks curtos e impactantes no estilo dos posts top-performers.
-    
-    Padrão identificado nos 3 posts de maior performance:
-    - "TRAVADINHA!" (1 palavra, gíria, impacto emocional)
-    - "JOGO SUJO" (2 palavras, expressão popular)
-    - "ANA PAULA PLANEJA VINGANÇA E COLOCA DUAS" (nome + ação forte - usado como fallback pela IA)
-    
-    Prioriza: gírias, expressões populares, frases curtíssimas de 1-3 palavras.
+    """Gera hooks em tom editorial-curioso para fallback local.
+
+    Objetivo: soar menos genérico/repetido e mais específico do fato.
     """
     h = _clean_text(headline).lower()
     if any(k in h for k in ["morre", "morte", "luto", "velório", "velorio", "enterro", "falece"]):
-        return random.choice(["PARTIU CEDO!", "PERDA BRUTAL!", "LUTO!", "CHOCANTE!", "IRREPARAVEL!"])
+        return random.choice(["UM DETALHE NO ADEUS CHOCOU A WEB", "O CLIMA DE LUTO TEVE REACAO INESPERADA"])
     if any(k in h for k in ["bbb", "big brother", "paredão", "paredao", "eliminação", "eliminacao", "prova do líder", "prova do lider", "anjo"]):
-        return random.choice(["JOGO SUJO", "PEGOU FOGO!", "TRETA NO BBB!", "PASSOU DOS LIMITES!", "SURREAL!", "APELOU!"])
+        return random.choice(["A JOGADA QUE MUDOU O CLIMA DA CASA", "NINGUEM ESPERAVA ESSE MOVIMENTO NO BBB"])
     if any(k in h for k in ["a fazenda", "reality", "peão", "peao"]):
-        return random.choice(["APELOU!", "PEGOU PESADO!", "SURREAL!", "FOI LONGE!"])
+        return random.choice(["O REALITY VIROU OUTRO DEPOIS DESSA CENA", "UMA FALA ACENDEU O CLIMA NO REALITY"])
     if any(k in h for k in ["filha", "filho", "bebê", "bebe", "gravidez", "grávida", "gravida", "nasceu"]):
-        return random.choice(["BOMBA!", "REVELACAO!", "SURPRESA!", "NINGUEM SABIA!"])
+        return random.choice(["A REVELACAO QUE PEGOU OS FAS DE SURPRESA", "NINGUEM VIU ESSE ANUNCIO CHEGAR"])
     if any(k in h for k in ["separ", "divórcio", "divorcio", "trai", "affair", "corno", "termina"]):
-        return random.choice(["ACABOU!", "FIM!", "ERA OBVIO!", "TRISTE FIM!", "MERECEU?"])
+        return random.choice(["O SINAL QUE ANTECIPOU O FIM DO CASAL", "UM GESTO LEVANTOU SUSPEITA DE TERMINO"])
     if any(k in h for k in ["polêmica", "polemica", "briga", "treta", "confusão", "confusao", "desabaf"]):
-        return random.choice(["TRETA!", "BARRACO!", "PESOU!", "EITA!", "FOI FEIO!"])
+        return random.choice(["A TRETA GANHOU OUTRO NIVEL NOS BASTIDORES", "UMA FALA DEIXOU A WEB DIVIDIDA"])
     if any(k in h for k in ["novela", "personagem", "ator", "atriz", "papel", "cena"]):
-        return random.choice(["CHOCANTE!", "REVIRAVOLTA!", "NINGUEM ESPERAVA!"])
+        return random.choice(["A CENA QUE VIROU ASSUNTO FORA DA NOVELA", "UMA MUDANCA DE ROTEIRO MEXEU COM A WEB"])
     if any(k in h for k in ["cirurgia", "hospital", "internado", "internada", "saúde", "saude", "doença", "doenca"]):
-        return random.choice(["PREOCUPANTE!", "GRAVE!", "ALERTA!", "FORCA!"])
+        return random.choice(["O BOLETIM TROUXE UM DETALHE DELICADO", "A ATUALIZACAO MEDICA GEROU ALERTA ENTRE FAS"])
     if any(k in h for k in ["namoro", "casal", "romance", "casamento", "noivar", "noivo", "noiva", "juntinhos", "flagrad", "beij"]):
-        return random.choice(["TRAVADINHA!", "SHIPPO!", "ASSUMIRAM!", "QUE CASAL!", "FLAGRADOS!"])
+        return random.choice(["UM FLAGRA REACENDEU OS RUMORES DO CASAL", "O MOMENTO QUE FEZ A WEB SHIPPAR DE NOVO"])
     if any(k in h for k in ["carnaval", "bloco", "fantasia", "desfile", "abadá", "abada"]):
-        return random.choice(["TRAVADINHA!", "LACROU!", "ARRASOU!", "QUE ISSO!", "CARNAVAL!"])
+        return random.choice(["UM DETALHE DA FANTASIA CHAMOU ATENCAO", "NO CARNAVAL ESSE MOMENTO NAO PASSOU BATIDO"])
     if any(k in h for k in ["pres", "cadeia", "processo", "policia", "policial", "detido", "detida"]):
-        return random.choice(["PRESO!", "PESADO!", "CHOCANTE!", "INACREDITAVEL!"])
+        return random.choice(["O CASO GANHOU UM NOVO CAPITULO NA JUSTICA", "UMA VIRADA NO CASO SURPREENDEU A WEB"])
     if any(k in h for k in ["vingança", "vinganca", "estratégia", "estrategia", "articul", "plano"]):
-        return random.choice(["JOGO SUJO", "CALCULISTA!", "FRIEZA!", "APELOU!"])
-    return random.choice(["CHOCANTE!", "EITA!", "BOMBA!", "SURREAL!", "PESOU!"])
+        return random.choice(["A ESTRATEGIA QUE MUDOU O RUMO DO JOGO", "UM PLANO SILENCIOSO COM CONSEQUENCIA IMEDIATA"])
+    return random.choice(["TEM UM DETALHE NESSA HISTORIA QUE INTRIGA", "ESSA CENA ACABOU VIRANDO ASSUNTO NA WEB"])
 
 
 def _pick_en_hook(headline: str) -> str:
-    """Generates short, impactful English hooks matching the top-performer style."""
+    """Generates editorial-curiosity hooks for local fallback."""
     h = _clean_text(headline).lower()
     if any(k in h for k in ["dies", "death", "dead", "passed away", "funeral"]):
-        return random.choice(["GONE!", "DEVASTATING!", "HEARTBREAKING!", "SHOCKING LOSS!"])
+        return random.choice(["ONE DETAIL IN THE FAREWELL SHOCKED FANS", "THE TRIBUTE MOMENT NOBODY EXPECTED"])
     if any(k in h for k in ["split", "divorce", "cheat", "scandal", "affair"]):
-        return random.choice(["ITS OVER!", "CAUGHT!", "SCANDAL!", "EXPOSED!", "BETRAYED!"])
+        return random.choice(["THE SIGN THAT HINTED THE BREAKUP EARLY", "ONE GESTURE REIGNITED CHEATING RUMORS"])
     if any(k in h for k in ["baby", "pregnan", "daughter", "son", "born"]):
-        return random.choice(["BOMBSHELL!", "SURPRISE!", "NO WAY!", "REVEALED!"])
+        return random.choice(["THE ANNOUNCEMENT THAT CAUGHT FANS OFF GUARD", "NOBODY SAW THIS REVEAL COMING"])
     if any(k in h for k in ["arrest", "jail", "court", "lawsuit", "sued"]):
-        return random.choice(["BUSTED!", "SHOCKING!", "ARRESTED!", "JUSTICE!"])
+        return random.choice(["THE CASE JUST TOOK AN UNEXPECTED TURN", "A NEW COURT UPDATE CHANGED EVERYTHING"])
     if any(k in h for k in ["wedding", "engaged", "dating", "romance", "couple"]):
-        return random.choice(["CAUGHT!", "LOVE!", "OFFICIAL!", "TOGETHER!"])
+        return random.choice(["A SPOTTED MOMENT REIGNITED COUPLE RUMORS", "THE CLIP THAT MADE FANS SHIP AGAIN"])
     if any(k in h for k in ["fight", "feud", "clash", "drama", "beef"]):
-        return random.choice(["DRAMA!", "BEEF!", "MESSY!", "WILD!"])
-    return random.choice(["SHOCKING!", "WILD!", "BOMBSHELL!", "NO WAY!", "EXPOSED!"])
+        return random.choice(["ONE LINE PUSHED THIS FEUD TO A NEW LEVEL", "THE BACKSTAGE DETAIL SPLIT THE INTERNET"])
+    return random.choice(["THERES ONE DETAIL HERE PEOPLE CANT IGNORE", "THIS MOMENT QUICKLY TOOK OVER THE INTERNET"])
 
 
 def _is_portuguese_context(source: str, headline: str) -> bool:
@@ -902,7 +1071,8 @@ def _build_text_layers(headline: str, source: str) -> tuple[str, str]:
 
     # Hook: pergunta temática impactante (sem forçar nome de pessoa)
     hook_text = _pick_pt_hook(clean) if is_pt else _pick_en_hook(clean)
-    hook = _wrap_for_overlay(hook_text, max_chars=20, max_lines=2, upper=True)
+    hook_text = _fit_hook_to_overlay(hook_text, max_chars=24, max_lines=2, min_words=6)
+    hook = _wrap_for_overlay(hook_text, max_chars=24, max_lines=2, upper=True)
 
     # Body: usa o título limpo como resumo
     summary = clean
@@ -945,9 +1115,9 @@ def _summarize_news_text(item: NewsItem) -> str:
 
                     "FORMATO OBRIGATORIO — exatamente 5 linhas de TEXTO PURO:\n\n"
 
-                    "Linha 1 = HOOK: Palavra ou expressao CURTISSIMA de impacto (1 a 3 palavras). "
-                    "Use girias, expressoes populares, exclamacoes. Ex: 'TRAVADINHA!', 'JOGO SUJO', 'TRETA!', 'ACABOU!', 'BOMBA!', 'EITA!', 'PESOU!'. "
-                    "Se o evento for muito especifico, pode usar NOME + ACAO (max 6 palavras). Ex: 'ANA PAULA PLANEJA VINGANCA'\n"
+                    "Linha 1 = HOOK: Frase-curta editorial de curiosidade (preferencia 6 a 9 palavras; max 12). "
+                    "Precisa soar especifica do caso e nao generica/repetida. "
+                    "Evite ganchos de uma palavra tipo 'EITA'/'BOMBA' sem contexto.\n"
                     "Linha 2 = FATO PRINCIPAL: O que aconteceu. Direto, com NOMES dos envolvidos. Max 2 frases.\n"
                     "Linha 3 = SUSPENSE/REACAO: Como a web ou os envolvidos reagiram. USE '..' (dois pontos) antes de revelar a reacao para criar suspense. Ex: '.. A WEB REAGIU COM CHOQUE'\n"
                     "Linha 4 = IMPACTO: Consequencia ou desdobramento. Se possivel termine com '...' (reticencias) para gerar curiosidade.\n"
@@ -955,8 +1125,8 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "Ex: 'COMENTA O QUE ACHOU!', 'CURTE SE GOSTA DE EMOCAO NO BBB', 'SALVA ESSE POST', 'QUEM TEM RAZAO? COMENTA!', 'MANDA PRA QUEM AMA FOFOCA'\n\n"
 
                     "REGRAS DE OURO:\n"
-                    "- Hook DEVE ser CURTISSIMO e de IMPACTO. Preferencia por 1-3 palavras.\n"
-                    "- Evite repetir hooks genericos como 'EITA!'. So use se nao houver alternativa especifica.\n"
+                    "- Hook deve ter cara editorial: frase curta, especifica e com curiosidade.\n"
+                    "- Evite hooks genericos/repetidos como 'EITA!' e 'BOMBA!'.\n"
                     "- Body (linhas 2-4) deve ser NARRATIVO, como se estivesse contando pra um amigo.\n"
                     "- Linhas 2, 3 e 4 juntas devem ter entre 20 e 32 palavras no total.\n"
                     "- Cada uma das linhas 2, 3 e 4 deve ter no maximo 11 palavras.\n"
@@ -982,9 +1152,9 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "Post 3: Hook='REVENGE PLAN' Body='SHE PLOTS TO ELIMINATE SAMIRA AND OTHER RIVALS.. THE WEB REACTS WITH SHOCK AND CRITICISM.'\n\n"
 
                     "MANDATORY FORMAT — exactly 5 lines of plain text:\n\n"
-                    "Line 1 = HOOK: Ultra-short impact word or phrase (1-3 words). "
-                    "Use slang, popular expressions, exclamations. Ex: 'CAUGHT!', 'DIRTY GAME', 'DRAMA!', 'ITS OVER!', 'BOMBSHELL!'. "
-                    "If the event is very specific, can use NAME + ACTION (max 6 words).\n"
+                    "Line 1 = HOOK: Editorial curiosity line (prefer 6 to 9 words; max 12). "
+                    "It must sound specific to the story, not generic/reused. "
+                    "Avoid one-word hooks like 'WOW'/'BOMBSHELL' without context.\n"
                     "Line 2 = MAIN FACT: What happened. Direct, with NAMES. Max 2 sentences.\n"
                     "Line 3 = SUSPENSE/REACTION: How the web or people reacted. USE '..' before revealing the reaction for suspense. Ex: '.. THE WEB REACTED WITH SHOCK'\n"
                     "Line 4 = IMPACT: Consequence or follow-up. End with '...' (ellipsis) to create curiosity.\n"
@@ -992,8 +1162,8 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "Ex: 'COMMENT WHAT YOU THINK!', 'LIKE IF THIS SHOCKED YOU', 'SAVE THIS POST', 'WHO IS RIGHT? COMMENT!'\n\n"
 
                     "GOLDEN RULES:\n"
-                    "- Hook MUST be ULTRA-SHORT and IMPACTFUL. Prefer 1-3 words.\n"
-                    "- Avoid repetitive generic hooks like 'WOW!'; prefer context-specific hooks.\n"
+                    "- Hook should feel editorial: short, specific and curiosity-driven.\n"
+                    "- Avoid repetitive generic hooks like 'WOW!'.\n"
                     "- Body (lines 2-4) must be NARRATIVE, like telling a friend.\n"
                     "- Lines 2, 3 and 4 combined must have 20 to 32 words total.\n"
                     "- Each of lines 2, 3 and 4 must have at most 11 words.\n"
@@ -1711,11 +1881,31 @@ def _specialize_pt_hook(hook: str, headline: str) -> str:
     return options[idx]
 
 
+def _upgrade_hook_if_too_short(hook: str, headline: str, source: str) -> str:
+    """Promote short/generic hooks into context-aware editorial hooks."""
+    cleaned = _clean_text(hook).upper().strip()
+    words = [w for w in cleaned.split() if w]
+    is_pt = _is_portuguese_context(source, headline)
+
+    generic_pt = {"EITA!", "BOMBA!", "CHOCANTE!", "SURREAL!", "PESOU!", "TRETA!"}
+    generic_en = {"WOW!", "WILD!", "SHOCKING!", "BOMBSHELL!", "NO WAY!", "DRAMA!"}
+
+    if is_pt:
+        if len(words) < 6 or cleaned in generic_pt:
+            return _pick_pt_hook(headline)
+        return cleaned
+
+    if len(words) < 6 or cleaned in generic_en:
+        return _pick_en_hook(headline)
+    return cleaned
+
+
 def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
     """Função centralizada para criar um post a partir de um NewsItem."""
     root = Path(__file__).resolve().parents[1]
     post_dir = root / "gossip_post"
     post_dir.mkdir(parents=True, exist_ok=True)
+    hook_history_path = post_dir / HOOK_HISTORY_FILE
 
     try:
         image_path = _download_image(item.image_url, post_dir / "news_image")
@@ -1788,7 +1978,17 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         if _is_portuguese_context(item.source, item.title):
             hook_clean = _normalize_pt_hook(hook_clean, item.title)
             hook_clean = _specialize_pt_hook(hook_clean, item.title)
-        # Garante que o hook não termina em palavra conectora (artigo/preposição/conjunção)
+        hook_clean = _upgrade_hook_if_too_short(hook_clean, item.title, item.source)
+        # Encaixa no overlay sem cortar palavras finais.
+        hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=2, min_words=6)
+        # Evita repetir estruturas de hook em publicações consecutivas.
+        recent_hooks = _load_recent_hook_history(hook_history_path, window=HOOK_HISTORY_WINDOW)
+        hook_clean = _diversify_hook_if_reused(
+            hook_clean,
+            headline=item.title,
+            source=item.source,
+            recent_hooks=recent_hooks,
+        )
         hook_clean = _trim_trailing_connectors(hook_clean)
 
         headline_text_clean = re.sub(r'#\w+', '', headline_text).strip()
@@ -1800,6 +2000,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         headline_text_clean = re.sub(r"\s*\.{1,2}\s*\.\.\s*", " .. ", headline_text_clean)
         headline_text_clean = re.sub(r"\s*\.\.\s*", " .. ", headline_text_clean)
         headline_text_clean = re.sub(r"\s{2,}", " ", headline_text_clean).strip()
+        headline_text_clean = _polish_body_punctuation(headline_text_clean)
         # Evita finais truncados tipo 'A WEB.'
         headline_text_clean = _fix_web_fragment(headline_text_clean)
         # Se o corpo aparentar fragmento (ex.: termina com 'TEM QUE SABER O MEU...'), tenta completar
@@ -1817,11 +2018,12 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         # Força caixa alta
         headline_text_clean = headline_text_clean.upper()
         
-        # Hook: 20 chars por linha, máximo 2 linhas
-        hook_wrapped = _wrap_for_overlay(hook_clean, max_chars=20, max_lines=2, upper=True)
+        # Hook: 24 chars por linha, máximo 2 linhas (mais natural para frase editorial curta)
+        hook_wrapped = _wrap_for_overlay(hook_clean, max_chars=24, max_lines=2, upper=True)
         
         hook_file = post_dir / "hook.txt"
         hook_file.write_text(_sanitize_overlay_text(hook_wrapped) + "\n", encoding="utf-8")
+        _save_hook_to_history(hook_history_path, hook_clean, title=item.title, source=item.source)
 
         summary_file = post_dir / "summary.txt"
         summary_file.write_text(_sanitize_overlay_text(headline_text_clean) + "\n", encoding="utf-8")
