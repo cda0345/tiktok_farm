@@ -132,7 +132,10 @@ def _get_random_cta(seed_text: str = "", headline: str = "") -> str:
     Usa o tema da notícia para escolher CTAs mais relevantes (padrão dos posts top).
     Se seed_text for fornecido, o mesmo texto sempre retorna o mesmo CTA.
     """
-    theme = _detect_news_theme(headline or seed_text)
+    if headline == "generic":
+        theme = "generic"
+    else:
+        theme = _detect_news_theme(headline or seed_text)
     
     # Pega CTAs do tema ou genéricos
     cta_pool = CTA_BY_THEME.get(theme, CTA_VARIATIONS_GENERIC)

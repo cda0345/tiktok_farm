@@ -17,7 +17,7 @@ import textwrap
 
 # Adiciona o diretório scripts ao path
 sys.path.insert(0, str(Path(__file__).parent))
-from create_gossip_post import _render_short_video, _send_video_to_telegram
+from create_gossip_post import _render_short_video, _send_video_to_telegram, _get_random_cta
 
 
 def preview_text(text: str):
@@ -74,7 +74,7 @@ Exemplos:
     parser.add_argument("--url", required=True, help="URL do vídeo no Twitter/X")
     parser.add_argument("--hook", required=True, help="Texto do hook (ex: 'TRETA!!')")
     parser.add_argument("--headline", required=True, help="Texto principal da notícia")
-    parser.add_argument("--cta", default="CURTE SE FICOU CHOCADO", help="Call-to-action")
+    parser.add_argument("--cta", default=None, help="Call-to-action (se não informado, será gerado automaticamente)")
     parser.add_argument("--duration", type=float, default=40.0, help="Duração máxima em segundos")
     parser.add_argument("--name", default="video_post", help="Nome do arquivo (sem extensão)")
     parser.add_argument("--skip-preview", action="store_true", help="Pula o preview do texto")
@@ -83,6 +83,9 @@ Exemplos:
     parser.add_argument("--telegram-description", default="", help="Descrição para caption do Telegram")
     
     args = parser.parse_args()
+
+    # Se CTA não for fornecido, gera um baseado no headline
+    cta = args.cta if args.cta else _get_random_cta(args.headline, args.headline)
     
     # Preview do texto
     if not args.skip_preview:
@@ -143,7 +146,7 @@ Exemplos:
             output_video,
             hook_file=hook_file,
             summary_file=headline_file,
-            cta_text=args.cta,
+            cta_text=cta,
             logo_path=logo_path,
             duration_s=args.duration,
         )
