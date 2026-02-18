@@ -23,7 +23,8 @@ try:
         NewsItem, 
         _clean_text, 
         _strip_html, 
-        _image_from_item
+        _image_from_item,
+        _extract_article_text,
     )
 except ImportError:
     print("❌ Erro: Não foi possível importar scripts.create_gossip_post. Certifique-se de que o caminho está correto.")
@@ -48,7 +49,11 @@ def save_history(history):
         json.dump(history[-50:], f, ensure_ascii=False, indent=2)
 
 def fetch_all_upcoming_news(profile="br"):
-    """Busca todas as notícias disponíveis nos feeds do perfil."""
+    """Busca todas as notícias disponíveis nos feeds do perfil.
+
+    Importante: para evitar 'corpo' truncado/incompleto no pipeline do scheduler,
+    prioriza a extração do texto do artigo (quando possível) em vez do excerpt do feed.
+    """
     feeds = FEED_PROFILES[profile]
     headers = {"User-Agent": "Mozilla/5.0 (compatible; GossipPostBot/1.0)"}
     all_items = []
@@ -68,18 +73,19 @@ def fetch_all_upcoming_news(profile="br"):
                     for post in posts[:10]:
                         title = _strip_html((post.get("title") or {}).get("rendered") or "")
                         link = post.get("link") or ""
-                        
+
                         image_url = ""
                         embedded = post.get("_embedded") or {}
                         media = embedded.get("wp:featuredmedia") or []
                         if media and isinstance(media[0], dict):
                             image_url = _clean_text(media[0].get("source_url") or "")
 
-                        if not image_url:
+                        if not image_url and link:
                             try:
                                 article_resp = requests.get(link, headers=headers, timeout=20)
                                 if article_resp.status_code == 200:
                                     import re
+
                                     # Padrões simplificados para extração rápida no scheduler
                                     patterns = [
                                         r"<meta[^>]+property=[\"']og:image[\"'][^>]+content=[\"']([^\"']+)",
@@ -96,27 +102,39 @@ def fetch_all_upcoming_news(profile="br"):
                                 pass
 
                         if title and link and image_url.startswith("http"):
-                            all_items.append(NewsItem(
-                                source=source_name,
-                                feed_url=feed_url,
-                                title=title,
-                                link=link,
-                                published=post.get("date") or "",
-                                image_url=image_url,
-                                description=_strip_html((post.get("excerpt") or {}).get("rendered") or "")
-                            ))
+                            # Evita excerpt truncado: tenta puxar texto do artigo para servir de contexto.
+                            article_text = ""
+                            try:
+                                article_text = _extract_article_text(link)
+                            except Exception:
+                                article_text = ""
+
+                            description = article_text or _strip_html((post.get("excerpt") or {}).get("rendered") or "")
+
+                            all_items.append(
+                                NewsItem(
+                                    source=source_name,
+                                    feed_url=feed_url,
+                                    title=title,
+                                    link=link,
+                                    published=post.get("date") or "",
+                                    image_url=image_url,
+                                    description=description,
+                                )
+                            )
             else:
                 root = ET.fromstring(body)
                 for item in root.findall("./channel/item")[:10]:
                     title = _clean_text(item.findtext("title"))
                     link = _clean_text(item.findtext("link"))
-                    
+
                     image_url = _image_from_item(item)
                     if not image_url and link:
                         try:
                             article_resp = requests.get(link, headers=headers, timeout=20)
                             if article_resp.status_code == 200:
                                 import re
+
                                 patterns = [
                                     r"<meta[^>]+property=[\"']og:image[\"'][^>]+content=[\"']([^\"']+)",
                                     r"<img[^>]+src=[\"']([^\"']+)"
@@ -132,15 +150,26 @@ def fetch_all_upcoming_news(profile="br"):
                             pass
 
                     if title and link and image_url and image_url.startswith("http"):
-                        all_items.append(NewsItem(
-                            source=source_name,
-                            feed_url=feed_url,
-                            title=title,
-                            link=link,
-                            published=_clean_text(item.findtext("pubDate")),
-                            image_url=image_url,
-                            description=_strip_html(item.findtext("description") or "")
-                        ))
+                        # Evita description truncado do RSS: tenta puxar artigo.
+                        article_text = ""
+                        try:
+                            article_text = _extract_article_text(link)
+                        except Exception:
+                            article_text = ""
+
+                        description = article_text or _strip_html(item.findtext("description") or "")
+
+                        all_items.append(
+                            NewsItem(
+                                source=source_name,
+                                feed_url=feed_url,
+                                title=title,
+                                link=link,
+                                published=_clean_text(item.findtext("pubDate")),
+                                image_url=image_url,
+                                description=description,
+                            )
+                        )
         except Exception:
             continue
     return all_items
