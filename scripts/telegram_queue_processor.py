@@ -42,23 +42,32 @@ def send_message(chat_id: str, text: str) -> bool:
 
 def _extract_video_metadata(video_url: str) -> tuple[str, str]:
     """Extrai título e descrição via yt-dlp sem baixar o arquivo."""
-    try:
-        result = subprocess.run(
-            [
-                "yt-dlp",
-                "--print",
-                "%(title)s",
-                "--print",
-                "%(description)s",
-                "--skip-download",
-                "--no-warnings",
-                video_url,
-            ],
+    def _run_metadata(extractor_api: str | None = None) -> subprocess.CompletedProcess:
+        cmd = [
+            "yt-dlp",
+            "--print",
+            "%(title)s",
+            "--print",
+            "%(description)s",
+            "--skip-download",
+            "--no-warnings",
+        ]
+        if extractor_api:
+            cmd.extend(["--extractor-args", f"twitter:api={extractor_api}"])
+        cmd.append(video_url)
+        return subprocess.run(
+            cmd,
             cwd=ROOT_DIR,
             capture_output=True,
             text=True,
             timeout=60,
         )
+
+    try:
+        result = _run_metadata()
+        err_text = ((result.stderr or "").strip() or (result.stdout or "").strip())
+        if result.returncode != 0 and "Error(s) while querying API" in err_text:
+            result = _run_metadata("syndication")
         if result.returncode == 0:
             lines = (result.stdout or "").splitlines()
             if lines:
@@ -257,7 +266,11 @@ def process_video_request(request: Dict[str, Any]) -> bool:
             send_message(chat_id, f"✅ Vídeo `{request['id']}` processado com sucesso!\n\nEnviando o arquivo...")
             return True
         print(f"STDERR: {result.stderr[:800]}")
-        send_message(chat_id, f"❌ Erro ao processar vídeo: {result.stderr[:200]}")
+        err_text = ((result.stderr or result.stdout or "").strip() or "erro desconhecido")
+        err_first_line = err_text.splitlines()[0][:220]
+        if "Dependency: Unspecified" in err_text:
+            err_first_line = "falha temporária da API do X/Twitter (retry automático já aplicado)"
+        send_message(chat_id, f"❌ Erro ao processar vídeo: {err_first_line}")
         return False
 
     except Exception as e:

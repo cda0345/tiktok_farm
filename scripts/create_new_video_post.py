@@ -10,14 +10,112 @@ Uso:
 """
 
 import argparse
+import re
 import sys
-from pathlib import Path
 import subprocess
 import textwrap
+import time
+from pathlib import Path
 
 # Adiciona o diretório scripts ao path
 sys.path.insert(0, str(Path(__file__).parent))
 from create_gossip_post import _render_short_video, _send_video_to_telegram, _get_random_cta
+
+
+def _build_video_download_candidates(url: str) -> list[str]:
+    """Build candidate URLs for X/Twitter to reduce extractor transient failures."""
+    raw = (url or "").strip()
+    if not raw:
+        return []
+
+    candidates: list[str] = [raw]
+    is_x = "x.com/" in raw
+    is_twitter = "twitter.com/" in raw
+
+    if is_x:
+        candidates.append(raw.replace("x.com/", "twitter.com/", 1))
+    elif is_twitter:
+        candidates.append(raw.replace("twitter.com/", "x.com/", 1))
+
+    status_match = re.search(r"/status/(\d+)", raw)
+    if status_match:
+        status_id = status_match.group(1)
+        candidates.extend(
+            [
+                f"https://x.com/i/status/{status_id}",
+                f"https://twitter.com/i/status/{status_id}",
+            ]
+        )
+
+    ordered_unique: list[str] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        if candidate and candidate not in seen:
+            ordered_unique.append(candidate)
+            seen.add(candidate)
+    return ordered_unique
+
+
+def _download_video_with_fallback(video_url: str, output_path: Path) -> None:
+    """Download using yt-dlp with retries and URL fallbacks for X/Twitter."""
+    candidates = _build_video_download_candidates(video_url)
+    if not candidates:
+        raise RuntimeError("URL de vídeo vazia")
+
+    def _run_download(candidate_url: str, extractor_api: str | None = None) -> subprocess.CompletedProcess:
+        cmd = [
+            "yt-dlp",
+            "-S",
+            "res,ext:mp4:m4a",
+            "-f",
+            "bv*+ba/best",
+            "--merge-output-format",
+            "mp4",
+            "--no-warnings",
+            "--retries",
+            "8",
+            "--fragment-retries",
+            "8",
+            "--extractor-retries",
+            "8",
+            "--retry-sleep",
+            "http:2:8",
+            "--retry-sleep",
+            "fragment:2:8",
+        ]
+        if extractor_api:
+            cmd.extend(["--extractor-args", f"twitter:api={extractor_api}"])
+        cmd.extend(["-o", str(output_path), candidate_url])
+        return subprocess.run(cmd, capture_output=True, text=True)
+
+    last_error = "erro desconhecido"
+    for index, candidate in enumerate(candidates, start=1):
+        print(f"⬇️ Tentativa {index}/{len(candidates)}: {candidate}")
+        result = _run_download(candidate)
+
+        err_text = ((result.stderr or "").strip() or (result.stdout or "").strip())
+        if result.returncode != 0 and "Error(s) while querying API" in err_text:
+            print("⚠️ API padrão do X falhou; tentando modo syndication...")
+            result = _run_download(candidate, extractor_api="syndication")
+
+        if result.returncode == 0 and output_path.exists() and output_path.stat().st_size > 100 * 1024:
+            return
+
+        stderr = (result.stderr or "").strip()
+        stdout = (result.stdout or "").strip()
+        combined = stderr or stdout or f"yt-dlp retornou código {result.returncode}"
+        last_error = combined[-1200:]
+
+        if output_path.exists() and output_path.stat().st_size <= 100 * 1024:
+            try:
+                output_path.unlink()
+            except OSError:
+                pass
+
+        if index < len(candidates):
+            time.sleep(min(2 * index, 6))
+
+    raise RuntimeError(f"Falha ao baixar vídeo após {len(candidates)} tentativas: {last_error}")
 
 
 def _send_document_to_telegram(file_path: Path, caption: str) -> bool:
@@ -137,26 +235,9 @@ Exemplos:
     # Baixar vídeo
     print("\n📥 Baixando vídeo do Twitter...")
     try:
-        # Evita '-f mp4' (gera warning e pode pegar qualidade baixa/inexistente).
-        # Preferir melhor vídeo+áudio e fazer merge para mp4 quando possível.
-        subprocess.run(
-            [
-                "yt-dlp",
-                "-S",
-                "res,ext:mp4:m4a",
-                "-f",
-                "bv*+ba/best",
-                "--merge-output-format",
-                "mp4",
-                "--no-warning",
-                "-o",
-                str(video_raw),
-                args.url,
-            ],
-            check=True,
-        )
+        _download_video_with_fallback(args.url, video_raw)
         print(f"✅ Vídeo baixado: {video_raw}")
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         print(f"❌ Erro ao baixar vídeo: {e}")
         return 1
     
