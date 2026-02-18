@@ -1429,7 +1429,9 @@ def _render_short(
     hook_filters = []
 
     # Keep hook on tarja, but inside safe area.
-    hook_base_y = _clamp(560, SAFE_TOP, SAFE_BOTTOM)
+    # If hook has 2 lines, move it one line up to reduce interference with the photo focal area.
+    hook_base_y_raw = 560 - (104 if len(hook_lines) >= 2 else 0)
+    hook_base_y = _clamp(hook_base_y_raw, SAFE_TOP, SAFE_BOTTOM)
     for i, line in enumerate(hook_lines):
         line_esc = _ffmpeg_escape_text(line)
         y_pos = _clamp(hook_base_y + (i * 104), SAFE_TOP, SAFE_BOTTOM)
@@ -1673,7 +1675,9 @@ def _render_short_video(
     hook_lines = textwrap.wrap(hook_clean, width=24, break_long_words=False, break_on_hyphens=False)[:2]
     hook_filters = []
 
-    hook_base_y = _clamp(560, SAFE_TOP, SAFE_BOTTOM)
+    # If hook has 2 lines, move it one line up to reduce interference with the photo focal area.
+    hook_base_y_raw = 560 - (104 if len(hook_lines) >= 2 else 0)
+    hook_base_y = _clamp(hook_base_y_raw, SAFE_TOP, SAFE_BOTTOM)
     for i, line in enumerate(hook_lines):
         line_esc = _ffmpeg_escape_text(line)
         y_pos = _clamp(hook_base_y + (i * 104), SAFE_TOP, SAFE_BOTTOM)
