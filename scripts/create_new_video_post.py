@@ -168,6 +168,45 @@ def preview_text(text: str):
     return len(full_lines) <= 10
 
 
+def _build_telegram_caption(*, hook: str, headline: str, cta: str, title: str, description: str, source_url: str) -> str:
+    hook_line = " ".join((hook or "").split()).strip()
+    headline_line = " ".join((headline or "").split()).strip()
+    title_line = " ".join((title or "").split()).strip()
+    desc_line = " ".join((description or "").split()).strip()
+    cta_line = " ".join((cta or "").split()).strip()
+
+    if not title_line:
+        title_line = headline_line
+    if not desc_line:
+        desc_line = headline_line
+    if len(desc_line) > 520:
+        desc_line = desc_line[:520].rsplit(" ", 1)[0] + "..."
+    if len(cta_line) > 64:
+        cta_line = cta_line[:64].rsplit(" ", 1)[0] + "..."
+
+    caption = (
+        "🔥 BABADO RAPIDO\n\n"
+        f"🧨 Hook: {hook_line or title_line}\n"
+        f"📰 Titulo: {title_line}\n"
+        f"📝 Resumo: {desc_line}\n"
+        f"💬 CTA: {cta_line or 'COMENTA O QUE ACHOU!'}\n\n"
+        f"🔗 Fonte: {source_url}"
+    )
+    if len(caption) > 1000:
+        overflow = len(caption) - 1000
+        if overflow > 0 and len(desc_line) > 80:
+            desc_line = desc_line[:-overflow].rsplit(" ", 1)[0].strip()
+            caption = (
+                "🔥 BABADO RAPIDO\n\n"
+                f"🧨 Hook: {hook_line or title_line}\n"
+                f"📰 Titulo: {title_line}\n"
+                f"📝 Resumo: {desc_line}\n"
+                f"💬 CTA: {cta_line or 'COMENTA O QUE ACHOU!'}\n\n"
+                f"🔗 Fonte: {source_url}"
+            )
+    return caption
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Cria um post de fofoca com vídeo do Twitter/X",
@@ -283,12 +322,13 @@ Exemplos:
     if not args.skip_telegram:
         title = (args.telegram_title or args.headline).strip()
         description = (args.telegram_description or args.headline).strip()
-        if len(description) > 700:
-            description = description[:700].rsplit(" ", 1)[0] + "..."
-        caption = (
-            f"🎬 Título: {title}\n"
-            f"📝 Descrição: {description}\n\n"
-            f"🔗 Fonte: {args.url}"
+        caption = _build_telegram_caption(
+            hook=args.hook,
+            headline=args.headline,
+            cta=cta,
+            title=title,
+            description=description,
+            source_url=args.url,
         )
         print("\n📱 Enviando para Telegram...")
         

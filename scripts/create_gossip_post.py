@@ -959,6 +959,8 @@ def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool 
 
 
 def _base_body_typography(line_count: int) -> tuple[int, int]:
+    if line_count > 9:
+        return 50, 60
     if line_count > 7:
         return 52, 62
     if line_count > 5:
@@ -972,14 +974,14 @@ def _layout_main_body_text(
     text: str,
     *,
     base_width: int = 34,
-    max_lines: int = 10,
-    min_scale: float = 0.90,
+    max_lines: int = 11,
+    min_scale: float = 0.84,
 ) -> tuple[list[str], int, int]:
     clean = " ".join((text or "").split())
     if not clean:
         return [], 68, 85
 
-    scales = [1.0, 0.97, 0.94, 0.91, min_scale]
+    scales = [1.0, 0.97, 0.94, 0.91, 0.88, 0.86, min_scale]
     baseline_lines = textwrap.wrap(clean, width=base_width, break_long_words=False, break_on_hyphens=False)
     base_font, base_spacing = _base_body_typography(len(baseline_lines))
 
@@ -990,8 +992,8 @@ def _layout_main_body_text(
     for scale in scales:
         width = max(30, int(round(base_width / scale)))
         lines = textwrap.wrap(clean, width=width, break_long_words=False, break_on_hyphens=False)
-        font_size = max(46, int(round(base_font * scale)))
-        line_spacing = max(56, int(round(base_spacing * scale)))
+        font_size = max(43, int(round(base_font * scale)))
+        line_spacing = max(52, int(round(base_spacing * scale)))
         fallback_lines = lines
         fallback_font = font_size
         fallback_spacing = line_spacing
@@ -1213,21 +1215,56 @@ def _summarize_news_text(item: NewsItem) -> str:
 
 def _send_video_to_telegram(video_path: Path, caption: str) -> bool:
     """Envia o vídeo gerado para o bot do Telegram."""
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendVideo"
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("⚠️ TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID não configurados.")
+        return False
+
+    if not video_path.exists():
+        print(f"⚠️ Vídeo não encontrado para envio: {video_path}")
+        return False
+
+    caption_clean = " ".join((caption or "").split())
+    if len(caption_clean) > 1024:
+        caption_clean = caption_clean[:1020].rsplit(" ", 1)[0] + "..."
+
+    send_video_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendVideo"
+    send_doc_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
+
+    last_error = "erro desconhecido"
+    for attempt in range(1, 3):
+        try:
+            with open(video_path, "rb") as video:
+                files = {"video": video}
+                data = {
+                    "chat_id": TELEGRAM_CHAT_ID,
+                    "caption": caption_clean,
+                    "supports_streaming": True,
+                }
+                response = requests.post(send_video_url, files=files, data=data, timeout=120 + (attempt * 45))
+            if response.status_code == 200:
+                print("✅ Vídeo enviado com sucesso para o Telegram!")
+                return True
+            last_error = f"{response.status_code} - {response.text}"
+            print(f"⚠️ Tentativa {attempt}/2 falhou no sendVideo: {last_error}")
+        except Exception as e:
+            last_error = str(e)
+            print(f"⚠️ Tentativa {attempt}/2 falhou no sendVideo: {e}")
+
+    # Fallback quando sendVideo falha por limite/formato: envia como documento.
     try:
         with open(video_path, "rb") as video:
-            files = {"video": video}
-            data = {"chat_id": TELEGRAM_CHAT_ID, "caption": caption}
-            response = requests.post(url, files=files, data=data, timeout=120)
-            if response.status_code == 200:
-                print(f"✅ Vídeo enviado com sucesso para o Telegram!")
-                return True
-            else:
-                print(f"❌ Erro ao enviar para o Telegram: {response.status_code} - {response.text}")
-                return False
+            files = {"document": video}
+            data = {"chat_id": TELEGRAM_CHAT_ID, "caption": caption_clean}
+            response = requests.post(send_doc_url, files=files, data=data, timeout=240)
+        if response.status_code == 200:
+            print("✅ Vídeo enviado como documento no Telegram (fallback).")
+            return True
+        print(f"❌ Falha no fallback sendDocument: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"⚠️ Falha ao tentar enviar para o Telegram: {e}")
-        return False
+        print(f"❌ Falha no fallback sendDocument: {e}")
+
+    print(f"❌ Erro final ao enviar para o Telegram: {last_error}")
+    return False
 
 
 def _send_text_to_telegram(text: str) -> bool:
@@ -1451,12 +1488,12 @@ def _render_short(
     # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
     # Isso garante que frases completas sejam exibidas
     
-    # Layout dinâmico: reduz fonte em até 10% e aumenta capacidade de linhas.
+    # Layout dinâmico: reduz fonte um pouco mais e permite 1 linha extra quando necessário.
     main_lines, font_size, line_spacing = _layout_main_body_text(
         main_input,
         base_width=34,
-        max_lines=10,
-        min_scale=0.90,
+        max_lines=11,
+        min_scale=0.84,
     )
     main_filters = []
 
@@ -1698,12 +1735,12 @@ def _render_short_video(
     # Não trunca o texto - use todo o conteúdo disponível para exibição completa
     # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
     
-    # Layout dinâmico: reduz fonte em até 10% e aumenta capacidade de linhas.
+    # Layout dinâmico: reduz fonte um pouco mais e permite 1 linha extra quando necessário.
     main_lines, font_size, line_spacing = _layout_main_body_text(
         main_input,
         base_width=34,
-        max_lines=10,
-        min_scale=0.90,
+        max_lines=11,
+        min_scale=0.84,
     )
     main_filters = []
 
@@ -2097,11 +2134,15 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         
         telegram_title = " ".join(_clean_text(item.title).split()) or headline_telegram
         telegram_description = f"{hook_telegram} {headline_telegram}".strip()
-        if len(telegram_description) > 700:
-            telegram_description = telegram_description[:700].rsplit(" ", 1)[0] + "..."
+        if len(telegram_description) > 520:
+            telegram_description = telegram_description[:520].rsplit(" ", 1)[0] + "..."
+        cta_for_caption = " ".join(_clean_text(cta_text).split()) if cta_text else "COMENTA O QUE ACHOU!"
         telegram_caption = (
-            f"📰 Título: {telegram_title}\n"
-            f"📝 Descrição: {telegram_description}\n\n"
+            "🔥 BABADO RAPIDO\n\n"
+            f"🧨 Hook: {hook_telegram}\n"
+            f"📰 Titulo: {telegram_title}\n"
+            f"📝 Resumo: {telegram_description}\n"
+            f"💬 CTA: {cta_for_caption}\n\n"
             f"📍 Fonte: {item.source.upper()}\n"
             f"🔗 {item.link}"
         )

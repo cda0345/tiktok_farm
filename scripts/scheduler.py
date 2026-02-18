@@ -7,6 +7,7 @@ import argparse
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 # Adiciona o diretório raiz ao path para permitir importações
@@ -31,6 +32,21 @@ except ImportError:
     sys.exit(1)
 
 HISTORY_FILE = ROOT_DIR / "gossip_post" / "history.json"
+HOT_KEYWORDS = {
+    "bbb": 3.0,
+    "paredao": 2.5,
+    "eliminacao": 2.4,
+    "treta": 3.0,
+    "briga": 2.2,
+    "polemica": 2.2,
+    "vazou": 1.8,
+    "flagra": 1.8,
+    "romance": 1.8,
+    "beijo": 1.6,
+    "separ": 1.8,
+    "gravidez": 1.6,
+    "carnaval": 1.4,
+}
 
 def load_history():
     """Carrega a lista de links já processados."""
@@ -47,6 +63,57 @@ def save_history(history):
     """Salva a lista de links processados, mantendo apenas os últimos 50."""
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history[-50:], f, ensure_ascii=False, indent=2)
+
+
+def _parse_published(raw: str) -> datetime | None:
+    t = _clean_text(raw)
+    if not t:
+        return None
+    try:
+        dt = datetime.fromisoformat(t.replace("Z", "+00:00"))
+        return dt
+    except Exception:
+        pass
+    try:
+        return parsedate_to_datetime(t)
+    except Exception:
+        return None
+
+
+def _score_item(item: NewsItem) -> float:
+    title = _clean_text(item.title).lower()
+    description = _clean_text(item.description).lower()
+    score = 0.0
+
+    for key, weight in HOT_KEYWORDS.items():
+        if key in title:
+            score += weight
+
+    words = title.split()
+    if 7 <= len(words) <= 18:
+        score += 1.4
+    elif len(words) < 5:
+        score -= 1.0
+
+    if len(description) >= 120:
+        score += 0.8
+    elif len(description) < 60:
+        score -= 0.6
+
+    published = _parse_published(item.published)
+    if published:
+        try:
+            age_h = (datetime.now(published.tzinfo) - published).total_seconds() / 3600.0
+            if age_h <= 12:
+                score += 2.6
+            elif age_h <= 36:
+                score += 1.8
+            elif age_h <= 72:
+                score += 0.8
+        except Exception:
+            pass
+
+    return score
 
 def fetch_all_upcoming_news(profile="br"):
     """Busca todas as notícias disponíveis nos feeds do perfil.
@@ -203,6 +270,7 @@ def run_scheduler():
 
                 # Filtra o que já foi postado
                 new_items = [it for it in all_items if it.link not in history]
+                new_items.sort(key=_score_item, reverse=True)
 
                 if not new_items:
                     print("😴 Nenhuma notícia nova encontrada.")

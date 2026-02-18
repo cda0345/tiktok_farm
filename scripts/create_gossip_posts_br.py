@@ -11,6 +11,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -26,9 +27,161 @@ BR_GOSSIP_FEEDS = [
     ("metropoles", "https://www.metropoles.com/colunas/leo-dias/feed"),
 ]
 
+HOT_STORY_KEYWORDS = {
+    "bbb": 3.0,
+    "paredao": 2.5,
+    "eliminação": 2.5,
+    "eliminacao": 2.5,
+    "treta": 3.0,
+    "briga": 2.5,
+    "polêmica": 2.5,
+    "polemica": 2.5,
+    "vazou": 2.0,
+    "flagra": 2.0,
+    "acus": 1.8,
+    "expôs": 1.8,
+    "expos": 1.8,
+    "romance": 2.0,
+    "beijo": 1.8,
+    "separ": 2.0,
+    "gravidez": 1.8,
+    "carnaval": 1.6,
+    "justiça": 1.6,
+    "justica": 1.6,
+}
+
+TITLE_STOPWORDS = {
+    "com", "para", "sobre", "depois", "após", "apos", "entre", "quando", "onde",
+    "mais", "menos", "diz", "fala", "sobre", "esta", "está", "ser", "sua", "seu",
+    "seus", "suas", "dos", "das", "nos", "nas", "uma", "uns", "umas", "que", "por",
+}
+
 
 def _clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "")).strip()
+
+
+def _parse_published_dt(raw: str) -> datetime | None:
+    txt = _clean_text(raw)
+    if not txt:
+        return None
+    try:
+        dt = datetime.fromisoformat(txt.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        pass
+    try:
+        dt = parsedate_to_datetime(txt)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        return None
+
+
+def _title_fingerprint(title: str) -> set[str]:
+    norm = _clean_text(title).lower()
+    norm = re.sub(r"[^\w\s\u00C0-\u00FF]", " ", norm)
+    tokens = [t for t in norm.split() if len(t) >= 4 and t not in TITLE_STOPWORDS]
+    return set(tokens)
+
+
+def _is_same_story(candidate_title: str, selected_fingerprints: list[set[str]]) -> bool:
+    cand = _title_fingerprint(candidate_title)
+    if not cand:
+        return False
+    for chosen in selected_fingerprints:
+        if not chosen:
+            continue
+        overlap = len(cand & chosen) / float(max(1, len(cand | chosen)))
+        if overlap >= 0.55:
+            return True
+    return False
+
+
+def _editorial_score(item) -> float:
+    title = _clean_text(item.title).lower()
+    description = _clean_text(getattr(item, "description", ""))
+
+    score = 0.0
+
+    for key, weight in HOT_STORY_KEYWORDS.items():
+        if key in title:
+            score += weight
+
+    words = title.split()
+    if 7 <= len(words) <= 18:
+        score += 1.6
+    elif len(words) < 5:
+        score -= 1.2
+    else:
+        score += 0.4
+
+    if len(description) >= 140:
+        score += 1.2
+    elif len(description) >= 80:
+        score += 0.6
+    else:
+        score -= 0.8
+
+    published_dt = _parse_published_dt(getattr(item, "published", ""))
+    if published_dt:
+        age_h = (datetime.now(timezone.utc) - published_dt.astimezone(timezone.utc)).total_seconds() / 3600.0
+        if age_h <= 12:
+            score += 3.0
+        elif age_h <= 36:
+            score += 2.0
+        elif age_h <= 72:
+            score += 1.0
+        elif age_h > 168:
+            score -= 1.4
+
+    return score
+
+
+def _finalize_overlay_body(text: str, *, cgp, item, max_chars: int = 360) -> str:
+    """Evita final truncado e garante fechamento semântico no corpo."""
+    t = _clean_text(text)
+    if not t:
+        return t
+
+    if hasattr(cgp, "_truncate_at_sentence_boundary"):
+        t = cgp._truncate_at_sentence_boundary(t, max_chars=max_chars)
+    elif len(t) > max_chars:
+        t = t[:max_chars].rsplit(" ", 1)[0].strip()
+
+    # Se terminar com reticências após conector ("COM O...", "A WEB JÁ..."),
+    # remove o rabo quebrado e fecha com pontuação normal.
+    if t.endswith("..."):
+        base = t[:-3].strip()
+        tokens = base.split()
+        dangling = {
+            "E", "OU", "O", "A", "OS", "AS", "UM", "UMA", "UNS", "UMAS",
+            "DE", "DO", "DA", "DOS", "DAS", "NO", "NA", "NOS", "NAS",
+            "EM", "COM", "POR", "PARA", "PELO", "PELA", "QUE", "JÁ", "JA",
+        }
+        while tokens:
+            last = re.sub(r"[^\w\u00C0-\u00FF]", "", tokens[-1]).upper()
+            if not last or len(last) <= 2 or last in dangling:
+                tokens.pop()
+                continue
+            break
+        candidate = " ".join(tokens).strip()
+        if candidate:
+            t = candidate
+
+    if hasattr(cgp, "_fix_web_fragment"):
+        t = cgp._fix_web_fragment(t)
+    if hasattr(cgp, "_ensure_headline_completeness"):
+        t = cgp._ensure_headline_completeness(t, item)
+    if hasattr(cgp, "_rewrite_overlay_body_if_needed"):
+        t = cgp._rewrite_overlay_body_if_needed(t, item=item)
+
+    if t and not re.search(r"[.!?]$", t):
+        t += "."
+    return t
 
 
 def _load_base_module(root: Path):
@@ -151,15 +304,7 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
         headline_text = cgp._ensure_headline_completeness(headline_text, item)
     if hasattr(cgp, "_rewrite_overlay_body_if_needed"):
         headline_text = cgp._rewrite_overlay_body_if_needed(headline_text, item=item)
-    if hasattr(cgp, "_truncate_at_sentence_boundary"):
-        headline_text = cgp._truncate_at_sentence_boundary(headline_text, max_chars=320)
-    if headline_text and not re.search(r"[.!?]$", headline_text):
-        headline_text += "."
-    
-    # Limita a 21 palavras (15 do resumo + 6 do CTA = ideal para o formato completo)
-    words = headline_text.split()
-    if len(words) > 21:
-        headline_text = " ".join(words[:21]) + "..."
+    headline_text = _finalize_overlay_body(headline_text, cgp=cgp, item=item, max_chars=360)
 
     # Força caixa alta no corpo/headline
     headline_text = headline_text.upper()
@@ -229,11 +374,18 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
 
     # Envio para o Telegram (chamando a função implementada no create_gossip_post)
     if hasattr(cgp, "_send_video_to_telegram"):
+        telegram_title = " ".join(_clean_text(item.title).split()) or headline_text
+        telegram_desc = " ".join(_clean_text(f"{hook} {headline_text}").split())
+        if len(telegram_desc) > 520:
+            telegram_desc = telegram_desc[:520].rsplit(" ", 1)[0] + "..."
         telegram_caption = (
-            f"🔥 *Novo Gossip Post (BR)*\n\n"
-            f"📍 *Fonte:* {item.source.upper()}\n"
-            f"📰 *Título:* {item.title}\n"
-            f"🔗 [Link da Matéria]({item.link})"
+            "🔥 BABADO RAPIDO\n\n"
+            f"🧨 Hook: {hook}\n"
+            f"📰 Titulo: {telegram_title}\n"
+            f"📝 Resumo: {telegram_desc}\n"
+            f"💬 CTA: {cta_text}\n\n"
+            f"📍 Fonte: {item.source.upper()}\n"
+            f"🔗 {item.link}"
         )
         cgp._send_video_to_telegram(out_video, telegram_caption)
         
@@ -364,6 +516,7 @@ def _fetch_from_feed(cgp, source: str, feed_url: str, skip_count: int = 0):
                     description=_clean_text(cgp._strip_html((post.get("excerpt") or {}).get("rendered") or "")),
                 ))
         
+        valid_items.sort(key=_editorial_score, reverse=True)
         if len(valid_items) > skip_count:
             return valid_items[skip_count]
         raise RuntimeError(f"No more items for JSON source (skip={skip_count}): {feed_url}")
@@ -399,6 +552,7 @@ def _fetch_from_feed(cgp, source: str, feed_url: str, skip_count: int = 0):
                 description=_clean_text(item.findtext("description") or ""),
             ))
 
+    valid_items.sort(key=_editorial_score, reverse=True)
     if len(valid_items) > skip_count:
         return valid_items[skip_count]
     raise RuntimeError(f"No more items for feed (skip={skip_count}): {feed_url}")
@@ -432,6 +586,7 @@ def main() -> None:
     out_root.mkdir(parents=True, exist_ok=True)
 
     used_links: set[str] = set()
+    used_title_fingerprints: list[set[str]] = []
     created = []
     
     max_tests = args.count
@@ -466,8 +621,12 @@ def main() -> None:
                 if item.link in used_links:
                     print(f"  ⏭️  Notícia já usada, pulando...")
                     continue
+                if _is_same_story(item.title, used_title_fingerprints):
+                    print("  ⏭️  Tema muito parecido com post já selecionado, pulando...")
+                    continue
                     
                 used_links.add(item.link)
+                used_title_fingerprints.append(_title_fingerprint(item.title))
                 print(f"  ✓ Nova notícia: {item.title[:60]}...")
 
                 slug = _make_slug(item.title)

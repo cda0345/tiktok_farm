@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 import unicodedata
+import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
@@ -20,6 +21,11 @@ import requests
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from core.ai_client import OpenAIConfig, is_openai_configured
+
 QUEUE_DIR = ROOT_DIR / "telegram_queue"
 QUEUE_DIR.mkdir(exist_ok=True)
 
@@ -102,47 +108,235 @@ def _normalize_video_text(raw: str) -> str:
     return re.sub(r"\s+", " ", clean).strip(" -|")
 
 
-def _build_video_copy(raw_title: str, raw_description: str = "") -> tuple[str, str]:
-    """Monta hook/headline curtos para render de vídeo."""
+def _detect_video_theme(text: str) -> str:
+    lowered = (text or "").lower()
+    if any(k in lowered for k in ("bbb", "paredao", "elimin", "lider", "prova")):
+        return "bbb"
+    if any(k in lowered for k in ("treta", "briga", "discuss", "barraco", "clim", "grit")):
+        return "treta"
+    if any(k in lowered for k in ("beijo", "beij", "casal", "romance", "ship", "ficou")):
+        return "romance"
+    if any(k in lowered for k in ("trai", "chifre", "termin", "separ", "ex ", "ex-")):
+        return "separacao"
+    if any(k in lowered for k in ("flagra", "vazou", "video", "imagens", "registro")):
+        return "flagra"
+    return "generic"
+
+
+def _trim_words(text: str, limit: int) -> str:
+    words = [w for w in (text or "").split() if w]
+    if len(words) <= limit:
+        return " ".join(words)
+    return " ".join(words[:limit]).rstrip(" ,.;:-") + "..."
+
+
+def _safe_upper(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "")).strip().upper()
+
+
+def _split_sentences(text: str) -> list[str]:
+    t = re.sub(r"\s+", " ", (text or "").strip())
+    if not t:
+        return []
+    parts = re.split(r"(?<=[.!?])\s+", t)
+    out = []
+    for p in parts:
+        s = p.strip(" .")
+        if len(s.split()) >= 4:
+            out.append(s)
+    return out
+
+
+def _build_video_copy_with_ai(title: str, description: str) -> tuple[str, str, str] | None:
+    cfg = OpenAIConfig()
+    if not is_openai_configured(cfg):
+        return None
+
+    api_key = os.getenv(cfg.api_key_env, "").strip()
+    if not api_key:
+        return None
+
+    context = _clean_telegram_text(f"{title}. {description}", 1600)
+    if not context:
+        return None
+
+    payload = {
+        "model": os.getenv("GOSSIP_SUMMARY_MODEL", cfg.model).strip() or cfg.model,
+        "temperature": 0.7,
+        "max_completion_tokens": 220,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "Voce escreve copy viral para post vertical de fofoca (PT-BR). "
+                    "Entregue exatamente 5 linhas em CAPS, sem hashtags e sem emojis: "
+                    "1) HOOK editorial (6 a 10 palavras), "
+                    "2) FATO principal com nomes, "
+                    "3) REACAO da web com suspense '..', "
+                    "4) IMPACTO/desdobramento (preferir final com '...'), "
+                    "5) CTA emocional curto. "
+                    "Nao invente fatos, nomes ou contexto que nao estejam no material enviado."
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"Base do video:\n{context}",
+            },
+        ],
+    }
+
+    try:
+        r = requests.post(
+            f"{cfg.base_url.rstrip('/')}/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=60,
+        )
+        if r.status_code >= 400:
+            return None
+        data = r.json()
+        content = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content")
+        if not content:
+            return None
+        lines = []
+        for raw in str(content).splitlines():
+            line = raw.strip()
+            if not line:
+                continue
+            if line.startswith("#"):
+                continue
+            line = re.sub(
+                r"^(gancho|hook|fato|reacao|reação|impacto|cta|linha|line)\s*\d*\s*[:\-–—=]\s*",
+                "",
+                line,
+                flags=re.IGNORECASE,
+            ).strip()
+            if line:
+                lines.append(line)
+
+        if len(lines) >= 5:
+            hook = lines[0]
+            body = f"{lines[1]} {lines[2]} {lines[3]}"
+            cta = lines[4]
+        elif len(lines) >= 3:
+            hook = lines[0]
+            body = " ".join(lines[1:3])
+            cta = "COMENTA O QUE ACHOU!"
+        elif len(lines) >= 2:
+            hook = lines[0]
+            body = lines[1]
+            cta = "COMENTA O QUE ACHOU!"
+        else:
+            return None
+
+        return hook, body, cta
+    except Exception:
+        return None
+
+
+def _build_video_copy_fallback(title: str, description: str) -> tuple[str, str, str]:
+    base = title or description or "Flagra que deu o que falar"
+    theme = _detect_video_theme(f"{title} {description}")
+
+    hooks = {
+        "bbb": [
+            "DETALHE DA APURACAO DIVIDIU A WEB",
+            "NO BBB, A CENA QUE PEGOU FOGO",
+        ],
+        "treta": [
+            "A TRETA SAIU DO CONTROLE RAPIDO",
+            "BASTIDOR QUENTE EXPLODIU NAS REDES",
+        ],
+        "romance": [
+            "FLAGRA REACENDEU RUMORES DE ROMANCE",
+            "O CLIMA ENTREGOU TUDO NESSE VIDEO",
+        ],
+        "separacao": [
+            "UM DETALHE LEVANTOU RUMOR DE FIM",
+            "A WEB APONTOU SINAL DE CRISE",
+        ],
+        "flagra": [
+            "O VIDEO QUE VIROU ASSUNTO DA HORA",
+            "FLAGRA RAPIDO ABRIU NOVA POLEMICA",
+        ],
+        "generic": [
+            "O DETALHE QUE NINGUEM IGNOROU",
+            "ESSA CENA ACENDEU O DEBATE",
+        ],
+    }
+    ctas = {
+        "bbb": "QUEM TEM RAZAO? COMENTA!",
+        "treta": "DE QUE LADO VOCE FICOU?",
+        "romance": "SHIPPA OU NAO SHIPPA?",
+        "separacao": "EXAGERO OU SINAL REAL?",
+        "flagra": "A CULPA FOI DE QUEM?",
+        "generic": "O QUE VOCE ACHOU DISSO?",
+    }
+
+    digest = hashlib.md5(_clean_telegram_text(base, 240).encode("utf-8")).hexdigest()
+    seed = int(digest, 16)
+    hook_pool = hooks.get(theme, hooks["generic"])
+    hook = hook_pool[seed % len(hook_pool)]
+
+    source_lines = _split_sentences(description) + _split_sentences(title)
+    fact = source_lines[0] if source_lines else base
+    fact = _trim_words(fact, 14).rstrip(".")
+
+    reaction_by_theme = {
+        "bbb": ".. A APURACAO PEGOU FOGO E A TORCIDA REAGIU",
+        "treta": ".. A WEB CRITICOU E DEFENDEU AO MESMO TEMPO",
+        "romance": ".. FAS APONTARAM CLIMA E DEBATERAM O FLAGRA",
+        "separacao": ".. PARTE DA WEB FALOU EM CRISE DO CASAL",
+        "flagra": ".. O VIDEO VIRALIZOU E GEROU CRITICAS RAPIDAS",
+        "generic": ".. O VIDEO DIVIDIU OPINIOES NAS REDES",
+    }
+    impact_by_theme = {
+        "bbb": "CRITICAS E MEMES TOMARAM CONTA DOS COMENTARIOS...",
+        "treta": "O DEBATE CRESCEU E CADA LADO DEFENDEU SUA VERSAO...",
+        "romance": "DEBATE DIVIDIU FAS E RUMOR GANHOU FORCA...",
+        "separacao": "DEPOIS DO VIDEO, O ASSUNTO GANHOU OUTRO TOM...",
+        "flagra": "APOS O FLAGRANTE, A DISCUSSAO SO AUMENTOU...",
+        "generic": "DEPOIS DESSA CENA, O ASSUNTO NAO SAIU DAS REDES...",
+    }
+
+    body = f"{fact}. {reaction_by_theme[theme]} {impact_by_theme[theme]}"
+    body = _trim_words(body, 36)
+    cta = ctas.get(theme, ctas["generic"])
+    return hook, body, cta
+
+
+def _build_video_copy(raw_title: str, raw_description: str = "") -> tuple[str, str, str, str, str]:
+    """Monta hook/headline/cta editoriais para render de vídeo."""
     clean = _normalize_video_text(raw_title)
     desc_clean = _normalize_video_text(raw_description)
 
-    # Alguns títulos do X chegam truncados com reticências.
-    # Se houver descrição útil, prefere o começo dela para evitar palavra cortada.
     if clean.endswith("...") and desc_clean and len(desc_clean.split()) >= 6:
         clean = desc_clean
-
     clean = clean or "Flagra que deu o que falar"
 
-    lowered = clean.lower()
-    # Variar hooks por tema para evitar repetição.
-    # Mantém curto e em CAPS (1 linha), mas com mais diversidade no fallback.
-    if any(k in lowered for k in ("beijo", "beij", "casal", "romance", "apaixon", "ficou")):
-        hook = "NAO E MAIS SEGREDO!"
-    elif any(k in lowered for k in ("trai", "traica", "chifre", "ex", "termin", "separ")):
-        hook = "DEU RUIM!"
-    elif any(k in lowered for k in ("treta", "briga", "discuss", "barraco", "clim", "grit")):
-        hook = "A TRETA EXPLODIU!"
-    elif any(k in lowered for k in ("bbb", "paredao", "elimin", "prova", "lider", "confession")):
-        hook = "PEGOU FOGO!"
-    elif any(k in lowered for k in ("flagra", "aparece", "vazou", "video", "imagens", "registro")):
-        hook = "EXCLUSIVO!"
+    ai_pack = _build_video_copy_with_ai(clean, desc_clean)
+    if ai_pack:
+        hook_raw, headline_raw, cta_raw = ai_pack
     else:
-        # Fallback variado e determinístico (baseado no texto) para reduzir "VEJA O FLAGRANTE".
-        options = [
-            "OLHA ISSO!",
-            "CHOCANTE!",
-            "INACREDITAVEL!",
-            "BOMBA!",
-            "FOI AGORA!",
-            "NINGUEM ESPERAVA!",
-        ]
-        hook = options[abs(hash(clean)) % len(options)]
+        hook_raw, headline_raw, cta_raw = _build_video_copy_fallback(clean, desc_clean)
 
-    headline = clean.upper()
-    if len(headline) > 120:
-        headline = headline[:120].rsplit(" ", 1)[0]
-    return hook, headline
+    hook = _safe_upper(_clean_telegram_text(hook_raw, 90))
+    headline = _safe_upper(_clean_telegram_text(headline_raw, 260))
+    cta = _safe_upper(_clean_telegram_text(cta_raw, 52))
+
+    if not hook:
+        hook = "O DETALHE QUE NINGUEM IGNOROU"
+    if not headline:
+        headline = _safe_upper(clean)
+    if not cta:
+        cta = "COMENTA O QUE ACHOU!"
+
+    telegram_title = _clean_telegram_text(raw_title, 180) or headline
+    base_desc = _clean_telegram_text(raw_description, 700) or _clean_telegram_text(headline, 700)
+    telegram_description = f"{hook}. {base_desc}".strip()
+    if len(telegram_description) > 700:
+        telegram_description = telegram_description[:700].rsplit(" ", 1)[0] + "..."
+    return hook, headline, cta, telegram_title, telegram_description
 
 
 def _clean_telegram_text(text: str, max_len: int) -> str:
@@ -225,10 +419,8 @@ def process_video_request(request: Dict[str, Any]) -> bool:
     try:
         print(f"🎬 Executando create_new_video_post.py para VÍDEO: {video_url}")
         raw_title, raw_description = _extract_video_metadata(video_url)
-        hook, headline = _build_video_copy(raw_title, raw_description)
-        duration = float(request.get("duration", 15))
-        telegram_title = _clean_telegram_text(raw_title, 180) or headline
-        telegram_description = _clean_telegram_text(raw_description, 700) or headline
+        hook, headline, cta, telegram_title, telegram_description = _build_video_copy(raw_title, raw_description)
+        duration = float(request.get("duration", 20))
 
         args = [
             sys.executable,
@@ -239,6 +431,8 @@ def process_video_request(request: Dict[str, Any]) -> bool:
             hook,
             "--headline",
             headline,
+            "--cta",
+            cta,
             "--duration",
             str(duration),
             "--name",
