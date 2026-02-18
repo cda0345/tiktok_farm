@@ -263,8 +263,8 @@ Actions → Process Telegram Queue → Run workflow
 
 ## 📚 Mais Informações
 
-- **Guia Visual:** `GUIA_VISUAL_PT.md`
-- **Guia Completo:** `TELEGRAM_BOT_GUIDE.md`
+- **Guia Visual:** `../tutorials/GUIA_VISUAL_PT.md`
+- **Guia Completo:** `../guides/TELEGRAM_BOT_GUIDE.md`
 - **Testes:** `VALIDATION_CHECKLIST.md`
 
 **Bons posts!** 🎬

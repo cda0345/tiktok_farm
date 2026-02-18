@@ -76,7 +76,7 @@ O bot vai confirmar e o GitHub Actions vai processar em até 15 minutos!
 
 ## 📚 Documentação Completa
 
-Veja [TELEGRAM_BOT_GUIDE.md](TELEGRAM_BOT_GUIDE.md) para mais detalhes.
+Veja [TELEGRAM_BOT_GUIDE.md](../guides/TELEGRAM_BOT_GUIDE.md) para mais detalhes.
 
 ## 🎯 Exemplos Reais
 

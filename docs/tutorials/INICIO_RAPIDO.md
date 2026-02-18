@@ -34,5 +34,5 @@ Vídeo será enviado no Telegram quando ficar pronto! 🎬
 ---
 
 ## 📚 Mais Info
-- **Guia Completo:** `SEU_BOT_ESTA_PRONTO.md`
+- **Guia Completo:** `../notes/SEU_BOT_ESTA_PRONTO.md`
 - **Visual PT:** `GUIA_VISUAL_PT.md`

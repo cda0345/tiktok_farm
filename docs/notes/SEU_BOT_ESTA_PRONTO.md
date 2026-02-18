@@ -175,8 +175,8 @@ python3 scripts/test_telegram_system.py list
 ## 📚 Documentação Completa
 
 - **Este Guia:** `USE_SEU_BOT_AGORA.md` ← você está aqui
-- **Guia Visual PT:** `GUIA_VISUAL_PT.md`
-- **Guia Completo:** `TELEGRAM_BOT_GUIDE.md`
+- **Guia Visual PT:** `../tutorials/GUIA_VISUAL_PT.md`
+- **Guia Completo:** `../guides/TELEGRAM_BOT_GUIDE.md`
 - **Checklist Testes:** `VALIDATION_CHECKLIST.md`
 
 ---

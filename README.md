@@ -1,7 +1,7 @@
 # Short-form video generator (House + Lifestyle)
 
 **Current Status (Feb 2026):**
-- 📱 **NEW: Telegram Bot System**: Create posts by sending messages! (See `GUIA_VISUAL_PT.md`)
+- 📱 **NEW: Telegram Bot System**: Create posts by sending messages! (See `docs/tutorials/GUIA_VISUAL_PT.md`)
 - 🎤 **TikTok Lyrics Mode**: New specialized engine for synchronized chorus videos
 - 📝 **Auto-Lyrics**: Multi-source scraper (LRCLIB, Lyricsify, Megalobiz) for `.lrc` files
 - ✅ 20 working posts (001-013, 016, 018-019, 021-022)
@@ -39,12 +39,12 @@ python3 scripts/telegram_bot.py
 ```
 
 **📚 Documentação:**
-- 🎯 **USE SEU BOT AGORA:** `SEU_BOT_ESTA_PRONTO.md` ← **COMECE AQUI!**
-- 🇧🇷 **Guia Visual PT:** `GUIA_VISUAL_PT.md`
-- ⚡ Quick Start: `QUICK_START_TELEGRAM.md`
-- 📖 Guia Completo: `TELEGRAM_BOT_GUIDE.md`
-- 🔧 Avançado: `TELEGRAM_ADVANCED.md`
-- ✅ Checklist: `VALIDATION_CHECKLIST.md`
+- 🎯 **USE SEU BOT AGORA:** `docs/notes/SEU_BOT_ESTA_PRONTO.md` ← **COMECE AQUI!**
+- 🇧🇷 **Guia Visual PT:** `docs/tutorials/GUIA_VISUAL_PT.md`
+- ⚡ Quick Start: `docs/tutorials/QUICK_START_TELEGRAM.md`
+- 📖 Guia Completo: `docs/guides/TELEGRAM_BOT_GUIDE.md`
+- 🔧 Avançado: `docs/guides/TELEGRAM_ADVANCED.md`
+- ✅ Checklist: `docs/notes/VALIDATION_CHECKLIST.md`
 
 ## Project Architecture (For AI Agents)
 
@@ -92,10 +92,10 @@ python main.py --help
 **Best for multiple posts:**
 
 ```powershell
-python batch_posts.py posts_queue.csv
+python batch_posts.py data/queue_samples/posts_queue.csv
 ```
 
-See [BATCH_PROCESSING_GUIDE.md](BATCH_PROCESSING_GUIDE.md) for complete documentation.
+See [BATCH_PROCESSING_GUIDE.md](docs/guides/BATCH_PROCESSING_GUIDE.md) for complete documentation.
 
 ## Run Single Post
 
@@ -191,7 +191,7 @@ Videos are engineered for Reels/TikTok "infinite discovery":
 Process multiple posts from CSV:
 
 ```powershell
-python batch_posts.py posts_queue.csv
+python batch_posts.py data/queue_samples/posts_queue.csv
 ```
 
 CSV format:
@@ -201,7 +201,7 @@ post_num,track_name,artist,broll_idea,themes,min_videos
 2,Underwater,Chris Lake,DJ mixing turntables close up,dj techno,4
 ```
 
-See [BATCH_PROCESSING_GUIDE.md](BATCH_PROCESSING_GUIDE.md) for details.
+See [BATCH_PROCESSING_GUIDE.md](docs/guides/BATCH_PROCESSING_GUIDE.md) for details.
 
 ### Using local provider (existing files):
 
@@ -279,7 +279,7 @@ See `providers/youtube.py` BLACKLIST_VIDEO_IDS for complete list. These videos a
 - Check GPU usage with Task Manager during render
 - Expected: 17.6x - 50.4x real-time speed
 
-For complete troubleshooting guide, see [BATCH_PROCESSING_GUIDE.md](BATCH_PROCESSING_GUIDE.md)
+For complete troubleshooting guide, see [BATCH_PROCESSING_GUIDE.md](docs/guides/BATCH_PROCESSING_GUIDE.md)
 
 prompt padrao
 

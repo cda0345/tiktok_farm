@@ -39,9 +39,9 @@
 - ✅ Atalho para processar fila localmente
 
 ### 6. **Documentação**
-- ✅ `QUICK_START_TELEGRAM.md` - Setup rápido (5 minutos)
-- ✅ `TELEGRAM_BOT_GUIDE.md` - Guia completo
-- ✅ `TELEGRAM_ADVANCED.md` - Configurações avançadas
+- ✅ `../tutorials/QUICK_START_TELEGRAM.md` - Setup rápido (5 minutos)
+- ✅ `../guides/TELEGRAM_BOT_GUIDE.md` - Guia completo
+- ✅ `../guides/TELEGRAM_ADVANCED.md` - Configurações avançadas
 - ✅ `run_telegram_bot.sh` - Script de inicialização
 
 ## 🎯 Como Usar

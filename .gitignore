@@ -10,6 +10,12 @@ venv/
 # (Gossip pipeline outputs)
 gossip_post/output/
 gossip_posts_br/
+logs/
+
+# telegram/gossip artifacts
+telegram_queue/request_*.json
+gossip_post/headline_telegram_*.txt
+gossip_post/hook_telegram_*.txt
 
 # TikTok lyrics pipeline assets not needed for gossip
 audio/

@@ -30,7 +30,7 @@ projeto_insta_pc/
 ├── online_pipeline.py         # Orquestração do workflow YouTube
 ├── exporter_fast.py          # Renderizador 2-pass (PRODUÇÃO)
 ├── batch_posts.py            # Processador de fila de posts
-├── posts_queue.csv           # Fila de posts a processar
+├── data/queue_samples/posts_queue.csv  # Fila de posts a processar (exemplo)
 ├── config.py                 # Configurações de renderização
 ├── providers/
 │   └── youtube.py           # Download de áudio/vídeo do YouTube
@@ -53,7 +53,7 @@ projeto_insta_pc/
 
 ### Método 1: Batch Automático (Recomendado)
 
-1. **Edite o arquivo `posts_queue.csv`:**
+1. **Edite o arquivo `data/queue_samples/posts_queue.csv`:**
 
 ```csv
 post_num,track_name,artist,broll_idea,themes,min_videos
@@ -65,7 +65,7 @@ post_num,track_name,artist,broll_idea,themes,min_videos
 2. **Execute o batch processor:**
 
 ```powershell
-python batch_posts.py posts_queue.csv
+python batch_posts.py data/queue_samples/posts_queue.csv
 ```
 
 **O script irá:**
@@ -87,7 +87,7 @@ python main.py --online `
   --overwrite
 ```
 
-## 📊 Formato do CSV (posts_queue.csv)
+## 📊 Formato do CSV (data/queue_samples/posts_queue.csv)
 
 ### Campos Obrigatórios
 
@@ -355,7 +355,7 @@ ffmpeg (8.0.1)      # Video encoding (com NVENC)
 
 ## 🎯 Próximos Passos Sugeridos
 
-1. **Adicionar mais posts**: Edite `posts_queue.csv` e rode batch
+1. **Adicionar mais posts**: Edite `data/queue_samples/posts_queue.csv` e rode batch
 2. **Melhorar blacklist**: Adicione video_ids indesejados
 3. **Testar diferentes estilos**: Experimente novas `broll_idea` queries
 4. **Caption automation**: Configure OPENAI_API_KEY para captions automáticas

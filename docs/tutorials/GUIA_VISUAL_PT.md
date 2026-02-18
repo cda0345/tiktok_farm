@@ -144,7 +144,7 @@ Execute no seu computador:
 Quando você enviar comando, ele já cria a requisição e GitHub Actions processa mais rápido!
 
 ### Opção 3: Webhook (Processamento Instantâneo)
-Veja `TELEGRAM_ADVANCED.md` para configurar servidor webhook.
+Veja `../guides/TELEGRAM_ADVANCED.md` para configurar servidor webhook.
 
 ---
 
@@ -201,8 +201,8 @@ Todos os vídeos são criados em:
 ## 📚 Mais Informações
 
 - **Setup Rápido:** `QUICK_START_TELEGRAM.md`
-- **Guia Completo:** `TELEGRAM_BOT_GUIDE.md`
-- **Configurações Avançadas:** `TELEGRAM_ADVANCED.md`
+- **Guia Completo:** `../guides/TELEGRAM_BOT_GUIDE.md`
+- **Configurações Avançadas:** `../guides/TELEGRAM_ADVANCED.md`
 - **Resumo Técnico:** `TELEGRAM_IMPLEMENTATION_SUMMARY.md`
 - **Deploy Webhook:** `DEPLOY_CONFIGS.md`
 
