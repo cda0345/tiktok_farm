@@ -748,6 +748,49 @@ def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool 
     return "\n".join(wrapped[:max_lines])
 
 
+def _base_body_typography(line_count: int) -> tuple[int, int]:
+    if line_count > 7:
+        return 52, 62
+    if line_count > 5:
+        return 56, 68
+    if line_count > 3:
+        return 62, 75
+    return 68, 85
+
+
+def _layout_main_body_text(
+    text: str,
+    *,
+    base_width: int = 34,
+    max_lines: int = 10,
+    min_scale: float = 0.90,
+) -> tuple[list[str], int, int]:
+    clean = " ".join((text or "").split())
+    if not clean:
+        return [], 68, 85
+
+    scales = [1.0, 0.97, 0.94, 0.91, min_scale]
+    baseline_lines = textwrap.wrap(clean, width=base_width, break_long_words=False, break_on_hyphens=False)
+    base_font, base_spacing = _base_body_typography(len(baseline_lines))
+
+    fallback_lines: list[str] = baseline_lines
+    fallback_font = base_font
+    fallback_spacing = base_spacing
+
+    for scale in scales:
+        width = max(30, int(round(base_width / scale)))
+        lines = textwrap.wrap(clean, width=width, break_long_words=False, break_on_hyphens=False)
+        font_size = max(46, int(round(base_font * scale)))
+        line_spacing = max(56, int(round(base_spacing * scale)))
+        fallback_lines = lines
+        fallback_font = font_size
+        fallback_spacing = line_spacing
+        if len(lines) <= max_lines:
+            return lines, font_size, line_spacing
+
+    return fallback_lines[:max_lines], fallback_font, fallback_spacing
+
+
 def _pick_pt_hook(headline: str) -> str:
     """Gera hooks curtos e impactantes no estilo dos posts top-performers.
     
@@ -849,6 +892,7 @@ def _summarize_news_text(item: NewsItem) -> str:
     context = context[:2200]
 
     cfg = OpenAIConfig()
+    summary_model = os.getenv("GOSSIP_SUMMARY_MODEL", "gpt-4.1").strip() or cfg.model
     if is_openai_configured(cfg):
         try:
             api_key = os.getenv(cfg.api_key_env, "").strip()
@@ -877,6 +921,8 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "REGRAS DE OURO:\n"
                     "- Hook DEVE ser CURTISSIMO e de IMPACTO. Preferencia por 1-3 palavras.\n"
                     "- Body (linhas 2-4) deve ser NARRATIVO, como se estivesse contando pra um amigo.\n"
+                    "- Linhas 2, 3 e 4 juntas devem ter entre 20 e 32 palavras no total.\n"
+                    "- Cada uma das linhas 2, 3 e 4 deve ter no maximo 11 palavras.\n"
                     "- Use '..' (dois pontos seguidos) para criar PAUSAS DRAMATICAS no meio do texto.\n"
                     "- Use '...' (reticencias) no FINAL para gerar curiosidade.\n"
                     "- Frases CURTAS e DIRETAS. Sem enrolacao.\n"
@@ -911,6 +957,8 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "GOLDEN RULES:\n"
                     "- Hook MUST be ULTRA-SHORT and IMPACTFUL. Prefer 1-3 words.\n"
                     "- Body (lines 2-4) must be NARRATIVE, like telling a friend.\n"
+                    "- Lines 2, 3 and 4 combined must have 20 to 32 words total.\n"
+                    "- Each of lines 2, 3 and 4 must have at most 11 words.\n"
                     "- Use '..' for DRAMATIC PAUSES in the middle of text.\n"
                     "- Use '...' at the END to create curiosity.\n"
                     "- Short, direct sentences. No fluff.\n"
@@ -922,8 +970,9 @@ def _summarize_news_text(item: NewsItem) -> str:
                 user_content = f"News:\n{context}"
 
             payload = {
-                "model": cfg.model,
+                "model": summary_model,
                 "temperature": 0.7,
+                "max_completion_tokens": 240,
                 "messages": [
                     {"role": "system", "content": system_instr},
                     {"role": "user", "content": user_content},
@@ -1067,23 +1116,14 @@ def _render_short(
     # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
     # Isso garante que frases completas sejam exibidas
     
-    # Quebra em linhas - aumentado para 34 chars por linha e máximo 8 linhas para mostrar mais conteúdo
-    main_lines = textwrap.wrap(main_input, width=34, break_long_words=False, break_on_hyphens=False)[:8]
+    # Layout dinâmico: reduz fonte em até 10% e aumenta capacidade de linhas.
+    main_lines, font_size, line_spacing = _layout_main_body_text(
+        main_input,
+        base_width=34,
+        max_lines=10,
+        min_scale=0.90,
+    )
     main_filters = []
-
-    # Ajuste dinâmico de fonte baseado no número de linhas
-    if len(main_lines) > 7:
-        line_spacing = 62
-        font_size = 52
-    elif len(main_lines) > 5:
-        line_spacing = 68
-        font_size = 56
-    elif len(main_lines) > 3:
-        line_spacing = 75
-        font_size = 62
-    else:
-        line_spacing = 85
-        font_size = 68
 
     # Start Y so that the full block ends at SAFE_BOTTOM.
     block_h = max(0, (len(main_lines) - 1) * line_spacing)
@@ -1294,23 +1334,14 @@ def _render_short_video(
     # Não trunca o texto - use todo o conteúdo disponível para exibição completa
     # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
     
-    # Quebra em linhas - aumentado para 34 chars por linha e máximo 8 linhas
-    main_lines = textwrap.wrap(main_input, width=34, break_long_words=False, break_on_hyphens=False)[:8]
+    # Layout dinâmico: reduz fonte em até 10% e aumenta capacidade de linhas.
+    main_lines, font_size, line_spacing = _layout_main_body_text(
+        main_input,
+        base_width=34,
+        max_lines=10,
+        min_scale=0.90,
+    )
     main_filters = []
-
-    # Ajuste dinâmico de fonte baseado no número de linhas
-    if len(main_lines) > 7:
-        line_spacing = 62
-        font_size = 52
-    elif len(main_lines) > 5:
-        line_spacing = 68
-        font_size = 56
-    elif len(main_lines) > 3:
-        line_spacing = 75
-        font_size = 62
-    else:
-        line_spacing = 85
-        font_size = 68
 
     block_h = max(0, (len(main_lines) - 1) * line_spacing)
     start_y = _clamp(SAFE_BOTTOM - block_h, SAFE_TOP + 520, SAFE_BOTTOM)
@@ -1497,7 +1528,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
 
         # Evita corpo gigante e NÃO corta no meio da última frase
         # (limite pensado para caber em ~7-8 linhas na overlay)
-        headline_text_clean = _truncate_at_sentence_boundary(headline_text_clean, max_chars=220)
+        headline_text_clean = _truncate_at_sentence_boundary(headline_text_clean, max_chars=320)
 
         # Garante pontuação final para sensação de completude
         if headline_text_clean and not re.search(r"[.!?]$", headline_text_clean):
@@ -1567,7 +1598,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             item.source,
             output_video,
             hook_file=hook_file,
-            summary_file=headline_file,
+            summary_file=summary_file,
             cta_text=cta_text,
             logo_path=logo_path,
         )
