@@ -659,6 +659,48 @@ def _polish_body_punctuation(text: str) -> str:
     return t
 
 
+def _is_probably_bad_hook(text: str) -> bool:
+    t = _clean_text(text).upper()
+    if not t:
+        return True
+    if t.startswith(("CONTEXTO", "CONTEXT", "SEGUNDO FAS", "ACCORDING TO FANS", "A REPERCUSSAO", "THE BACKLASH")):
+        return True
+    if re.search(r"\b(LINHA|LINE)\s*\d+\b", t):
+        return True
+    words = [w for w in t.split() if w]
+    return len(words) < 5
+
+
+def _is_bad_overlay_body(text: str) -> bool:
+    t = _clean_text(text)
+    if not t:
+        return True
+    # Placeholder labels and common broken endings seen in scheduler outputs.
+    if re.search(r"\b(CONTEXTO|CONTEXT)\s*:", t, flags=re.I):
+        return True
+    if re.search(r"\b(SEGUNDO\s+F[ÃA]S|ACCORDING TO FANS)\b.{0,40}\b(FOI|WAS)\.?\s*$", t, flags=re.I):
+        return True
+    if re.search(r"\bA\s+WEB\s+FOI\.?\s*$", t, flags=re.I):
+        return True
+    if re.search(r"\b(FOI|WAS)\.?\s*$", t, flags=re.I) and len(t.split()) <= 24:
+        return True
+    return False
+
+
+def _is_valid_ai_cta(text: str) -> bool:
+    t = _clean_text(text).upper()
+    if not t:
+        return False
+    if len(t) < 6 or len(t) > 45:
+        return False
+    # Question-style closing line is not a CTA for this template.
+    if "?" in t:
+        return False
+    if t.startswith(("ISSO E ", "EXAGERO OU", "AVANCO OU", "WHAT ", "IS THIS ", "DO YOU ")):
+        return False
+    return bool(re.search(r"\b(COMENTA|CURTE|SALVA|SEGUE|MARCA|MANDA|CONTA)\b", t, flags=re.I))
+
+
 def _normalize_hook_text(text: str) -> str:
     import unicodedata
 
@@ -1330,8 +1372,8 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "Ex: 'SEGUNDO FAS, .. A CENA DIVIDIU OPINIOES'.\n"
                     "Linha 4 = DESDOBRAMENTO (OBRIGATORIO iniciar com 'A REPERCUSSAO COMECOU APOS'): consequencia ou impacto. "
                     "Se possivel termine com '...' (reticencias).\n"
-                    "Linha 5 = PERGUNTA EDITORIAL: pergunta curta que força posicionamento. "
-                    "Ex: 'ISSO E AVANCO OU OPORTUNISMO?', 'EXAGERO OU CRITICA JUSTA?'\n\n"
+                    "Linha 5 = CTA DE ENGAJAMENTO: frase imperativa curta para acao. "
+                    "Ex: 'COMENTA O QUE ACHOU!', 'CURTE SE CONCORDA!', 'SALVA PRA VER DEPOIS!'\n\n"
 
                     "REGRAS DE OURO:\n"
                     "- Hook deve ter cara editorial: frase curta, especifica e com curiosidade.\n"
@@ -1344,6 +1386,7 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "- Frases CURTAS e DIRETAS. Sem enrolacao.\n"
                     "- NUNCA comece o hook com 'VOCE', 'O QUE', 'VEJA', 'CONHECE'.\n"
                     "- Linguagem INFORMAL, como se falasse com amigo no WhatsApp.\n"
+                    "- Linha 5 nao pode ser pergunta; deve ser CTA imperativo.\n"
                     "- ZERO hashtags.\n"
                     "- ZERO emojis.\n"
                     "- TODAS AS LINHAS EM CAPS LOCK.\n\n"
@@ -1367,7 +1410,8 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "Line 2 = CONTEXT (MUST start with 'CONTEXT:'): one objective sentence with the main fact and names.\n"
                     "Line 3 = WEB REACTION (MUST start with 'ACCORDING TO FANS,'): include '..' suspense marker.\n"
                     "Line 4 = FOLLOW-UP (MUST start with 'THE BACKLASH STARTED AFTER'): consequence/impact and ideally end with '...'.\n"
-                    "Line 5 = EDITORIAL QUESTION: short question forcing a stance.\n\n"
+                    "Line 5 = ENGAGEMENT CTA: short imperative call-to-action.\n"
+                    "Ex: 'COMMENT YOUR TAKE!', 'LIKE IF YOU AGREE!', 'SAVE THIS POST!'\n\n"
 
                     "GOLDEN RULES:\n"
                     "- Hook should feel editorial: short, specific and curiosity-driven.\n"
@@ -1380,6 +1424,7 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "- Short, direct sentences. No fluff.\n"
                     "- NEVER start hook with 'YOU', 'WHAT', 'SEE', 'CHECK'.\n"
                     "- Informal language, like texting a friend.\n"
+                    "- Line 5 must be imperative CTA, not a question.\n"
                     "- ALL CAPS, zero hashtags, zero emojis.\n\n"
                     "Respond ONLY with the 5 lines. Nothing before, nothing after."
                 )
@@ -1432,7 +1477,7 @@ def _summarize_news_text(item: NewsItem) -> str:
             f"CONTEXTO: {context_line}.",
             f"SEGUNDO FAS, .. {reaction_hint}",
             "A REPERCUSSAO COMECOU APOS O VIDEO VIRALIZAR...",
-            "ISSO E ANALISE JUSTA OU EXAGERO?",
+            "COMENTA O QUE ACHOU!",
         ]
     )
 
@@ -2213,6 +2258,8 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         hook_clean = re.sub(r'#\w+', '', hook).strip()
         hook_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', hook_clean)
         hook_clean = re.sub(r'\s+', ' ', hook_clean).strip()
+        if _is_probably_bad_hook(hook_clean):
+            hook_clean = _pick_pt_hook(item.title) if _is_portuguese_context(item.source, item.title) else _pick_en_hook(item.title)
         # Ajuste PT-BR: evita hooks estranhos (ex.: 'EITA CONFISSOU!')
         if _is_portuguese_context(item.source, item.title):
             hook_clean = _normalize_pt_hook(hook_clean, item.title)
@@ -2248,6 +2295,9 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         headline_text_clean = _ensure_headline_completeness(headline_text_clean, item)
         # Passo final anti-fragmento para overlays curtos.
         headline_text_clean = _rewrite_overlay_body_if_needed(headline_text_clean, item=item)
+        if _is_bad_overlay_body(headline_text_clean):
+            headline_text_clean = _clean_text(f"{item.title}. A WEB REAGIU E O TEMA VIRALIZOU NAS REDES...")
+            headline_text_clean = _rewrite_overlay_body_if_needed(headline_text_clean, item=item)
         # Evita corpo gigante e NÃO corta no meio da última frase
         # (limite pensado para caber em ~7-8 linhas na overlay)
         headline_text_clean = _truncate_at_sentence_boundary(headline_text_clean, max_chars=320)
@@ -2301,7 +2351,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
 
         # ── CTA: Prefere CTA da IA (linha 5), fallback para CTA temático ──
         # A IA agora gera CTAs emocionais como "COMENTA O QUE ACHOU!", "CURTE SE GOSTA DE EMOCAO NO BBB"
-        if ai_cta and len(ai_cta) >= 5 and len(ai_cta) <= 45:
+        if _is_valid_ai_cta(ai_cta):
             # Usa o CTA gerado pela IA (já otimizado para o tema)
             cta_text = _sanitize_cta_text(ai_cta.upper())
         else:
