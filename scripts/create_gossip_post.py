@@ -1003,6 +1003,211 @@ def _layout_main_body_text(
     return fallback_lines[:max_lines], fallback_font, fallback_spacing
 
 
+EDITORIAL_LAYOUT_PRESETS: list[dict[str, object]] = [
+    {
+        "name": "classic_center",
+        "hook_width": 24,
+        "hook_fontsize": 85,
+        "hook_line_step": 104,
+        "hook_base_y": 560,
+        "hook_two_line_shift": 104,
+        "hook_boxborderw": 18,
+        "hook_x_mode": "center",
+        "body_base_width": 34,
+        "body_prefit_max_lines": 5,
+        "body_prefit_min_scale": 0.72,
+        "body_max_lines": 11,
+        "body_min_scale": 0.84,
+        "body_min_top_padding": 520,
+        "body_x_mode": "center",
+        "cta_fontsize": 53,
+        "cta_y": "h*0.90",
+        "cta_blink_period": 1.4,
+        "cta_blink_on": 0.7,
+    },
+    {
+        "name": "mag_strip",
+        "hook_width": 22,
+        "hook_fontsize": 89,
+        "hook_line_step": 100,
+        "hook_base_y": 500,
+        "hook_two_line_shift": 90,
+        "hook_boxborderw": 22,
+        "hook_x_mode": "center",
+        "body_base_width": 33,
+        "body_prefit_max_lines": 5,
+        "body_prefit_min_scale": 0.72,
+        "body_max_lines": 10,
+        "body_min_scale": 0.82,
+        "body_min_top_padding": 560,
+        "body_x_mode": "left",
+        "body_left_x": 72,
+        "cta_fontsize": 49,
+        "cta_y": "h*0.885",
+        "cta_blink_period": 1.6,
+        "cta_blink_on": 0.8,
+    },
+    {
+        "name": "wide_editorial",
+        "hook_width": 26,
+        "hook_fontsize": 79,
+        "hook_line_step": 98,
+        "hook_base_y": 540,
+        "hook_two_line_shift": 86,
+        "hook_boxborderw": 16,
+        "hook_x_mode": "left",
+        "hook_left_x": 60,
+        "body_base_width": 36,
+        "body_prefit_max_lines": 6,
+        "body_prefit_min_scale": 0.72,
+        "body_max_lines": 9,
+        "body_min_scale": 0.83,
+        "body_min_top_padding": 610,
+        "body_x_mode": "left",
+        "body_left_x": 64,
+        "cta_fontsize": 50,
+        "cta_y": "h*0.895",
+        "cta_blink_period": 1.3,
+        "cta_blink_on": 0.6,
+    },
+    {
+        "name": "compact_bulletin",
+        "hook_width": 23,
+        "hook_fontsize": 83,
+        "hook_line_step": 96,
+        "hook_base_y": 610,
+        "hook_two_line_shift": 92,
+        "hook_boxborderw": 18,
+        "hook_x_mode": "center",
+        "body_base_width": 32,
+        "body_prefit_max_lines": 5,
+        "body_prefit_min_scale": 0.70,
+        "body_max_lines": 11,
+        "body_min_scale": 0.80,
+        "body_min_top_padding": 500,
+        "body_x_mode": "center",
+        "cta_fontsize": 52,
+        "cta_y": "h*0.91",
+        "cta_blink_period": 1.2,
+        "cta_blink_on": 0.55,
+    },
+]
+
+EDITORIAL_COLORWAYS: list[dict[str, object]] = [
+    {"hook_box_color": "0x111827", "hook_box_alpha": 0.95, "eq": "eq=brightness=-0.03:contrast=1.10:saturation=1.03"},
+    {"hook_box_color": "0x7F1D1D", "hook_box_alpha": 0.94, "eq": "eq=brightness=-0.02:contrast=1.12:saturation=1.01"},
+    {"hook_box_color": "0x1E293B", "hook_box_alpha": 0.95, "eq": "eq=brightness=-0.04:contrast=1.14:saturation=0.99"},
+    {"hook_box_color": "0x1F2937", "hook_box_alpha": 0.93, "eq": "eq=brightness=-0.01:contrast=1.09:saturation=1.06"},
+    {"hook_box_color": "0x422006", "hook_box_alpha": 0.94, "eq": "eq=brightness=-0.02:contrast=1.11:saturation=1.04"},
+]
+
+
+def _safe_int(value: object, default: int) -> int:
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except Exception:
+        return default
+
+
+def _safe_float(value: object, default: float) -> float:
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except Exception:
+        return default
+
+
+def _pick_editorial_style(seed_text: str) -> tuple[dict[str, object], dict[str, object]]:
+    clean_seed = _clean_text(seed_text) or "editorial-style"
+    digest = hashlib.sha1(clean_seed.encode("utf-8")).hexdigest()
+    seed = int(digest, 16)
+    layout = EDITORIAL_LAYOUT_PRESETS[seed % len(EDITORIAL_LAYOUT_PRESETS)]
+    colorway = EDITORIAL_COLORWAYS[(seed // len(EDITORIAL_LAYOUT_PRESETS)) % len(EDITORIAL_COLORWAYS)]
+    return layout, colorway
+
+
+def _pick_logo_variant(seed_text: str) -> dict[str, object]:
+    variants: list[dict[str, object]] = [
+        {"name": "top_center_large", "x_mode": "center", "y": 28, "width": 372, "pulse": True, "pulse_amp": 18, "pulse_period": 68},
+        {"name": "top_left_compact", "x_mode": "left", "x_margin": 42, "y": 32, "width": 290, "pulse": False},
+        {"name": "top_right_compact", "x_mode": "right", "x_margin": 42, "y": 34, "width": 294, "pulse": False},
+        {"name": "top_center_wide", "x_mode": "center", "y": 44, "width": 404, "pulse": True, "pulse_amp": 22, "pulse_period": 80},
+        {"name": "top_left_featured", "x_mode": "left", "x_margin": 36, "y": 24, "width": 336, "pulse": True, "pulse_amp": 14, "pulse_period": 72},
+        {"name": "top_right_featured", "x_mode": "right", "x_margin": 36, "y": 24, "width": 336, "pulse": True, "pulse_amp": 14, "pulse_period": 72},
+    ]
+    clean_seed = _clean_text(seed_text) or "logo-variant"
+    digest = hashlib.sha1(clean_seed.encode("utf-8")).hexdigest()
+    idx = int(digest, 16) % len(variants)
+    return variants[idx]
+
+
+def _logo_overlay_expr(variant: dict[str, object]) -> tuple[str, str, str, str]:
+    x_mode = str(variant.get("x_mode", "center"))
+    x_margin = _safe_int(variant.get("x_margin"), 36)
+    y = str(_safe_int(variant.get("y"), 32))
+    width = _safe_int(variant.get("width"), 340)
+    pulse = bool(variant.get("pulse", False))
+    pulse_amp = _safe_int(variant.get("pulse_amp"), 16)
+    pulse_period = max(36, _safe_int(variant.get("pulse_period"), 72))
+
+    if pulse:
+        width_expr = f"{width}+{pulse_amp}*sin(2*PI*n/{pulse_period})"
+    else:
+        width_expr = str(width)
+
+    if x_mode == "left":
+        x_expr = str(x_margin)
+    elif x_mode == "right":
+        x_expr = f"W-w-{x_margin}"
+    else:
+        x_expr = "(W-w)/2"
+
+    return width_expr, x_expr, y, str(variant.get("name", "logo_default"))
+
+
+def _pick_image_motion_variant(seed_text: str, duration_s: float) -> tuple[list[str], str]:
+    d = max(5.0, float(duration_s))
+    d_str = f"{d:.2f}"
+    variants: list[dict[str, str]] = [
+        {
+            "name": "zoom_in",
+            "z": f"(1.000+0.034*t/{d_str})",
+        },
+        {
+            "name": "zoom_out",
+            "z": f"(1.034-0.034*t/{d_str})",
+        },
+    ]
+    clean_seed = _clean_text(seed_text) or "image-motion"
+    digest = hashlib.sha1(clean_seed.encode("utf-8")).hexdigest()
+    idx = int(digest, 16) % len(variants)
+    variant = variants[idx]
+    z_expr = variant["z"]
+    filters = [
+        f"scale='1080*{z_expr}':'1920*{z_expr}':eval=frame:flags=lanczos",
+        "crop=1080:1920:'floor((iw-1080)/2/2)*2':'floor((ih-1920)/2/2)*2'",
+    ]
+    return filters, variant["name"]
+
+
+def _load_item_for_overlay_rewrite(out_video: Path, source: str) -> NewsItem | None:
+    meta_path = out_video.parent / "news.json"
+    if not meta_path.exists():
+        return None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        return NewsItem(
+            source=meta.get("source") or source,
+            feed_url=meta.get("feed_url") or "",
+            title=meta.get("title") or "",
+            link=meta.get("link") or "",
+            published=meta.get("published") or "",
+            image_url=meta.get("image_url") or "",
+            description=meta.get("description") or "",
+        )
+    except Exception:
+        return None
+
+
 def _pick_pt_hook(headline: str) -> str:
     """Gera hooks em tom editorial-curioso para fallback local.
 
@@ -1379,151 +1584,125 @@ def _render_short(
     summary_file: Path | None = None,
     cta_text: str = "INSCREVA-SE",
     logo_path: Path | None = None,
+    duration_s: float = 5.0,
 ) -> None:
     ff = ensure_ffmpeg("tools")
     font = _ffmpeg_escape(_select_font())
-    duration_s = 5
     fade_out_start = max(0.0, duration_s - 1.2)
     cta_escaped = _ffmpeg_escape_text(_sanitize_cta_text(cta_text.upper()))
-    overlay_dir = out_video.parent / "_overlay_text"
-    overlay_dir.mkdir(parents=True, exist_ok=True)
-    hook_box_color = "0x000000"
-
-    # Palette of colors used to vary background and tarjas per publication.
-    # Deterministic selection based on headline content (so each publication keeps the same color).
-    PALETTE = [
-        "0x1A73E8",  # blue
-        "0xFB8C00",  # orange
-        "0x06B6D4",  # cyan
-        "0x8B5CF6",  # purple
-        "0x16A34A",  # green
-        "0xEF4444",  # red
-        "0xF59E0B",  # amber
-        "0xE11D48",  # rose
-    ]
-
-    # We'll pick a color based on the main headline text so it's repeatable per post.
-    # main_input is computed below; use a temporary seed from the headline file if needed.
-    # Default to black on error.
-    bg_color = "0x000000"
-    tarja_color = "0x000000"
-
-    # Make spacing consistent across macOS/Linux builds of FFmpeg/libfreetype.
-    # Keep only widely-supported drawtext params.
+    (out_video.parent / "_overlay_text").mkdir(parents=True, exist_ok=True)
 
     SAFE_TOP = 220
     SAFE_BOTTOM = 1520
-    # Margens horizontais: pode usar mais espaço lateral (não tem UI do YouTube Shorts nas laterais)
-    SAFE_LEFT = 40   # Margem esquerda pequena
-    SAFE_RIGHT = 40  # Margem direita pequena
 
     main_path = summary_file or headline_file
     main_raw = main_path.read_text(encoding="utf-8") if main_path.exists() else ""
     main_clean = _sanitize_overlay_text(main_raw).replace("\xa0", " ")
-    
     hook_raw = hook_file.read_text(encoding="utf-8") if hook_file and hook_file.exists() else ""
     hook_clean = _sanitize_overlay_text(hook_raw).replace("\xa0", " ")
-
-    # Render HOOK - aumentado para 24 chars por linha (mais largura disponível)
-    hook_lines = textwrap.wrap(hook_clean, width=24, break_long_words=False, break_on_hyphens=False)[:2]
-    hook_filters = []
-
-    # Keep hook on tarja, but inside safe area.
-    # If hook has 2 lines, move it one line up to reduce interference with the photo focal area.
-    hook_base_y_raw = 560 - (104 if len(hook_lines) >= 2 else 0)
-    hook_base_y = _clamp(hook_base_y_raw, SAFE_TOP, SAFE_BOTTOM)
-    for i, line in enumerate(hook_lines):
-        line_esc = _ffmpeg_escape_text(line)
-        y_pos = _clamp(hook_base_y + (i * 104), SAFE_TOP, SAFE_BOTTOM)
-        hook_filters.append(
-            f"drawtext=text='{line_esc}':fontfile='{font}':"
-            f"fontcolor=white:fontsize=85:fix_bounds=1:"
-            f"borderw=3:bordercolor=black:"
-            f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=18:"
-            f"x=(w-tw)/2:y={y_pos}"
-        )
-
-    # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
 
-    # Fit strategy:
-    # 1) Try to fit into max 5 lines by scaling font more aggressively.
-    # 2) If still too long, rewrite via IA to a short overlay-friendly body.
+    style_seed = f"{source}|{out_video.name}|{main_input}|{hook_clean}"
+    layout, colorway = _pick_editorial_style(style_seed)
+    motion_filters, _ = _pick_image_motion_variant(style_seed + "|motion", duration_s)
+    logo_variant = _pick_logo_variant(style_seed + "|image")
+    logo_scale_expr, logo_x_expr, logo_y_expr, _ = _logo_overlay_expr(logo_variant)
+    hook_box_color = str(colorway.get("hook_box_color", "0x111827"))
+    hook_box_alpha = _safe_float(colorway.get("hook_box_alpha"), 0.95)
+
+    hook_width = _safe_int(layout.get("hook_width"), 24)
+    hook_fontsize = _safe_int(layout.get("hook_fontsize"), 85)
+    hook_line_step = _safe_int(layout.get("hook_line_step"), 104)
+    hook_base_y_cfg = _safe_int(layout.get("hook_base_y"), 560)
+    hook_two_line_shift = _safe_int(layout.get("hook_two_line_shift"), 104)
+    hook_boxborderw = _safe_int(layout.get("hook_boxborderw"), 18)
+
+    hook_lines = textwrap.wrap(hook_clean, width=hook_width, break_long_words=False, break_on_hyphens=False)[:2]
+    hook_filters = []
+    hook_base_y_raw = hook_base_y_cfg - (hook_two_line_shift if len(hook_lines) >= 2 else 0)
+    hook_base_y = _clamp(hook_base_y_raw, SAFE_TOP, SAFE_BOTTOM)
+    hook_x = "(w-tw)/2" if str(layout.get("hook_x_mode", "center")) != "left" else str(_safe_int(layout.get("hook_left_x"), 60))
+    for i, line in enumerate(hook_lines):
+        line_esc = _ffmpeg_escape_text(line)
+        y_pos = _clamp(hook_base_y + (i * hook_line_step), SAFE_TOP, SAFE_BOTTOM)
+        hook_filters.append(
+            f"drawtext=text='{line_esc}':fontfile='{font}':"
+            f"fontcolor=white:fontsize={hook_fontsize}:fix_bounds=1:"
+            f"borderw=3:bordercolor=black:"
+            f"box=1:boxcolor={hook_box_color}@{hook_box_alpha:.2f}:boxborderw={hook_boxborderw}:"
+            f"x={hook_x}:y={y_pos}"
+        )
+
+    prefit_width = _safe_int(layout.get("body_base_width"), 34)
+    prefit_max_lines = _safe_int(layout.get("body_prefit_max_lines"), 5)
+    prefit_min_scale = _safe_float(layout.get("body_prefit_min_scale"), 0.72)
     main_lines, font_size, line_spacing = _layout_main_body_text(
         main_input,
-        base_width=34,
-        max_lines=5,
-        min_scale=0.72,
+        base_width=prefit_width,
+        max_lines=prefit_max_lines,
+        min_scale=prefit_min_scale,
     )
-    # If the last wrapped line becomes a dangling stub (ex.: 'WEB.'), rewrite and relayout.
-    if (len(main_lines) > 5) or (main_lines and re.fullmatch(r"(A\s+)?WEB\.?", main_lines[-1].strip(), flags=re.I)):
-        # rewrite text to fit and recompute layout
+    if (len(main_lines) > prefit_max_lines) or (main_lines and re.fullmatch(r"(A\s+)?WEB\.?", main_lines[-1].strip(), flags=re.I)):
         try:
-            # load item metadata to help rewrite (news.json is written before render)
-            meta_path = out_video.parent / "news.json"
-            item_for_rewrite = None
-            if meta_path.exists():
-                meta = json.loads(meta_path.read_text(encoding="utf-8"))
-                # best-effort reconstruction
-                item_for_rewrite = NewsItem(
-                    source=meta.get("source") or source,
-                    feed_url=meta.get("feed_url") or "",
-                    title=meta.get("title") or "",
-                    link=meta.get("link") or "",
-                    published=meta.get("published") or "",
-                    image_url=meta.get("image_url") or "",
-                    description=meta.get("description") or "",
-                )
+            item_for_rewrite = _load_item_for_overlay_rewrite(out_video, source)
             if item_for_rewrite:
                 main_input2 = _rewrite_overlay_body_if_needed(main_input, item=item_for_rewrite)
                 main_lines, font_size, line_spacing = _layout_main_body_text(
                     main_input2,
-                    base_width=34,
-                    max_lines=5,
-                    min_scale=0.70,
+                    base_width=prefit_width,
+                    max_lines=prefit_max_lines,
+                    min_scale=max(0.68, prefit_min_scale - 0.02),
                 )
                 main_input = main_input2
         except Exception:
             pass
 
-    # Não trunca o texto - use todo o conteúdo disponível
-    # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
-    # Isso garante que frases completas sejam exibidas
-    
-    # Layout dinâmico: reduz fonte um pouco mais e permite 1 linha extra quando necessário.
+    body_width = _safe_int(layout.get("body_base_width"), 34)
+    body_max_lines = _safe_int(layout.get("body_max_lines"), 11)
+    body_min_scale = _safe_float(layout.get("body_min_scale"), 0.84)
     main_lines, font_size, line_spacing = _layout_main_body_text(
         main_input,
-        base_width=34,
-        max_lines=11,
-        min_scale=0.84,
+        base_width=body_width,
+        max_lines=body_max_lines,
+        min_scale=body_min_scale,
     )
     main_filters = []
-
-    # Start Y so that the full block ends at SAFE_BOTTOM.
-    block_h = max(0, (len(main_lines) - 1) * line_spacing)
-    start_y = _clamp(SAFE_BOTTOM - block_h, SAFE_TOP + 520, SAFE_BOTTOM)
+    main_x = "(w-tw)/2" if str(layout.get("body_x_mode", "center")) != "left" else str(_safe_int(layout.get("body_left_x"), 64))
+    block_h = max(0, (len(main_lines) - 1) * line_spacing + font_size)
+    top_padding = _safe_int(layout.get("body_min_top_padding"), 520)
+    start_y = _clamp(SAFE_BOTTOM - block_h, SAFE_TOP + top_padding, SAFE_BOTTOM - font_size)
 
     for i, line in enumerate(main_lines):
         line_esc = _ffmpeg_escape_text(line)
-        y_pos = _clamp(start_y + (i * line_spacing), SAFE_TOP, SAFE_BOTTOM)
+        y_pos = start_y + (i * line_spacing)
         main_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
             f"fontcolor=white:fontsize={font_size}:fix_bounds=1:"
             f"borderw=3:bordercolor=black:"
-            f"x=(w-tw)/2:y={y_pos}"
+            f"x={main_x}:y={y_pos}"
         )
 
-    vf_layers = [
-        "scale=1080:-2",  # Ajusta o vídeo para caber no quadro 9:16
-        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",  # Adiciona padding para manter a proporção
-        "setsar=1",  # Garante pixels quadrados
-        "format=yuv420p",  # Formato de saída correto
-        "eq=brightness=-0.02:contrast=1.08:saturation=1.02",  # Ajustes de cor
-        *hook_filters,  # Filtros para o texto do hook
-        *main_filters,  # Filtros para o texto principal
+    cta_fontsize = _safe_int(layout.get("cta_fontsize"), 53)
+    cta_y = str(layout.get("cta_y", "h*0.90"))
+    cta_period = _safe_float(layout.get("cta_blink_period"), 1.4)
+    cta_on = _safe_float(layout.get("cta_blink_on"), 0.7)
+    cta_filter = (
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
-        f"borderw=2:bordercolor=black:"
-        "fontsize=53:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",  # CTA piscante
+        f"borderw=2:bordercolor=black:fontsize={cta_fontsize}:x=(w-text_w)/2:y={cta_y}:"
+        f"enable='lt(mod(t\\,{cta_period:.2f})\\,{cta_on:.2f})'"
+    )
+
+    eq_filter = str(colorway.get("eq", "eq=brightness=-0.02:contrast=1.08:saturation=1.02"))
+    vf_layers = [
+        "scale=1080:-2",
+        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",
+        "setsar=1",
+        "format=yuv420p",
+        eq_filter,
+        *motion_filters,
+        *hook_filters,
+        *main_filters,
+        cta_filter,
     ]
     vf = ",".join(vf_layers)
 
@@ -1551,7 +1730,7 @@ def _render_short(
             "-i",
             "sine=frequency=247:sample_rate=44100",
             "-filter_complex",
-            f"[0:v]{vf}[bg];[1:v]scale='360+34*sin(2*PI*n/72)':-1:eval=frame[logo];[bg][logo]overlay=(W-w)/2:36[v]",
+            f"[0:v]{vf}[bg];[1:v]scale='{logo_scale_expr}':-1:eval=frame[logo];[bg][logo]overlay={logo_x_expr}:{logo_y_expr}[v]",
             "-map",
             "[v]",
             "-map",
@@ -1642,141 +1821,120 @@ def _render_short_video(
     """
     ff = ensure_ffmpeg("tools")
     font = _ffmpeg_escape(_select_font())
-    
-    fade_out_start = max(0.0, duration_s - 1.2)
     cta_escaped = _ffmpeg_escape_text(_sanitize_cta_text(cta_text.upper()))
-    hook_box_color = "0x000000"
-
-    PALETTE = [
-        "0x1A73E8",  # blue
-        "0xFB8C00",  # orange
-        "0x06B6D4",  # cyan
-        "0x8B5CF6",  # purple
-        "0x16A34A",  # green
-        "0xEF4444",  # red
-        "0xF59E0B",  # amber
-        "0xE11D48",  # rose
-    ]
 
     SAFE_TOP = 220
     SAFE_BOTTOM = 1520
-    # Margens horizontais: pode usar mais espaço lateral
-    SAFE_LEFT = 40
-    SAFE_RIGHT = 40
 
     main_path = summary_file or headline_file
     main_raw = main_path.read_text(encoding="utf-8") if main_path.exists() else ""
     main_clean = _sanitize_overlay_text(main_raw).replace("\xa0", " ")
-    
     hook_raw = hook_file.read_text(encoding="utf-8") if hook_file and hook_file.exists() else ""
     hook_clean = _sanitize_overlay_text(hook_raw).replace("\xa0", " ")
-
-    # Render HOOK - aumentado para 24 chars
-    hook_lines = textwrap.wrap(hook_clean, width=24, break_long_words=False, break_on_hyphens=False)[:2]
-    hook_filters = []
-
-    # If hook has 2 lines, move it one line up to reduce interference with the photo focal area.
-    hook_base_y_raw = 560 - (104 if len(hook_lines) >= 2 else 0)
-    hook_base_y = _clamp(hook_base_y_raw, SAFE_TOP, SAFE_BOTTOM)
-    for i, line in enumerate(hook_lines):
-        line_esc = _ffmpeg_escape_text(line)
-        y_pos = _clamp(hook_base_y + (i * 104), SAFE_TOP, SAFE_BOTTOM)
-        hook_filters.append(
-            f"drawtext=text='{line_esc}':fontfile='{font}':"
-            f"fontcolor=white:fontsize=85:fix_bounds=1:"
-            f"borderw=3:bordercolor=black:"
-            f"box=1:boxcolor={hook_box_color}@0.96:boxborderw=18:"
-            f"x=(w-tw)/2:y={y_pos}"
-        )
-
-    # Render MAIN HEADLINE
     main_input = " ".join(main_clean.split())
 
+    style_seed = f"{source}|{out_video.name}|{main_input}|{hook_clean}"
+    layout, colorway = _pick_editorial_style(style_seed)
+    logo_variant = _pick_logo_variant(style_seed + "|video")
+    logo_scale_expr, logo_x_expr, logo_y_expr, _ = _logo_overlay_expr(logo_variant)
+    hook_box_color = str(colorway.get("hook_box_color", "0x111827"))
+    hook_box_alpha = _safe_float(colorway.get("hook_box_alpha"), 0.95)
+
+    hook_width = _safe_int(layout.get("hook_width"), 24)
+    hook_fontsize = _safe_int(layout.get("hook_fontsize"), 85)
+    hook_line_step = _safe_int(layout.get("hook_line_step"), 104)
+    hook_base_y_cfg = _safe_int(layout.get("hook_base_y"), 560)
+    hook_two_line_shift = _safe_int(layout.get("hook_two_line_shift"), 104)
+    hook_boxborderw = _safe_int(layout.get("hook_boxborderw"), 18)
+
+    hook_lines = textwrap.wrap(hook_clean, width=hook_width, break_long_words=False, break_on_hyphens=False)[:2]
+    hook_filters = []
+    hook_base_y_raw = hook_base_y_cfg - (hook_two_line_shift if len(hook_lines) >= 2 else 0)
+    hook_base_y = _clamp(hook_base_y_raw, SAFE_TOP, SAFE_BOTTOM)
+    hook_x = "(w-tw)/2" if str(layout.get("hook_x_mode", "center")) != "left" else str(_safe_int(layout.get("hook_left_x"), 60))
+    for i, line in enumerate(hook_lines):
+        line_esc = _ffmpeg_escape_text(line)
+        y_pos = _clamp(hook_base_y + (i * hook_line_step), SAFE_TOP, SAFE_BOTTOM)
+        hook_filters.append(
+            f"drawtext=text='{line_esc}':fontfile='{font}':"
+            f"fontcolor=white:fontsize={hook_fontsize}:fix_bounds=1:"
+            f"borderw=3:bordercolor=black:"
+            f"box=1:boxcolor={hook_box_color}@{hook_box_alpha:.2f}:boxborderw={hook_boxborderw}:"
+            f"x={hook_x}:y={y_pos}"
+        )
+
+    prefit_width = _safe_int(layout.get("body_base_width"), 34)
+    prefit_max_lines = _safe_int(layout.get("body_prefit_max_lines"), 5)
+    prefit_min_scale = _safe_float(layout.get("body_prefit_min_scale"), 0.72)
     main_lines, font_size, line_spacing = _layout_main_body_text(
         main_input,
-        base_width=34,
-        max_lines=5,
-        min_scale=0.72,
+        base_width=prefit_width,
+        max_lines=prefit_max_lines,
+        min_scale=prefit_min_scale,
     )
-    if (len(main_lines) > 5) or (main_lines and re.fullmatch(r"(A\s+)?WEB\.?", main_lines[-1].strip(), flags=re.I)):
+    if (len(main_lines) > prefit_max_lines) or (main_lines and re.fullmatch(r"(A\s+)?WEB\.?", main_lines[-1].strip(), flags=re.I)):
         try:
-            meta_path = out_video.parent / "news.json"
-            item_for_rewrite = None
-            if meta_path.exists():
-                meta = json.loads(meta_path.read_text(encoding="utf-8"))
-                item_for_rewrite = NewsItem(
-                    source=meta.get("source") or source,
-                    feed_url=meta.get("feed_url") or "",
-                    title=meta.get("title") or "",
-                    link=meta.get("link") or "",
-                    published=meta.get("published") or "",
-                    image_url=meta.get("image_url") or "",
-                    description=meta.get("description") or "",
-                )
+            item_for_rewrite = _load_item_for_overlay_rewrite(out_video, source)
             if item_for_rewrite:
                 main_input2 = _rewrite_overlay_body_if_needed(main_input, item=item_for_rewrite)
                 main_lines, font_size, line_spacing = _layout_main_body_text(
                     main_input2,
-                    base_width=34,
-                    max_lines=5,
-                    min_scale=0.70,
+                    base_width=prefit_width,
+                    max_lines=prefit_max_lines,
+                    min_scale=max(0.68, prefit_min_scale - 0.02),
                 )
                 main_input = main_input2
         except Exception:
             pass
 
-    # Seleciona cores determinísticas baseadas no texto
-    try:
-        seed_text = main_input or headline_file.read_text(encoding="utf-8")
-        h = hashlib.sha1(seed_text.encode("utf-8")).hexdigest()
-        idx = int(h, 16) % len(PALETTE)
-        bg_color = PALETTE[idx]
-        tarja_color = PALETTE[(idx + 3) % len(PALETTE)]
-    except Exception:
-        bg_color = "0x000000"
-        tarja_color = "0x000000"
-    
-    # Não trunca o texto - use todo o conteúdo disponível para exibição completa
-    # O textwrap vai quebrar em linhas e o limite de linhas controla o que aparece
-    
-    # Layout dinâmico: reduz fonte um pouco mais e permite 1 linha extra quando necessário.
+    body_width = _safe_int(layout.get("body_base_width"), 34)
+    body_max_lines = _safe_int(layout.get("body_max_lines"), 11)
+    body_min_scale = _safe_float(layout.get("body_min_scale"), 0.84)
     main_lines, font_size, line_spacing = _layout_main_body_text(
         main_input,
-        base_width=34,
-        max_lines=11,
-        min_scale=0.84,
+        base_width=body_width,
+        max_lines=body_max_lines,
+        min_scale=body_min_scale,
     )
     main_filters = []
+    main_x = "(w-tw)/2" if str(layout.get("body_x_mode", "center")) != "left" else str(_safe_int(layout.get("body_left_x"), 64))
 
-    block_h = max(0, (len(main_lines) - 1) * line_spacing)
-    start_y = _clamp(SAFE_BOTTOM - block_h, SAFE_TOP + 520, SAFE_BOTTOM)
+    block_h = max(0, (len(main_lines) - 1) * line_spacing + font_size)
+    top_padding = _safe_int(layout.get("body_min_top_padding"), 520)
+    start_y = _clamp(SAFE_BOTTOM - block_h, SAFE_TOP + top_padding, SAFE_BOTTOM - font_size)
 
     for i, line in enumerate(main_lines):
         line_esc = _ffmpeg_escape_text(line)
-        y_pos = _clamp(start_y + (i * line_spacing), SAFE_TOP, SAFE_BOTTOM)
+        y_pos = start_y + (i * line_spacing)
         main_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{font}':"
             f"fontcolor=white:fontsize={font_size}:fix_bounds=1:"
             f"borderw=3:bordercolor=black:"
-            f"x=(w-tw)/2:y={y_pos}"
+            f"x={main_x}:y={y_pos}"
         )
 
-    # Filtros de escala e padding (serão aplicados de forma diferente com ou sem logo)
-    scale_filters = [
-        "scale=1080:-2",  # Escala mantendo aspect ratio
-        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",  # Padding preto
-        "setsar=1",  # Garante pixels quadrados
-        "format=yuv420p",  # Formato de saída
-        "eq=brightness=-0.02:contrast=1.08:saturation=1.02",  # Ajustes de cor
-    ]
-    
-    # Filtros de texto apenas (sem escala/pad quando há logo)
-    text_filters = [
-        *hook_filters,  # Filtros para o texto do hook
-        *main_filters,  # Filtros para o texto principal
+    cta_fontsize = _safe_int(layout.get("cta_fontsize"), 53)
+    cta_y = str(layout.get("cta_y", "h*0.90"))
+    cta_period = _safe_float(layout.get("cta_blink_period"), 1.4)
+    cta_on = _safe_float(layout.get("cta_blink_on"), 0.7)
+    cta_filter = (
         f"drawtext=text='{cta_escaped}':fontfile='{font}':fontcolor=white@0.88:"
-        f"borderw=2:bordercolor=black:"
-        "fontsize=53:x=(w-text_w)/2:y=h*0.90:enable='lt(mod(t\\,1.4)\\,0.7)'",  # CTA piscante
+        f"borderw=2:bordercolor=black:fontsize={cta_fontsize}:x=(w-text_w)/2:y={cta_y}:"
+        f"enable='lt(mod(t\\,{cta_period:.2f})\\,{cta_on:.2f})'"
+    )
+
+    eq_filter = str(colorway.get("eq", "eq=brightness=-0.02:contrast=1.08:saturation=1.02"))
+    scale_filters = [
+        "scale=1080:-2",
+        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",
+        "setsar=1",
+        "format=yuv420p",
+        eq_filter,
+    ]
+    text_filters = [
+        *hook_filters,
+        *main_filters,
+        cta_filter,
     ]
 
     out_video.parent.mkdir(parents=True, exist_ok=True)
@@ -1797,10 +1955,10 @@ def _render_short_video(
             "-filter_complex",
             # Escala vídeo base para 1080x1920 com aspect ratio preservado
             f"[0:v]{base_filters},{text_only}[bg];"
-            # Escala logo separadamente com sin wave, mantendo proporção
-            "[1:v]scale='min(360,iw)':-1:eval=frame[logo];"
-            # Overlay logo no topo
-            "[bg][logo]overlay=(W-w)/2:36[v]",
+            # Escala logo com variante editorial por post
+            f"[1:v]scale='{logo_scale_expr}':-1:eval=frame[logo];"
+            # Overlay do logo com posicao variavel
+            f"[bg][logo]overlay={logo_x_expr}:{logo_y_expr}[v]",
             "-map",
             "[v]",
             "-map",
@@ -2073,6 +2231,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         headline = _build_display_headline(headline_text_clean)
         headline_file = post_dir / "headline.txt"
         headline_file.write_text(_sanitize_overlay_text(headline) + "\n", encoding="utf-8")
+        image_duration_s = round(random.uniform(5.0, 8.0), 2)
 
         # Keep source metadata for traceability and later automation.
         metadata = {
@@ -2084,6 +2243,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             "published": item.published,
             "image_url": item.image_url,
             "local_image": str(image_path.relative_to(root)),
+            "video_duration_s": image_duration_s,
         }
         (post_dir / "news.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -2125,6 +2285,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             summary_file=summary_file,
             cta_text=cta_text,
             logo_path=logo_path,
+            duration_s=image_duration_s,
         )
 
         # Adiciona um pequeno delay para garantir que o arquivo de vídeo seja liberado pelo SO

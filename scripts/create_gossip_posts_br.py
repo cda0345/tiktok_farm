@@ -324,6 +324,8 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
     headline_file = post_dir / "headline.txt"
     headline_file.write_text(sanitize(headline) + "\n", encoding="utf-8")
 
+    image_duration_s = round(random.uniform(5.0, 8.0), 2)
+
     metadata = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source": item.source,
@@ -333,6 +335,7 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
         "published": item.published,
         "image_url": item.image_url,
         "local_image": str(image_path.relative_to(root)),
+        "video_duration_s": image_duration_s,
     }
     (post_dir / "news.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -370,6 +373,7 @@ def _build_post(cgp, root: Path, post_dir: Path, item) -> Path:
         summary_file=summary_file, # Use summary_file which contains the headline_text
         cta_text=cta_text,
         logo_path=logo_path,
+        duration_s=image_duration_s,
     )
 
     # Envio para o Telegram (chamando a função implementada no create_gossip_post)
