@@ -1322,14 +1322,16 @@ def _summarize_news_text(item: NewsItem) -> str:
 
                     "FORMATO OBRIGATORIO — exatamente 5 linhas de TEXTO PURO:\n\n"
 
-                    "Linha 1 = HOOK: Frase-curta editorial de curiosidade (preferencia 6 a 9 palavras; max 12). "
+                    "Linha 1 = HOOK FACTUAL: Frase-curta editorial de curiosidade (preferencia 6 a 9 palavras; max 12). "
                     "Precisa soar especifica do caso e nao generica/repetida. "
                     "Evite ganchos de uma palavra tipo 'EITA'/'BOMBA' sem contexto.\n"
-                    "Linha 2 = FATO PRINCIPAL: O que aconteceu. Direto, com NOMES dos envolvidos. Max 2 frases.\n"
-                    "Linha 3 = SUSPENSE/REACAO: Como a web ou os envolvidos reagiram. USE '..' (dois pontos) antes de revelar a reacao para criar suspense. Ex: '.. A WEB REAGIU COM CHOQUE'\n"
-                    "Linha 4 = IMPACTO: Consequencia ou desdobramento. Se possivel termine com '...' (reticencias) para gerar curiosidade.\n"
-                    "Linha 5 = CTA EMOCIONAL: Uma frase que pede ACAO ESPECIFICA conectada ao tema. "
-                    "Ex: 'COMENTA O QUE ACHOU!', 'CURTE SE GOSTA DE EMOCAO NO BBB', 'SALVA ESSE POST', 'QUEM TEM RAZAO? COMENTA!', 'MANDA PRA QUEM AMA FOFOCA'\n\n"
+                    "Linha 2 = CONTEXTO (OBRIGATORIO iniciar com 'CONTEXTO:'): 1 frase objetiva com o fato principal e nomes.\n"
+                    "Linha 3 = REACAO WEB (OBRIGATORIO iniciar com 'SEGUNDO FAS,'): reacao da web com suspense '..'. "
+                    "Ex: 'SEGUNDO FAS, .. A CENA DIVIDIU OPINIOES'.\n"
+                    "Linha 4 = DESDOBRAMENTO (OBRIGATORIO iniciar com 'A REPERCUSSAO COMECOU APOS'): consequencia ou impacto. "
+                    "Se possivel termine com '...' (reticencias).\n"
+                    "Linha 5 = PERGUNTA EDITORIAL: pergunta curta que força posicionamento. "
+                    "Ex: 'ISSO E AVANCO OU OPORTUNISMO?', 'EXAGERO OU CRITICA JUSTA?'\n\n"
 
                     "REGRAS DE OURO:\n"
                     "- Hook deve ter cara editorial: frase curta, especifica e com curiosidade.\n"
@@ -1359,14 +1361,13 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "Post 3: Hook='REVENGE PLAN' Body='SHE PLOTS TO ELIMINATE SAMIRA AND OTHER RIVALS.. THE WEB REACTS WITH SHOCK AND CRITICISM.'\n\n"
 
                     "MANDATORY FORMAT — exactly 5 lines of plain text:\n\n"
-                    "Line 1 = HOOK: Editorial curiosity line (prefer 6 to 9 words; max 12). "
+                    "Line 1 = FACTUAL HOOK: Editorial curiosity line (prefer 6 to 9 words; max 12). "
                     "It must sound specific to the story, not generic/reused. "
                     "Avoid one-word hooks like 'WOW'/'BOMBSHELL' without context.\n"
-                    "Line 2 = MAIN FACT: What happened. Direct, with NAMES. Max 2 sentences.\n"
-                    "Line 3 = SUSPENSE/REACTION: How the web or people reacted. USE '..' before revealing the reaction for suspense. Ex: '.. THE WEB REACTED WITH SHOCK'\n"
-                    "Line 4 = IMPACT: Consequence or follow-up. End with '...' (ellipsis) to create curiosity.\n"
-                    "Line 5 = EMOTIONAL CTA: A phrase requesting SPECIFIC ACTION connected to the topic. "
-                    "Ex: 'COMMENT WHAT YOU THINK!', 'LIKE IF THIS SHOCKED YOU', 'SAVE THIS POST', 'WHO IS RIGHT? COMMENT!'\n\n"
+                    "Line 2 = CONTEXT (MUST start with 'CONTEXT:'): one objective sentence with the main fact and names.\n"
+                    "Line 3 = WEB REACTION (MUST start with 'ACCORDING TO FANS,'): include '..' suspense marker.\n"
+                    "Line 4 = FOLLOW-UP (MUST start with 'THE BACKLASH STARTED AFTER'): consequence/impact and ideally end with '...'.\n"
+                    "Line 5 = EDITORIAL QUESTION: short question forcing a stance.\n\n"
 
                     "GOLDEN RULES:\n"
                     "- Hook should feel editorial: short, specific and curiosity-driven.\n"
@@ -1408,14 +1409,53 @@ def _summarize_news_text(item: NewsItem) -> str:
         except Exception:
             pass
 
-    # Local fallback: compress title while preserving key info.
-    title = _clean_text(item.title)
+    # Local fallback: preserve the fixed editorial signature in 5 lines.
+    title = _clean_text(item.title) or "CASO VIROU ASSUNTO NAS REDES"
+    desc = _clean_text(item.description)
     base = re.split(r"\s*[-:|]\s*", title, maxsplit=1)
     if len(base) == 2:
-        summary = f"{base[0]}: {base[1]}."
+        factual = f"{base[0]}: {base[1]}"
     else:
-        summary = title if title.endswith(".") else (title + ".")
-    return _clean_text(summary)
+        factual = title
+
+    context_line = factual.rstrip(".")
+    if len(context_line.split()) > 12:
+        context_line = " ".join(context_line.split()[:12]).rstrip(" ,.;:-") + "..."
+
+    reaction_hint = desc or title
+    if len(reaction_hint.split()) > 10:
+        reaction_hint = " ".join(reaction_hint.split()[:10]).rstrip(" ,.;:-") + "..."
+
+    return "\n".join(
+        [
+            "DETALHE DO CASO ACENDEU DEBATE NAS REDES",
+            f"CONTEXTO: {context_line}.",
+            f"SEGUNDO FAS, .. {reaction_hint}",
+            "A REPERCUSSAO COMECOU APOS O VIDEO VIRALIZAR...",
+            "ISSO E ANALISE JUSTA OU EXAGERO?",
+        ]
+    )
+
+
+def _enforce_editorial_markers(body: str) -> str:
+    """Guarantee editorial markers required for monetization-safe classification."""
+    text = " ".join((body or "").split())
+    if not text:
+        text = "CONTEXTO: CASO VIROU ASSUNTO NAS REDES."
+    if not re.search(r"\bCONTEXTO\s*:", text, flags=re.I):
+        text = f"CONTEXTO: {text}"
+    if not re.search(r"\bSEGUNDO\s+F[ÃA]S\b", text, flags=re.I):
+        text = f"{text} SEGUNDO FAS, .. A WEB DIVIDIU OPINIOES."
+    if not re.search(r"\bA\s+REPERCUSSAO\s+COMECOU\s+APOS\b", text, flags=re.I):
+        text = f"{text} A REPERCUSSAO COMECOU APOS O TRECHO VIRALIZAR..."
+    return " ".join(text.split())
+
+
+def _strip_context_label(text: str) -> str:
+    """Removes literal 'CONTEXTO:' label from overlay while keeping the sentence."""
+    t = " ".join((text or "").split())
+    t = re.sub(r"(^|\.\s+)\bCONTEXTO\s*:\s*", r"\1", t, flags=re.I)
+    return " ".join(t.split())
 
 
 def _send_video_to_telegram(video_path: Path, caption: str) -> bool:
@@ -2190,6 +2230,8 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         )
         hook_clean = _trim_trailing_connectors(hook_clean)
 
+        headline_text = _enforce_editorial_markers(headline_text)
+        headline_text = _strip_context_label(headline_text)
         headline_text_clean = re.sub(r'#\w+', '', headline_text).strip()
         # Preserva '..' (suspense) e '...' (curiosidade) - padrão dos posts top
         headline_text_clean = re.sub(r'[^\w\s\u00C0-\u00FF.,!?]', '', headline_text_clean)

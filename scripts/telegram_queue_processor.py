@@ -134,6 +134,25 @@ def _safe_upper(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "")).strip().upper()
 
 
+def _enforce_editorial_markers(text: str) -> str:
+    out = re.sub(r"\s+", " ", (text or "").strip())
+    if not out:
+        out = "CONTEXTO: CASO VIROU ASSUNTO NAS REDES."
+    if not re.search(r"\bCONTEXTO\s*:", out, flags=re.I):
+        out = f"CONTEXTO: {out}"
+    if not re.search(r"\bSEGUNDO\s+F[ÃA]S\b", out, flags=re.I):
+        out = f"{out} SEGUNDO FAS, .. A WEB DIVIDIU OPINIOES."
+    if not re.search(r"\bA\s+REPERCUSSAO\s+COMECOU\s+APOS\b", out, flags=re.I):
+        out = f"{out} A REPERCUSSAO COMECOU APOS O TRECHO VIRALIZAR..."
+    return re.sub(r"\s+", " ", out).strip()
+
+
+def _strip_context_label(text: str) -> str:
+    out = re.sub(r"\s+", " ", (text or "").strip())
+    out = re.sub(r"(^|\.\s+)\bCONTEXTO\s*:\s*", r"\1", out, flags=re.I)
+    return re.sub(r"\s+", " ", out).strip()
+
+
 def _split_sentences(text: str) -> list[str]:
     t = re.sub(r"\s+", " ", (text or "").strip())
     if not t:
@@ -170,11 +189,11 @@ def _build_video_copy_with_ai(title: str, description: str) -> tuple[str, str, s
                 "content": (
                     "Voce escreve copy viral para post vertical de fofoca (PT-BR). "
                     "Entregue exatamente 5 linhas em CAPS, sem hashtags e sem emojis: "
-                    "1) HOOK editorial (6 a 10 palavras), "
-                    "2) FATO principal com nomes, "
-                    "3) REACAO da web com suspense '..', "
-                    "4) IMPACTO/desdobramento (preferir final com '...'), "
-                    "5) CTA emocional curto. "
+                    "1) HOOK FACTUAL editorial (6 a 10 palavras), "
+                    "2) CONTEXTO em 1 frase iniciando obrigatoriamente com 'CONTEXTO:', "
+                    "3) REACAO WEB iniciando obrigatoriamente com 'SEGUNDO FAS,' e usando suspense '..', "
+                    "4) DESDOBRAMENTO iniciando obrigatoriamente com 'A REPERCUSSAO COMECOU APOS' (preferir final com '...'), "
+                    "5) PERGUNTA editorial curta que forca posicionamento. "
                     "Nao invente fatos, nomes ou contexto que nao estejam no material enviado."
                 ),
             },
@@ -264,13 +283,13 @@ def _build_video_copy_fallback(title: str, description: str) -> tuple[str, str, 
             "ESSA CENA ACENDEU O DEBATE",
         ],
     }
-    ctas = {
-        "bbb": "QUEM TEM RAZAO? COMENTA!",
-        "treta": "DE QUE LADO VOCE FICOU?",
-        "romance": "SHIPPA OU NAO SHIPPA?",
-        "separacao": "EXAGERO OU SINAL REAL?",
-        "flagra": "A CULPA FOI DE QUEM?",
-        "generic": "O QUE VOCE ACHOU DISSO?",
+    editorial_questions = {
+        "bbb": "ISSO FOI ESTRATEGIA OU EXAGERO?",
+        "treta": "ISSO E CRITICA JUSTA OU OPORTUNISMO?",
+        "romance": "ISSO FOI NATURAL OU JOGADA PRA ENGAJAR?",
+        "separacao": "ISSO INDICA CRISE REAL OU LEITURA FORCADA?",
+        "flagra": "ISSO MUDA A LEITURA DO CASO OU NAO?",
+        "generic": "ISSO E ANALISE JUSTA OU EXAGERO?",
     }
 
     digest = hashlib.md5(_clean_telegram_text(base, 240).encode("utf-8")).hexdigest()
@@ -283,25 +302,29 @@ def _build_video_copy_fallback(title: str, description: str) -> tuple[str, str, 
     fact = _trim_words(fact, 14).rstrip(".")
 
     reaction_by_theme = {
-        "bbb": ".. A APURACAO PEGOU FOGO E A TORCIDA REAGIU",
+        "bbb": ".. A TORCIDA DIVIDIU LEITURAS SOBRE O MOVIMENTO",
         "treta": ".. A WEB CRITICOU E DEFENDEU AO MESMO TEMPO",
         "romance": ".. FAS APONTARAM CLIMA E DEBATERAM O FLAGRA",
-        "separacao": ".. PARTE DA WEB FALOU EM CRISE DO CASAL",
-        "flagra": ".. O VIDEO VIRALIZOU E GEROU CRITICAS RAPIDAS",
-        "generic": ".. O VIDEO DIVIDIU OPINIOES NAS REDES",
+        "separacao": ".. PARTE DA WEB LEU COMO SINAL DE CRISE",
+        "flagra": ".. A WEB LEVANTOU CRITICAS E DEFESAS RAPIDAS",
+        "generic": ".. O ASSUNTO DIVIDIU OPINIOES NAS REDES",
     }
     impact_by_theme = {
-        "bbb": "CRITICAS E MEMES TOMARAM CONTA DOS COMENTARIOS...",
-        "treta": "O DEBATE CRESCEU E CADA LADO DEFENDEU SUA VERSAO...",
-        "romance": "DEBATE DIVIDIU FAS E RUMOR GANHOU FORCA...",
-        "separacao": "DEPOIS DO VIDEO, O ASSUNTO GANHOU OUTRO TOM...",
-        "flagra": "APOS O FLAGRANTE, A DISCUSSAO SO AUMENTOU...",
-        "generic": "DEPOIS DESSA CENA, O ASSUNTO NAO SAIU DAS REDES...",
+        "bbb": "A REPERCUSSAO COMECOU APOS RECORTES VIRALIZAREM...",
+        "treta": "A REPERCUSSAO COMECOU APOS O TRECHO RODAR NAS PAGINAS...",
+        "romance": "A REPERCUSSAO COMECOU APOS O FLAGRA TOMAR AS REDES...",
+        "separacao": "A REPERCUSSAO COMECOU APOS LEITURAS DE BASTIDOR...",
+        "flagra": "A REPERCUSSAO COMECOU APOS O VIDEO SUBIR NAS CONTAS...",
+        "generic": "A REPERCUSSAO COMECOU APOS A CENA VIRAR DEBATE...",
     }
 
-    body = f"{fact}. {reaction_by_theme[theme]} {impact_by_theme[theme]}"
-    body = _trim_words(body, 36)
-    cta = ctas.get(theme, ctas["generic"])
+    body = (
+        f"CONTEXTO: {fact}. "
+        f"SEGUNDO FAS, {reaction_by_theme[theme]} "
+        f"{impact_by_theme[theme]}"
+    )
+    body = _trim_words(body, 44)
+    cta = editorial_questions.get(theme, editorial_questions["generic"])
     return hook, body, cta
 
 
@@ -321,7 +344,9 @@ def _build_video_copy(raw_title: str, raw_description: str = "") -> tuple[str, s
         hook_raw, headline_raw, cta_raw = _build_video_copy_fallback(clean, desc_clean)
 
     hook = _safe_upper(_clean_telegram_text(hook_raw, 90))
-    headline = _safe_upper(_clean_telegram_text(headline_raw, 260))
+    headline_enforced = _enforce_editorial_markers(headline_raw)
+    headline_enforced = _strip_context_label(headline_enforced)
+    headline = _safe_upper(_clean_telegram_text(headline_enforced, 260))
     cta = _safe_upper(_clean_telegram_text(cta_raw, 52))
 
     if not hook:
