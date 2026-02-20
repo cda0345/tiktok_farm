@@ -990,6 +990,64 @@ def _estimate_logo_bg_color(logo_path: Path) -> str:
         return "0x202020"  # Default to a dark gray color
 
 
+def _derive_overlay_colors_from_image(image_path: Path) -> tuple[str, str]:
+    """Derive subtle overlay colors from the news image (tarja + background)."""
+    fallback_hook = "0x1F2937"
+    fallback_pad = "0x0B0F16"
+
+    try:
+        from PIL import Image
+
+        with Image.open(image_path).convert("RGB") as img:
+            img.thumbnail((96, 96))
+            pixels = list(img.getdata())
+            avg_pixel = img.resize((1, 1)).getpixel((0, 0))
+
+        if not pixels:
+            return fallback_hook, fallback_pad
+
+        buckets: dict[tuple[int, int, int], int] = {}
+        step = 2
+        for r, g, b in pixels[::step]:
+            luma = int(0.2126 * r + 0.7152 * g + 0.0722 * b)
+            if luma < 16 or luma > 240:
+                continue
+            key = ((r // 24) * 24, (g // 24) * 24, (b // 24) * 24)
+            buckets[key] = buckets.get(key, 0) + 1
+
+        if buckets:
+            r, g, b = max(buckets.items(), key=lambda item: item[1])[0]
+        else:
+            r, g, b = avg_pixel
+
+        avg_luma = sum(int(0.2126 * pr + 0.7152 * pg + 0.0722 * pb) for pr, pg, pb in pixels[::2]) / max(1, len(pixels[::2]))
+
+        # Keep it harmonious but not attention-grabbing: desaturate and darken.
+        avg = (r + g + b) / 3.0
+        hook_r = int((r * 0.42) + (avg * 0.58))
+        hook_g = int((g * 0.42) + (avg * 0.58))
+        hook_b = int((b * 0.42) + (avg * 0.58))
+        hook_r = max(0, min(255, int(hook_r * 0.52)))
+        hook_g = max(0, min(255, int(hook_g * 0.52)))
+        hook_b = max(0, min(255, int(hook_b * 0.52)))
+
+        if avg_luma >= 168:
+            # For bright images (like white backgrounds), prefer light pad.
+            pad_r = max(225, min(255, int(avg_pixel[0] * 0.18 + 255 * 0.82)))
+            pad_g = max(225, min(255, int(avg_pixel[1] * 0.18 + 255 * 0.82)))
+            pad_b = max(225, min(255, int(avg_pixel[2] * 0.18 + 255 * 0.82)))
+        else:
+            pad_r = max(0, min(255, int(hook_r * 0.52)))
+            pad_g = max(0, min(255, int(hook_g * 0.52)))
+            pad_b = max(0, min(255, int(hook_b * 0.52)))
+
+        hook_hex = f"0x{hook_r:02X}{hook_g:02X}{hook_b:02X}"
+        pad_hex = f"0x{pad_r:02X}{pad_g:02X}{pad_b:02X}"
+        return hook_hex, pad_hex
+    except Exception:
+        return fallback_hook, fallback_pad
+
+
 def _wrap_for_overlay(text: str, max_chars: int, max_lines: int, *, upper: bool = False) -> str:
     clean = _clean_text(text)
     if upper:
@@ -1212,11 +1270,11 @@ def _pick_image_motion_variant(seed_text: str, duration_s: float) -> tuple[list[
     variants: list[dict[str, str]] = [
         {
             "name": "zoom_in",
-            "z": f"(1.000+0.034*t/{d_str})",
+            "z": f"(1.000+0.016*t/{d_str})",
         },
         {
             "name": "zoom_out",
-            "z": f"(1.034-0.034*t/{d_str})",
+            "z": f"(1.016-0.016*t/{d_str})",
         },
     ]
     clean_seed = _clean_text(seed_text) or "image-motion"
@@ -1226,7 +1284,7 @@ def _pick_image_motion_variant(seed_text: str, duration_s: float) -> tuple[list[
     z_expr = variant["z"]
     filters = [
         f"scale='1080*{z_expr}':'1920*{z_expr}':eval=frame:flags=lanczos",
-        "crop=1080:1920:'floor((iw-1080)/2/2)*2':'floor((ih-1920)/2/2)*2'",
+        "crop=1080:1920:'(iw-1080)/2':'(ih-1920)/2'",
     ]
     return filters, variant["name"]
 
@@ -1692,7 +1750,8 @@ def _render_short(
     motion_filters, _ = _pick_image_motion_variant(style_seed + "|motion", duration_s)
     logo_variant = _pick_logo_variant(style_seed + "|image")
     logo_scale_expr, logo_x_expr, logo_y_expr, _ = _logo_overlay_expr(logo_variant)
-    hook_box_color = str(colorway.get("hook_box_color", "0x111827"))
+    derived_hook_box_color, derived_pad_color = _derive_overlay_colors_from_image(image_path)
+    hook_box_color = derived_hook_box_color or str(colorway.get("hook_box_color", "0x111827"))
     hook_box_alpha = _safe_float(colorway.get("hook_box_alpha"), 0.95)
 
     hook_width = _safe_int(layout.get("hook_width"), 24)
@@ -1780,7 +1839,7 @@ def _render_short(
     eq_filter = str(colorway.get("eq", "eq=brightness=-0.02:contrast=1.08:saturation=1.02"))
     vf_layers = [
         "scale=1080:-2",
-        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black",
+        f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color={derived_pad_color}",
         "setsar=1",
         "format=yuv420p",
         eq_filter,
