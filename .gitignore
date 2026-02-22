@@ -1,0 +1,25 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+.venv/
+venv/
+.env
+.vscode/
+
+# generated outputs
+gossip_post/output/
+gossip_posts_br/
+logs/
+
+# telegram queue runtime files
+telegram_queue/request_*.json
+gossip_post/headline_telegram_*.txt
+gossip_post/hook_telegram_*.txt
+gossip_post/summary_telegram_*.txt
+
+# local datasets and downloads not needed in git
+audio/
+broll_library/
+tools/ffmpeg*/
+tools/*.zip

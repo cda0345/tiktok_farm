@@ -1,0 +1,355 @@
+{
+  "version": 1,
+  "hooks": [
+    {
+      "created_at_utc": "2026-02-21T10:08:40.404766+00:00",
+      "hook": "SAMIRA CHANTAGEIA ARMINDA E UM TIRO SAI",
+      "normalized": "SAMIRA CHANTAGEIA ARMINDA E UM TIRO SAI",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T10:14:18.195124+00:00",
+      "hook": "DETALHE DO CASO ACENDEU DEBATE NAS REDES",
+      "normalized": "DETALHE DO CASO ACENDEU DEBATE NAS REDES",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato - Contigo!",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T10:20:49.361334+00:00",
+      "hook": "TEM UM DETALHE NESSA HISTORIA QUE INTRIGA",
+      "normalized": "TEM UM DETALHE NESSA HISTORIA QUE INTRIGA",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato - Contigo!",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T10:28:25.970990+00:00",
+      "hook": "TEM UM DETALHE NESSA HISTORIA QUE INTRIGA",
+      "normalized": "TEM UM DETALHE NESSA HISTORIA QUE INTRIGA",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:04:39.415732+00:00",
+      "hook": "ESSA CENA ACABOU VIRANDO ASSUNTO?",
+      "normalized": "ESSA CENA ACABOU VIRANDO ASSUNTO",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:04:40.411758+00:00",
+      "hook": "ESSA CENA ACABOU VIRANDO ASSUNTO NA WEB",
+      "normalized": "ESSA CENA ACABOU VIRANDO ASSUNTO NA WEB",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:04:41.532749+00:00",
+      "hook": "TEM UM DETALHE NESSA HISTORIA QUE INTRIGA",
+      "normalized": "TEM UM DETALHE NESSA HISTORIA QUE INTRIGA",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:05:00.417669+00:00",
+      "hook": "TEM UM DETALHE NESSA HISTORIA?",
+      "normalized": "TEM UM DETALHE NESSA HISTORIA",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:05:07.236338+00:00",
+      "hook": "ESSA CENA ACABOU VIRANDO ASSUNTO NA WEB",
+      "normalized": "ESSA CENA ACABOU VIRANDO ASSUNTO NA WEB",
+      "title": "Três Graças: Jorginho toma decisão sobre Raul após descobrir a venda da neta: ‘Tá louco?’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:05:13.602353+00:00",
+      "hook": "TEM UM DETALHE NESSA HISTORIA QUE INTRIGA",
+      "normalized": "TEM UM DETALHE NESSA HISTORIA QUE INTRIGA",
+      "title": "Atitude de Virginia após derrota da Grande Rio divide opiniões: ‘Sem noção’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:06:29.688113+00:00",
+      "hook": "TEM UM DETALHE NESSA HISTORIA?",
+      "normalized": "TEM UM DETALHE NESSA HISTORIA",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:06:36.824137+00:00",
+      "hook": "TEM UM DETALHE NESSA HISTORIA?",
+      "normalized": "TEM UM DETALHE NESSA HISTORIA",
+      "title": "Três Graças: Jorginho toma decisão sobre Raul após descobrir a venda da neta: ‘Tá louco?’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:06:43.177877+00:00",
+      "hook": "TEM UM DETALHE NESSA HISTORIA?",
+      "normalized": "TEM UM DETALHE NESSA HISTORIA",
+      "title": "Atitude de Virginia após derrota da Grande Rio divide opiniões: ‘Sem noção’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:17:11.799772+00:00",
+      "hook": "WEB QUESTIONA SAMIRA AGORA?",
+      "normalized": "WEB QUESTIONA SAMIRA AGORA",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:17:17.168683+00:00",
+      "hook": "WEB QUESTIONA JORGINHO AGORA?",
+      "normalized": "WEB QUESTIONA JORGINHO AGORA",
+      "title": "Três Graças: Jorginho toma decisão sobre Raul após descobrir a venda da neta: ‘Tá louco?’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:17:22.757772+00:00",
+      "hook": "VIRGINIA VIROU DEBATE AGORA?",
+      "normalized": "VIRGINIA VIROU DEBATE AGORA",
+      "title": "Atitude de Virginia após derrota da Grande Rio divide opiniões: ‘Sem noção’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:23:11.436996+00:00",
+      "hook": "REACAO A SAMIRA DIVIDE?",
+      "normalized": "REACAO A SAMIRA DIVIDE",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:36:14.828960+00:00",
+      "hook": "SAMIRA TENTA TIRAR DINHEIRO E ARMINDA MATA?",
+      "normalized": "SAMIRA TENTA TIRAR DINHEIRO E ARMINDA MATA",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:36:25.769299+00:00",
+      "hook": "JORGINHO VAI EXPULSAR RAUL APÓS VENDER A NETA?",
+      "normalized": "JORGINHO VAI EXPULSAR RAUL APOS VENDER A NETA",
+      "title": "Três Graças: Jorginho toma decisão sobre Raul após descobrir a venda da neta: ‘Tá louco?’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:36:36.216524+00:00",
+      "hook": "VIRGINIA FONSECA DEBOCHA DA DERROTA DA GRANDE RIO?",
+      "normalized": "VIRGINIA FONSECA DEBOCHA DA DERROTA DA GRANDE RIO",
+      "title": "Atitude de Virginia após derrota da Grande Rio divide opiniões: ‘Sem noção’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:40:12.250348+00:00",
+      "hook": "SAMIRA TENTA ROUBAR ARMINDA E ACABA MORTA?",
+      "normalized": "SAMIRA TENTA ROUBAR ARMINDA E ACABA MORTA",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:40:23.008950+00:00",
+      "hook": "JORGINHO VAI DENUNCIAR RAUL POR VENDER JOÉLLY?",
+      "normalized": "JORGINHO VAI DENUNCIAR RAUL POR VENDER JOELLY",
+      "title": "Três Graças: Jorginho toma decisão sobre Raul após descobrir a venda da neta: ‘Tá louco?’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:40:34.259406+00:00",
+      "hook": "VIRGINIA FONSECA FOI SEM NOÇÃO COM GRANDE RIO?",
+      "normalized": "VIRGINIA FONSECA FOI SEM NOCAO COM GRANDE RIO",
+      "title": "Atitude de Virginia após derrota da Grande Rio divide opiniões: ‘Sem noção’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:42:04.214847+00:00",
+      "hook": "ARMINDA MATA SAMIRA APÓS TENTATIVA DE EXTORSÃO?",
+      "normalized": "ARMINDA MATA SAMIRA APOS TENTATIVA DE EXTORSAO",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:42:13.878731+00:00",
+      "hook": "JORGINHO CHAMA RAUL DE LOUCO POR JOÉLLY?",
+      "normalized": "JORGINHO CHAMA RAUL DE LOUCO POR JOELLY",
+      "title": "Três Graças: Jorginho toma decisão sobre Raul após descobrir a venda da neta: ‘Tá louco?’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:42:23.281281+00:00",
+      "hook": "VIRGINIA FONSECA COMEMOROU A DERROTA DA GRANDE RIO?",
+      "normalized": "VIRGINIA FONSECA COMEMOROU A DERROTA DA GRANDE RIO",
+      "title": "Atitude de Virginia após derrota da Grande Rio divide opiniões: ‘Sem noção’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:43:07.042169+00:00",
+      "hook": "Samira pressiona Arminda e tudo sai do controle?",
+      "normalized": "SAMIRA PRESSIONA ARMINDA E TUDO SAI DO CONTROLE",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:43:27.353360+00:00",
+      "hook": "Samira pressiona Arminda e tudo sai do controle?",
+      "normalized": "SAMIRA PRESSIONA ARMINDA E TUDO SAI DO CONTROLE",
+      "title": "Três Graças: Samira resolve tirar dinheiro de Arminda e a vilã comete assassinato",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:43:36.491081+00:00",
+      "hook": "JORGINHO EXPULSA RAUL APÓS VENDER JOÉLLY?",
+      "normalized": "JORGINHO EXPULSA RAUL APOS VENDER JOELLY",
+      "title": "Três Graças: Jorginho toma decisão sobre Raul após descobrir a venda da neta: ‘Tá louco?’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-21T11:43:46.383621+00:00",
+      "hook": "VIRGINIA FONSECA DEBOCHOU DA DERROTA DA GRANDE RIO?",
+      "normalized": "VIRGINIA FONSECA DEBOCHOU DA DERROTA DA GRANDE RIO",
+      "title": "Atitude de Virginia após derrota da Grande Rio divide opiniões: ‘Sem noção’",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T09:29:50.975275+00:00",
+      "hook": "TRATAMENTO COM ESTÍMULOS NO CRÂNIO DE BOLSONARO?",
+      "normalized": "TRATAMENTO COM ESTIMULOS NO CRANIO DE BOLSONARO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T09:39:11.779706+00:00",
+      "hook": "QUE TRATAMENTO NO CRÂNIO BOLSONARO QUER NA PRISÃO?",
+      "normalized": "QUE TRATAMENTO NO CRANIO BOLSONARO QUER NA PRISAO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T09:40:54.716267+00:00",
+      "hook": "DEFESA QUER ESTÍMULOS NO CRÂNIO DE BOLSONARO?",
+      "normalized": "DEFESA QUER ESTIMULOS NO CRANIO DE BOLSONARO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T09:44:31.496069+00:00",
+      "hook": "ADVOGADOS DE BOLSONARO PEDEM ESTÍMULO CRANIANO NA PRISÃO?",
+      "normalized": "ADVOGADOS DE BOLSONARO PEDEM ESTIMULO CRANIANO NA PRISAO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:02:45.023159+00:00",
+      "hook": "TRATAMENTO CRANIANO NA PRISÃO BOLSONARO PIOROU MESMO?",
+      "normalized": "TRATAMENTO CRANIANO NA PRISAO BOLSONARO PIOROU MESMO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:03:19.236640+00:00",
+      "hook": "BOLSONARO PEDE ESTÍMULO NO CRÂNIO E MORAES VAI?",
+      "normalized": "BOLSONARO PEDE ESTIMULO NO CRANIO E MORAES VAI",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:07:58.189367+00:00",
+      "hook": "TRATAMENTO CRANIANO NA CADEIA BOLSONARO TÁ PIORANDO?",
+      "normalized": "TRATAMENTO CRANIANO NA CADEIA BOLSONARO TA PIORANDO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:08:43.955750+00:00",
+      "hook": "BOLSONARO VAI RECEBER ESTÍMULOS NO CRÂNIO PRESO?",
+      "normalized": "BOLSONARO VAI RECEBER ESTIMULOS NO CRANIO PRESO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:09:43.768696+00:00",
+      "hook": "ESTIMULAÇÃO NO CRÂNIO DE BOLSONARO NA PRISÃO?",
+      "normalized": "ESTIMULACAO NO CRANIO DE BOLSONARO NA PRISAO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:10:22.370949+00:00",
+      "hook": "BOLSONARO FARÁ ESTÍMULO CRANIANO DENTRO DA PRISÃO?",
+      "normalized": "BOLSONARO FARA ESTIMULO CRANIANO DENTRO DA PRISAO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:14:55.560714+00:00",
+      "hook": "BOLSONARO VAI FAZER TÉCNICA NO CRÂNIO PRESO?",
+      "normalized": "BOLSONARO VAI FAZER TECNICA NO CRANIO PRESO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:15:09.360700+00:00",
+      "hook": "O QUE ACONTECEU COM MURILO HUFF INTERNADO?",
+      "normalized": "O QUE ACONTECEU COM MURILO HUFF INTERNADO",
+      "title": "É grave? Murilo Huff cancela show após ser internado",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:15:22.090237+00:00",
+      "hook": "QUEM VENCEU O ANJO E CAUSOU BARRACO?",
+      "normalized": "QUEM VENCEU O ANJO E CAUSOU BARRACO",
+      "title": "‘BBB 26’: Prova do Anjo provoca barraco na casa; veja quem ganhou",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:22:29.102179+00:00",
+      "hook": "ADVOGADOS PEDEM ESTÍMULO CRANIANO PARA BOLSONARO NA PRISÃO",
+      "normalized": "ADVOGADOS PEDEM ESTIMULO CRANIANO PARA BOLSONARO NA PRISAO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:22:41.344545+00:00",
+      "hook": "MURILO HUFF É INTERNADO ÀS PRESSAS E CANCELA",
+      "normalized": "MURILO HUFF E INTERNADO AS PRESSAS E CANCELA",
+      "title": "É grave? Murilo Huff cancela show após ser internado",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:22:52.087782+00:00",
+      "hook": "JULIANO VENCE O ANJO E GABRIELA ARMA BARRACO",
+      "normalized": "JULIANO VENCE O ANJO E GABRIELA ARMA BARRACO",
+      "title": "‘BBB 26’: Prova do Anjo provoca barraco na casa; veja quem ganhou",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:24:22.321153+00:00",
+      "hook": "DEFESA DE BOLSONARO PEDE ESTÍMULOS NO CRÂNIO NA CADEIA",
+      "normalized": "DEFESA DE BOLSONARO PEDE ESTIMULOS NO CRANIO NA CADEIA",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:24:34.544462+00:00",
+      "hook": "MURILO HUFF É INTERNADO E CANCELA SHOW SÁBADO",
+      "normalized": "MURILO HUFF E INTERNADO E CANCELA SHOW SABADO",
+      "title": "É grave? Murilo Huff cancela show após ser internado",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:24:44.840435+00:00",
+      "hook": "APÓS O ANJO GABRIELA ACUSA JULIANO DE TRAIÇÃO",
+      "normalized": "APOS O ANJO GABRIELA ACUSA JULIANO DE TRAICAO",
+      "title": "‘BBB 26’: Prova do Anjo provoca barraco na casa; veja quem ganhou",
+      "source": "contigo"
+    },
+    {
+      "created_at_utc": "2026-02-22T10:41:10.189472+00:00",
+      "hook": "DEFESA DE BOLSONARO PEDE ESTÍMULOS NO CRÂNIO NA PRISÃO",
+      "normalized": "DEFESA DE BOLSONARO PEDE ESTIMULOS NO CRANIO NA PRISAO",
+      "title": "Piorou? Defesa de Bolsonaro solicita tratamento com estímulos no crânio",
+      "source": "contigo"
+    }
+  ]
+}

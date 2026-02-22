@@ -1,0 +1,8 @@
+{
+  "name": "ricky_martin_carnaval_2026_raw_cut_no_overlay",
+  "source_raw": "posts/2026-02-21_ricky-martin-carnaval/raw/video/ricky_martin_globo_raw.mp4",
+  "output_video": "posts/2026-02-21_ricky-martin-carnaval/output/ricky_martin_carnaval_2026_raw_cut_no_overlay.mp4",
+  "overlay": false,
+  "duration_target_s": 11,
+  "notes": "Versao sem overlay, somente material raw cortado."
+}

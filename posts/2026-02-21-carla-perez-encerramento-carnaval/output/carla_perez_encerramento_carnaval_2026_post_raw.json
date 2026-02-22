@@ -1,0 +1,18 @@
+{
+  "name": "carla_perez_encerramento_carnaval_2026_post_raw",
+  "post_dir": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21-carla-perez-encerramento-carnaval",
+  "output_video": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21-carla-perez-encerramento-carnaval/output/carla_perez_encerramento_carnaval_2026_post_raw.mp4",
+  "duration_target_s": 11.0,
+  "primary_video": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21-carla-perez-encerramento-carnaval/raw/video/carla_perez_emocao_encerramento_raw.mp4",
+  "primary_video_duration_s": 11.0,
+  "segment_count": 1,
+  "segments": [
+    {
+      "kind": "video",
+      "source": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21-carla-perez-encerramento-carnaval/raw/video/carla_perez_emocao_encerramento_raw.mp4",
+      "start_s": 0.0,
+      "duration_s": 11.0
+    }
+  ],
+  "overlay": false
+}

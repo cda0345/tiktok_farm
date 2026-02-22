@@ -1,0 +1,5 @@
+gshow_materia_principal|https://s2-gshow.glbimg.com/Q2CCYzmw1izUyti1ei5V498hRBQ=/1920x0/filters:format(jpeg)/https://i.s3.glbimg.com/v1/AUTH_e84042ef78cb4708aeebdf1c68c6cbd6/internal_photos/bs/2026/8/4/a583EtRBqrobBWD72PMw/montagens-gshow-19-.png|posts/2026-02-21_ricky-martin-carnaval/raw/images/gshow_materia_principal_og.png
+gshow_sapucai_famosos|https://s2-gshow.glbimg.com/2Vbu8cx2XyzhNwlDTvy4NuEPAEI=/2048x0/filters:format(jpeg)/https://i.s3.glbimg.com/v1/AUTH_e84042ef78cb4708aeebdf1c68c6cbd6/internal_photos/bs/2026/z/k/wDByZVSNA9BcfceHGnFA/ricky-martin.jpg|posts/2026-02-21_ricky-martin-carnaval/raw/images/gshow_sapucai_famosos_og.jpg
+video_principal|https://s02.video.glbimg.com/x720/14359733.jpg|posts/2026-02-21_ricky-martin-carnaval/raw/images/video_principal_og.jpg
+caras_contexto|https://caras.com.br/wp-content/uploads/2026/02/sarah-jessica-parker-shawn-mendes-ricky-martin-800x450.jpg
+caras_ricky|https://caras.com.br/wp-content/uploads/2026/02/caras-2026-02-12T205912.579.jpg

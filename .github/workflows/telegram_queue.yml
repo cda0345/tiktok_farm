@@ -1,0 +1,98 @@
+name: Process Telegram Queue
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "telegram_queue/request_*.json"
+  repository_dispatch:
+    types: [telegram_request]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: telegram-queue
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libfreetype6
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install yt-dlp
+
+      - name: Poll Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          python scripts/poll_telegram_to_queue.py
+
+      - name: Check queue
+        id: check_queue
+        run: |
+          if ls telegram_queue/request_*.json >/dev/null 2>&1; then
+            echo "has_requests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_requests=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Process queue
+        if: steps.check_queue.outputs.has_requests == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python scripts/process_telegram_queue.py
+
+      - name: Upload processed videos
+        if: always() && steps.check_queue.outputs.has_requests == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram_posts_${{ github.run_id }}
+          if-no-files-found: ignore
+          retention-days: 3
+          path: |
+            gossip_post/output/*.mp4
+
+      - name: Commit queue state
+        if: always()
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add telegram_queue/
+
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update telegram queue and last_id [skip ci]"
+            git push
+          fi
+
+      - name: Cleanup videos
+        if: always()
+        run: |
+          rm -f gossip_post/output/*.mp4 || true
+          rm -f gossip_post/video_*.mp4 || true
+

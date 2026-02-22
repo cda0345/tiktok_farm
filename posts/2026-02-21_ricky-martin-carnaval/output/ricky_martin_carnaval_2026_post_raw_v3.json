@@ -1,0 +1,42 @@
+{
+  "name": "ricky_martin_carnaval_2026_post_raw_v3",
+  "post_dir": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21_ricky-martin-carnaval",
+  "output_video": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21_ricky-martin-carnaval/output/ricky_martin_carnaval_2026_post_raw_v3.mp4",
+  "duration_target_s": 11.0,
+  "primary_video": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21_ricky-martin-carnaval/raw/video/ricky_martin_carnaval_2026_raw.mp4",
+  "primary_video_duration_s": 50.63,
+  "segment_count": 5,
+  "segments": [
+    {
+      "kind": "video",
+      "source": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21_ricky-martin-carnaval/raw/video/ricky_martin_carnaval_2026_raw.mp4",
+      "start_s": 0.0,
+      "duration_s": 2.9
+    },
+    {
+      "kind": "image",
+      "source": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21_ricky-martin-carnaval/raw/images/gshow_sapucai_famosos_og.jpg",
+      "start_s": 0.0,
+      "duration_s": 1.15
+    },
+    {
+      "kind": "video",
+      "source": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21_ricky-martin-carnaval/raw/video/ricky_martin_carnaval_2026_raw.mp4",
+      "start_s": 23.865,
+      "duration_s": 2.9
+    },
+    {
+      "kind": "image",
+      "source": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21_ricky-martin-carnaval/raw/images/gshow_materia_principal_og.png",
+      "start_s": 0.0,
+      "duration_s": 1.15
+    },
+    {
+      "kind": "video",
+      "source": "/Users/caioalbanese/Documents/Tiktok_farm/Babado_farm/posts/2026-02-21_ricky-martin-carnaval/raw/video/ricky_martin_carnaval_2026_raw.mp4",
+      "start_s": 47.73,
+      "duration_s": 2.9
+    }
+  ],
+  "overlay": false
+}
