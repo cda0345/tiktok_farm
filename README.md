@@ -87,6 +87,22 @@ pip install -r requirements.txt
 python main.py --help
 ```
 
+### Git Remote Configuration
+
+After cloning, verify the remote is correctly configured:
+
+```bash
+git remote -v
+# origin  https://github.com/cda0345/tiktok_farm.git (fetch)
+# origin  https://github.com/cda0345/tiktok_farm.git (push)
+```
+
+If no remote is configured (e.g., in a fresh container or Codespace), add it:
+
+```bash
+git remote add origin https://github.com/cda0345/tiktok_farm.git
+```
+
 ## Quick Start - Batch Processing
 
 **Best for multiple posts:**
