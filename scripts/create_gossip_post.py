@@ -2211,6 +2211,160 @@ def _render_short_video(
     run_ffmpeg(ff.ffmpeg, args, stream_output=False)
 
 
+def build_editorial_pack_for_item(
+    item: NewsItem,
+    *,
+    hook_history_path: Path | None = None,
+) -> dict[str, str]:
+    """Build V5 editorial lines (hook/headline/body/description/cta) for a NewsItem.
+
+    This is shared across scheduler and Telegram video flows to keep copy quality consistent.
+    """
+    raw_script = _summarize_news_text(item)
+    all_lines = [ln.rstrip() for ln in raw_script.splitlines()]
+
+    hashtags = " ".join([ln.lower() for ln in all_lines if ln.strip().startswith("#")])
+
+    content_lines: list[str] = []
+    parsed_fields: dict[str, str] = {}
+    for ln in all_lines:
+        stripped = ln.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("#"):
+            continue
+        if re.match(r"^-{2,}$", stripped):
+            continue
+        if re.match(
+            r"^(variante|variation|vers[ãa]o|version|op[çc][ãa]o|option)\s*\d*\s*[:\-–—]*\s*",
+            stripped,
+            flags=re.I,
+        ):
+            continue
+        labeled = re.match(
+            r"^(gancho|hook|headline|titulo|title|corpo|body|tarja|descricao|descrição|description|cta)\s*[:\-–—=]\s*(.+)$",
+            stripped,
+            flags=re.I,
+        )
+        if labeled:
+            key = labeled.group(1).lower()
+            value = labeled.group(2).strip()
+            if key in {"gancho", "hook"}:
+                parsed_fields["hook"] = value
+            elif key in {"headline", "titulo", "title"}:
+                parsed_fields["headline"] = value
+            elif key in {"corpo", "body", "tarja"}:
+                parsed_fields["body"] = value
+            elif key in {"descricao", "descrição", "description"}:
+                parsed_fields["description"] = value
+            elif key == "cta":
+                parsed_fields["cta"] = value
+            continue
+
+        cleaned = re.sub(r"^(linha|line)\s*\d*\s*[:\-–—=]\s*", "", stripped, flags=re.I).strip()
+        if cleaned:
+            content_lines.append(cleaned)
+
+    ai_cta = parsed_fields.get("cta", "")
+    hook = parsed_fields.get("hook", "")
+    headline_core = parsed_fields.get("headline", "")
+    body = parsed_fields.get("body", "")
+    description_text = parsed_fields.get("description", "")
+
+    if not hook and content_lines:
+        hook = content_lines[0]
+    if not headline_core and len(content_lines) > 1:
+        headline_core = content_lines[1]
+    if not body and len(content_lines) > 2:
+        body = content_lines[2]
+    if not description_text and len(content_lines) > 3:
+        description_text = content_lines[3]
+    if not ai_cta and len(content_lines) > 4:
+        ai_cta = content_lines[4]
+
+    if not hook:
+        hook = _build_v5_fallback_hook(item)
+    if not headline_core:
+        headline_core = _build_v5_fallback_headline(item)
+    if not body:
+        body = _build_v5_fallback_body(item)
+    if not description_text:
+        description_text = f"{_clean_text(item.title)}. A web reagiu e as opinioes ficaram divididas."
+
+    hook_clean = re.sub(r"#\w+", "", hook).strip()
+    hook_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", "", hook_clean)
+    hook_clean = re.sub(r"\s+", " ", hook_clean).strip()
+    recent_hooks = (
+        _load_recent_hook_history(hook_history_path, window=HOOK_HISTORY_WINDOW)
+        if hook_history_path is not None
+        else []
+    )
+
+    ai_hook = _generate_contextual_hook_with_ai(item, recent_hooks, fallback=hook_clean)
+    if ai_hook:
+        hook_clean = ai_hook
+
+    if _is_probably_bad_hook(hook_clean):
+        hook_clean = _build_v5_fallback_hook(item)
+    hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
+    hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
+    if _is_overgeneric_hook(hook_clean):
+        ai_retry = _generate_contextual_hook_with_ai(item, recent_hooks, fallback=hook_clean)
+        if ai_retry:
+            hook_clean = ai_retry
+    if _is_probably_bad_hook(hook_clean):
+        hook_clean = _build_v5_fallback_hook(item)
+    hook_clean = _trim_trailing_connectors(hook_clean)
+    hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
+    hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
+
+    headline_text_clean = re.sub(r"#\w+", "", headline_core).strip()
+    headline_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,;:?!-]", "", headline_text_clean)
+    headline_text_clean = re.sub(r"\s+", " ", headline_text_clean).strip()
+    headline = _enforce_editorial_headline(headline_text_clean, item.title)
+    headline = _ensure_contextual_headline_line(headline, item)
+
+    body_text_clean = re.sub(r"#\w+", "", body).strip()
+    body_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,;:?!-]", "", body_text_clean)
+    body_text_clean = re.sub(r"\s+", " ", body_text_clean).strip()
+    body_text_clean = _ensure_contextual_body_line(body_text_clean, item)
+    body_text_clean = _rewrite_overlay_body_if_needed(body_text_clean, item=item)
+    body_text_clean = _build_tarja_text(body_text_clean, item=item)
+    if _looks_incomplete_pt_line(body_text_clean):
+        body_text_clean = _build_tarja_text(_build_v5_fallback_body(item), item=item)
+    if _is_hook_inconsistent_with_story(hook_clean, headline, body_text_clean):
+        hook_clean = _build_v5_fallback_hook(item)
+        hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
+        hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
+
+    description_text_clean = re.sub(r"#\w+", "", description_text).strip()
+    description_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,!?]", "", description_text_clean)
+    description_text_clean = re.sub(r"\s+", " ", description_text_clean).strip()
+    desc_line_1, desc_line_2 = _build_editorial_description(description_text_clean, item)
+    description_text_clean = f"{desc_line_1} {desc_line_2}".strip()
+    description_multiline = f"{desc_line_1}\n{desc_line_2}"
+
+    if _is_valid_ai_cta(ai_cta):
+        cta_text = _sanitize_cta_text(ai_cta.upper())
+    else:
+        cta_text = _sanitize_cta_text(_get_random_cta(item.title, headline=item.title))
+
+    if hook_history_path is not None:
+        _save_hook_to_history(hook_history_path, hook_clean, title=item.title, source=item.source)
+
+    return {
+        "hook": hook_clean,
+        "headline": headline,
+        "body": body_text_clean,
+        "description": description_text_clean,
+        "description_multiline": description_multiline,
+        "description_line_1": desc_line_1,
+        "description_line_2": desc_line_2,
+        "cta": cta_text,
+        "hashtags": hashtags,
+    }
+
+
 def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
     """Função centralizada para criar um post a partir de um NewsItem."""
     root = Path(__file__).resolve().parents[1]

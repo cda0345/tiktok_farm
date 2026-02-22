@@ -257,13 +257,18 @@ Exemplos:
     )
     
     parser.add_argument("--url", required=True, help="URL do vídeo no Twitter/X")
-    parser.add_argument("--hook", required=True, help="Hook editorial (3-5 palavras)")
-    parser.add_argument("--headline", required=True, help="Headline central (ate 4 palavras)")
-    parser.add_argument("--body", default="", help="Body/tarja editorial (2-3 palavras)")
+    parser.add_argument("--hook", required=True, help="Hook editorial")
+    parser.add_argument("--headline", required=True, help="Headline editorial")
+    parser.add_argument("--body", default="", help="Body/tarja editorial")
     parser.add_argument("--cta", default=None, help="Call-to-action (se não informado, será gerado automaticamente)")
     parser.add_argument("--duration", type=float, default=11.0, help="Duração máxima em segundos (padrao 11s)")
     parser.add_argument("--name", default="video_post", help="Nome do arquivo (sem extensão)")
     parser.add_argument("--skip-preview", action="store_true", help="Pula o preview do texto")
+    parser.add_argument(
+        "--raw-editorial",
+        action="store_true",
+        help="Usa hook/headline/body como recebidos (sem normalizacao curta).",
+    )
     parser.add_argument("--skip-telegram", action="store_true", help="Não envia para o Telegram")
     parser.add_argument("--telegram-title", default="", help="Título para caption do Telegram")
     parser.add_argument("--telegram-description", default="", help="Descrição para caption do Telegram")
@@ -274,15 +279,22 @@ Exemplos:
     )
     
     args = parser.parse_args()
-    args.hook = _normalize_editorial_hook(args.hook)
-    args.headline = _normalize_editorial_headline(args.headline)
-    args.body = _normalize_editorial_body(args.body, args.headline)
+    if args.raw_editorial:
+        args.hook = " ".join((args.hook or "").split()).strip().upper() or "QUE BABADO?"
+        args.headline = " ".join((args.headline or "").split()).strip() or "Web dividida"
+        args.body = " ".join((args.body or "").split()).strip()
+        if not args.body:
+            args.body = _build_tarja_text(args.headline or "Revelacao chocante")
+    else:
+        args.hook = _normalize_editorial_hook(args.hook)
+        args.headline = _normalize_editorial_headline(args.headline)
+        args.body = _normalize_editorial_body(args.body, args.headline)
     if abs(args.duration - 11.0) > 0.001:
         print("ℹ️ Diretriz ativa: duração normalizada para 11s.")
     args.duration = 11.0
 
     # Se CTA não for fornecido, gera um baseado no headline
-    cta = args.cta if args.cta else _get_random_cta(args.headline, args.headline)
+    cta = " ".join((args.cta or "").split()).strip() if args.cta else _get_random_cta(args.headline, args.headline)
     
     # Preview do texto
     if not args.skip_preview:

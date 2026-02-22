@@ -25,6 +25,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from core.ai_client import OpenAIConfig, is_openai_configured
+from scripts.create_gossip_post import NewsItem, build_editorial_pack_for_item
 
 QUEUE_DIR = ROOT_DIR / "telegram_queue"
 QUEUE_DIR.mkdir(exist_ok=True)
@@ -354,8 +355,8 @@ def _build_video_copy_fallback(title: str, description: str) -> tuple[str, str, 
     return hook, headline, body, desc, cta
 
 
-def _build_video_copy(raw_title: str, raw_description: str = "") -> tuple[str, str, str, str, str, str]:
-    """Monta hook/headline/body/cta editoriais para render de vídeo."""
+def _build_video_copy_legacy(raw_title: str, raw_description: str = "") -> tuple[str, str, str, str, str, str]:
+    """Legacy generator kept as fallback if shared V5 pipeline fails."""
     clean = _normalize_video_text(raw_title)
     desc_clean = _normalize_video_text(raw_description)
 
@@ -390,6 +391,37 @@ def _build_video_copy(raw_title: str, raw_description: str = "") -> tuple[str, s
     if len(telegram_description) > 700:
         telegram_description = telegram_description[:700].rsplit(" ", 1)[0] + "..."
     return hook, headline, body, cta, telegram_title, telegram_description
+
+
+def _build_video_copy(raw_title: str, raw_description: str = "", video_url: str = "") -> tuple[str, str, str, str, str, str]:
+    """Build copy for Telegram video posts using the same V5 engine as scheduler."""
+    clean_title = _normalize_video_text(raw_title) or "Flagra no X"
+    clean_desc = _normalize_video_text(raw_description)
+
+    item = NewsItem(
+        source="telegram_video",
+        feed_url="telegram://x",
+        title=clean_title,
+        link=video_url.strip(),
+        published="",
+        image_url="",
+        description=clean_desc,
+    )
+    hook_history_path = ROOT_DIR / "gossip_post" / "hook_history.json"
+
+    try:
+        pack = build_editorial_pack_for_item(item, hook_history_path=hook_history_path)
+        hook = pack.get("hook", "").strip() or "QUE BABADO?"
+        headline = pack.get("headline", "").strip() or "Web dividida"
+        body = pack.get("body", "").strip() or "A web reagiu e as opinioes ficaram divididas"
+        cta = pack.get("cta", "").strip() or "COMENTA O QUE ACHOU!"
+
+        telegram_title = _clean_telegram_text(raw_title, 180) or headline
+        telegram_description = _clean_telegram_text(pack.get("description", ""), 700) or headline
+        return hook, headline, body, cta, telegram_title, telegram_description
+    except Exception as exc:
+        print(f"⚠️ Falha no motor V5 compartilhado, usando fallback legado: {exc}")
+        return _build_video_copy_legacy(raw_title, raw_description)
 
 
 def _clean_telegram_text(text: str, max_len: int) -> str:
@@ -472,7 +504,11 @@ def process_video_request(request: Dict[str, Any]) -> bool:
     try:
         print(f"🎬 Executando create_new_video_post.py para VÍDEO: {video_url}")
         raw_title, raw_description = _extract_video_metadata(video_url)
-        hook, headline, body, cta, telegram_title, telegram_description = _build_video_copy(raw_title, raw_description)
+        hook, headline, body, cta, telegram_title, telegram_description = _build_video_copy(
+            raw_title,
+            raw_description,
+            video_url,
+        )
         duration = 11.0
 
         args = [
@@ -486,6 +522,7 @@ def process_video_request(request: Dict[str, Any]) -> bool:
             headline,
             "--body",
             body,
+            "--raw-editorial",
             "--cta",
             cta,
             "--duration",
