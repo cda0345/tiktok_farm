@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 import requests
@@ -103,6 +104,20 @@ CTA_BY_THEME = {
 HOOK_HISTORY_FILE = "hook_history.json"
 HOOK_HISTORY_WINDOW = 12
 HOOK_HISTORY_MAX = 120
+
+HOOK_WRAP_WIDTH = 24
+HOOK_MAX_LINES = 2
+BODY_WRAP_WIDTH = 27
+BODY_MAX_LINES = 4
+
+TOP_PANEL_Y = 0
+TOP_PANEL_H = 610
+HOOK_AREA_Y = 450
+HOOK_AREA_H = 170
+BOTTOM_PANEL_Y = 1290
+BOTTOM_PANEL_H = 300
+LOGO_Y = 120
+BODY_LEFT_X = 56
 
 
 def _detect_news_theme(headline: str) -> str:
@@ -633,7 +648,13 @@ def _trim_trailing_connectors(text: str) -> str:
     return " ".join(words).strip()
 
 
-def _fit_hook_to_overlay(hook: str, *, max_chars: int = 24, max_lines: int = 3, min_words: int = 5) -> str:
+def _fit_hook_to_overlay(
+    hook: str,
+    *,
+    max_chars: int = HOOK_WRAP_WIDTH,
+    max_lines: int = HOOK_MAX_LINES,
+    min_words: int = 5,
+) -> str:
     """Fit hook into overlay without truncating in awkward places."""
     words = [w for w in _clean_text(hook).split() if w]
     if not words:
@@ -804,7 +825,7 @@ def _generate_contextual_hook_with_ai(item: NewsItem, recent_hooks: list[str], f
         line = re.sub(r"[^\w\s\u00C0-\u00FF?!]", "", line)
         line = re.sub(r"\s+", " ", line).strip().upper()
         line = _smart_truncate_hook(line, max_words=8)
-        line = _fit_hook_to_overlay(line, max_chars=24, max_lines=3, min_words=5)
+        line = _fit_hook_to_overlay(line, max_chars=HOOK_WRAP_WIDTH, max_lines=HOOK_MAX_LINES, min_words=5)
 
         if not line:
             return None
@@ -1311,7 +1332,7 @@ def _build_v5_fallback_hook(item: NewsItem) -> str:
         prefer_description=False,
     ).upper()
     hook = _smart_truncate_hook(hook, max_words=10)
-    hook = _fit_hook_to_overlay(hook, max_chars=24, max_lines=3, min_words=5)
+    hook = _fit_hook_to_overlay(hook, max_chars=HOOK_WRAP_WIDTH, max_lines=HOOK_MAX_LINES, min_words=5)
     if _looks_incomplete_pt_line(hook):
         hook = _trim_trailing_connectors(hook)
     return hook
@@ -1438,6 +1459,453 @@ def _fit_font_to_width(
         return target_font
     width_cap = int(max_text_width_px / max(1.0, longest * glyph_ratio))
     return max(min_font, min(target_font, width_cap))
+
+
+def _wrap_overlay_lines(text: str, *, width: int, max_lines: int, upper: bool = False) -> list[str]:
+    clean = _clean_text(text)
+    if upper:
+        clean = clean.upper()
+    if not clean:
+        return []
+    wrapped = textwrap.wrap(clean, width=width, break_long_words=False, break_on_hyphens=False)
+    return wrapped[:max_lines]
+
+
+def _plan_overlay_layout(hook_text: str, body_text: str) -> dict[str, Any]:
+    """Pre-compute overlay lines and typography before rendering."""
+    hook_lines = _wrap_overlay_lines(
+        hook_text,
+        width=HOOK_WRAP_WIDTH,
+        max_lines=HOOK_MAX_LINES,
+        upper=True,
+    ) or ["NOTICIA EM DESTAQUE"]
+    tarja_lines = _wrap_overlay_lines(
+        body_text,
+        width=BODY_WRAP_WIDTH,
+        max_lines=BODY_MAX_LINES,
+        upper=True,
+    ) or ["NOTICIA EM ATUALIZACAO"]
+
+    hook_size, hook_step, hook_start_y = _fit_lines_in_bar(
+        bar_y=HOOK_AREA_Y,
+        bar_h=HOOK_AREA_H,
+        line_count=len(hook_lines),
+        target_font=92,
+        min_font=54,
+        gap=8,
+        inner_padding=18,
+    )
+    hook_size = _fit_font_to_width(
+        hook_lines,
+        target_font=hook_size,
+        min_font=54,
+        max_text_width_px=920,
+    )
+    hook_step = hook_size + 8
+    hook_block_h = (hook_size * max(1, len(hook_lines))) + (8 * max(0, len(hook_lines) - 1))
+    hook_start_y = HOOK_AREA_Y + max(0, (HOOK_AREA_H - hook_block_h) // 2)
+
+    tarja_size, tarja_step, tarja_start_y = _fit_lines_in_bar(
+        bar_y=BOTTOM_PANEL_Y,
+        bar_h=BOTTOM_PANEL_H,
+        line_count=max(1, len(tarja_lines)),
+        target_font=56,
+        min_font=34,
+        gap=6,
+        inner_padding=22,
+    )
+    tarja_size = _fit_font_to_width(
+        tarja_lines,
+        target_font=tarja_size,
+        min_font=34,
+        max_text_width_px=940,
+    )
+    tarja_step = tarja_size + 6
+    tarja_block_h = (tarja_size * max(1, len(tarja_lines))) + (6 * max(0, len(tarja_lines) - 1))
+    tarja_start_y = BOTTOM_PANEL_Y + max(0, (BOTTOM_PANEL_H - tarja_block_h) // 2)
+
+    return {
+        "hook_lines": hook_lines,
+        "tarja_lines": tarja_lines,
+        "hook_font_size": hook_size,
+        "hook_line_step": hook_step,
+        "hook_start_y": hook_start_y,
+        "tarja_font_size": tarja_size,
+        "tarja_line_step": tarja_step,
+        "tarja_start_y": tarja_start_y,
+    }
+
+
+def _safe_int(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+def _resolve_overlay_layout_plan(layout_plan: dict[str, Any] | None, *, hook_text: str, body_text: str) -> dict[str, Any]:
+    if isinstance(layout_plan, dict):
+        hook_lines_raw = layout_plan.get("hook_lines")
+        tarja_lines_raw = layout_plan.get("tarja_lines")
+        hook_lines = [
+            _sanitize_overlay_text(str(line))
+            for line in (hook_lines_raw if isinstance(hook_lines_raw, list) else [])
+            if _clean_text(str(line))
+        ][:HOOK_MAX_LINES]
+        tarja_lines = [
+            _sanitize_overlay_text(str(line))
+            for line in (tarja_lines_raw if isinstance(tarja_lines_raw, list) else [])
+            if _clean_text(str(line))
+        ][:BODY_MAX_LINES]
+        if hook_lines and tarja_lines:
+            return {
+                "hook_lines": hook_lines,
+                "tarja_lines": tarja_lines,
+                "hook_font_size": _safe_int(layout_plan.get("hook_font_size"), 92),
+                "hook_line_step": _safe_int(layout_plan.get("hook_line_step"), 100),
+                "hook_start_y": _safe_int(layout_plan.get("hook_start_y"), HOOK_AREA_Y),
+                "tarja_font_size": _safe_int(layout_plan.get("tarja_font_size"), 56),
+                "tarja_line_step": _safe_int(layout_plan.get("tarja_line_step"), 62),
+                "tarja_start_y": _safe_int(layout_plan.get("tarja_start_y"), BOTTOM_PANEL_Y),
+            }
+    return _plan_overlay_layout(hook_text, body_text)
+
+
+SEMANTIC_STOPWORDS_PT = {
+    "com", "para", "sobre", "entre", "depois", "antes", "apos", "após", "quando", "onde", "como",
+    "mais", "menos", "muito", "muita", "muitas", "muitos", "essa", "esse", "isso", "isto", "aquela",
+    "aquele", "dessa", "desse", "nesta", "neste", "naquela", "naquele", "pela", "pelos", "pelas",
+    "sobre", "contra", "apos", "pelo", "pela", "seu", "sua", "seus", "suas", "dele", "dela",
+    "eles", "elas", "tambem", "também", "ser", "estar", "foi", "era", "sao", "são", "tem", "teve",
+    "das", "dos", "que", "com", "sem", "uma", "umas", "uns", "nos", "nas", "ele", "ela", "aqui",
+}
+
+
+def _extract_story_keywords(item: NewsItem, *, max_terms: int = 16) -> list[str]:
+    raw = _clean_text(f"{item.title} {item.description}")
+    tokens = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ]{3,}", raw.lower())
+    counts: dict[str, int] = {}
+    for token in tokens:
+        if token in SEMANTIC_STOPWORDS_PT:
+            continue
+        counts[token] = counts.get(token, 0) + 1
+    ordered = sorted(counts.items(), key=lambda kv: (-kv[1], -len(kv[0]), kv[0]))
+    return [k for k, _ in ordered[:max_terms]]
+
+
+def _story_overlap_count(text: str, keywords: list[str]) -> int:
+    if not keywords:
+        return 0
+    t = _clean_text(text).lower()
+    if not t:
+        return 0
+    matches = 0
+    for keyword in keywords:
+        if re.search(rf"\b{re.escape(keyword)}\w*\b", t):
+            matches += 1
+    return matches
+
+
+def _coerce_editorial_fields(
+    item: NewsItem,
+    *,
+    hook: str,
+    headline: str,
+    body: str,
+    cta: str,
+) -> tuple[str, str, str, str]:
+    hook_clean = re.sub(r"#\w+", "", hook or "").strip()
+    hook_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", "", hook_clean)
+    hook_clean = re.sub(r"\s+", " ", hook_clean).strip()
+    if not hook_clean:
+        hook_clean = _build_v5_fallback_hook(item)
+    hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
+    hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=HOOK_WRAP_WIDTH, max_lines=HOOK_MAX_LINES, min_words=5)
+    if _is_probably_bad_hook(hook_clean) or _is_overgeneric_hook(hook_clean):
+        hook_clean = _build_v5_fallback_hook(item)
+        hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
+        hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=HOOK_WRAP_WIDTH, max_lines=HOOK_MAX_LINES, min_words=5)
+    hook_clean = _trim_trailing_connectors(hook_clean)
+
+    headline_text_clean = re.sub(r"#\w+", "", headline or "").strip()
+    headline_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,;:?!-]", "", headline_text_clean)
+    headline_text_clean = re.sub(r"\s+", " ", headline_text_clean).strip()
+    headline_clean = _enforce_editorial_headline(headline_text_clean, item.title)
+    headline_clean = _ensure_contextual_headline_line(headline_clean, item)
+
+    body_text_clean = re.sub(r"#\w+", "", body or "").strip()
+    body_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,;:?!-]", "", body_text_clean)
+    body_text_clean = re.sub(r"\s+", " ", body_text_clean).strip()
+    body_text_clean = _ensure_contextual_body_line(body_text_clean, item)
+    body_text_clean = _rewrite_overlay_body_if_needed(body_text_clean, item=item)
+    body_text_clean = _build_tarja_text(body_text_clean, item=item)
+    if _looks_incomplete_pt_line(body_text_clean):
+        body_text_clean = _build_tarja_text(_build_v5_fallback_body(item), item=item)
+
+    if _is_hook_inconsistent_with_story(hook_clean, headline_clean, body_text_clean):
+        hook_clean = _build_v5_fallback_hook(item)
+        hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
+        hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=HOOK_WRAP_WIDTH, max_lines=HOOK_MAX_LINES, min_words=5)
+
+    cta_clean = _sanitize_cta_text((cta or "").upper())
+    if not _is_valid_ai_cta(cta_clean):
+        cta_clean = _sanitize_cta_text(_get_random_cta(item.title, headline=item.title))
+
+    return hook_clean, headline_clean, body_text_clean, cta_clean
+
+
+def _validate_editorial_semantics(item: NewsItem, *, hook: str, headline: str, body: str, cta: str) -> tuple[bool, list[str]]:
+    reasons: list[str] = []
+
+    hook_words = _count_words(hook)
+    if hook_words < 5 or hook_words > 10:
+        reasons.append("hook fora de 5-10 palavras")
+    if _looks_incomplete_pt_line(hook):
+        reasons.append("hook com final incompleto")
+    if _is_probably_bad_hook(hook) or _is_overgeneric_hook(hook):
+        reasons.append("hook generico ou sem sentido")
+
+    body_words = _count_words(body)
+    if body_words < 14 or body_words > 24:
+        reasons.append("body fora de 14-24 palavras")
+    if _looks_incomplete_pt_line(body):
+        reasons.append("body com final incompleto")
+
+    if _is_hook_inconsistent_with_story(hook, headline, body):
+        reasons.append("hook contradiz headline/body")
+
+    if not _is_valid_ai_cta(cta):
+        reasons.append("cta invalido")
+
+    story_keywords = _extract_story_keywords(item)
+    hook_hits = _story_overlap_count(hook, story_keywords)
+    body_hits = _story_overlap_count(body, story_keywords)
+    if hook_hits < 1:
+        reasons.append("hook sem relacao clara com a materia")
+    if body_hits < 1:
+        reasons.append("body sem relacao clara com a materia")
+
+    return len(reasons) == 0, reasons
+
+
+def _extract_json_object_from_text(raw: str) -> dict[str, Any] | None:
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+    match = re.search(r"\{.*\}", raw, flags=re.S)
+    if not match:
+        return None
+    try:
+        parsed = json.loads(match.group(0))
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        return None
+    return None
+
+
+def _review_editorial_with_ai(
+    item: NewsItem,
+    *,
+    hook: str,
+    headline: str,
+    body: str,
+    cta: str,
+    max_attempts: int = 2,
+) -> tuple[dict[str, str] | None, str]:
+    cfg = OpenAIConfig()
+    if not is_openai_configured(cfg):
+        return None, "openai_nao_configurado"
+
+    api_key = os.getenv(cfg.api_key_env, "").strip()
+    if not api_key:
+        return None, "api_key_ausente"
+
+    model = os.getenv("GOSSIP_REVIEW_MODEL", os.getenv("GOSSIP_SUMMARY_MODEL", cfg.model)).strip() or cfg.model
+    url = f"{cfg.base_url.rstrip('/')}/chat/completions"
+    context = _clean_text(f"{item.title}. {_clean_description_boilerplate(item.description, title=item.title)}")[:2200]
+    messages: list[dict[str, str]] = [
+        {
+            "role": "system",
+            "content": (
+                "Voce faz revisao editorial final para video curto de fofoca.\n"
+                "Valide e reescreva HOOK, HEADLINE, BODY e CTA mantendo relacao direta com a materia.\n"
+                "Formato obrigatorio de saida: JSON com chaves exatas "
+                "approved, hook, headline, body, cta, review_notes.\n"
+                "Regras:\n"
+                "- hook: 5 a 10 palavras, frase completa, especifico da materia.\n"
+                "- headline: 9 a 16 palavras.\n"
+                "- body: 14 a 24 palavras, frase completa com contexto e consequencia.\n"
+                "- cta: chamada imperativa curta, sem pergunta.\n"
+                "- Sem hashtags, sem emojis, sem texto fora do JSON."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"MATERIA ORIGINAL: {context}\n\n"
+                f"HOOK_ATUAL: {hook}\n"
+                f"HEADLINE_ATUAL: {headline}\n"
+                f"BODY_ATUAL: {body}\n"
+                f"CTA_ATUAL: {cta}\n\n"
+                "Revisar e devolver JSON final aprovado."
+            ),
+        },
+    ]
+
+    last_reason = "resposta_invalida"
+    for _ in range(max_attempts):
+        payload = {
+            "model": model,
+            "temperature": 0.2,
+            "max_completion_tokens": 240,
+            "response_format": {"type": "json_object"},
+            "messages": messages,
+        }
+        try:
+            r = requests.post(
+                url,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json=payload,
+                timeout=60,
+            )
+            if r.status_code >= 400:
+                return None, f"http_{r.status_code}"
+            data = r.json()
+            content = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content")
+            obj = _extract_json_object_from_text(str(content or ""))
+            if not obj:
+                last_reason = "json_nao_parseavel"
+                messages.append({"role": "assistant", "content": str(content or "")})
+                messages.append({"role": "user", "content": "Retorne apenas JSON valido conforme schema."})
+                continue
+
+            candidate_hook = _clean_text(str(obj.get("hook") or hook))
+            candidate_headline = _clean_text(str(obj.get("headline") or headline))
+            candidate_body = _clean_text(str(obj.get("body") or body))
+            candidate_cta = _clean_text(str(obj.get("cta") or cta))
+
+            candidate_hook, candidate_headline, candidate_body, candidate_cta = _coerce_editorial_fields(
+                item,
+                hook=candidate_hook,
+                headline=candidate_headline,
+                body=candidate_body,
+                cta=candidate_cta,
+            )
+            valid, reasons = _validate_editorial_semantics(
+                item,
+                hook=candidate_hook,
+                headline=candidate_headline,
+                body=candidate_body,
+                cta=candidate_cta,
+            )
+            if valid:
+                return {
+                    "hook": candidate_hook,
+                    "headline": candidate_headline,
+                    "body": candidate_body,
+                    "cta": candidate_cta,
+                }, ""
+
+            last_reason = "; ".join(reasons) if reasons else "validacao_local_falhou"
+            messages.append({"role": "assistant", "content": json.dumps(obj, ensure_ascii=False)})
+            messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        f"Reescreva novamente. Problemas detectados: {last_reason}. "
+                        "Retorne somente JSON valido."
+                    ),
+                }
+            )
+        except Exception as exc:
+            return None, f"erro_{exc}"
+    return None, last_reason
+
+
+def _run_editorial_review_gate(
+    item: NewsItem,
+    *,
+    hook: str,
+    headline: str,
+    body: str,
+    cta: str,
+) -> tuple[dict[str, str], dict[str, Any]]:
+    hook_final, headline_final, body_final, cta_final = _coerce_editorial_fields(
+        item,
+        hook=hook,
+        headline=headline,
+        body=body,
+        cta=cta,
+    )
+    local_ok_before, local_reasons_before = _validate_editorial_semantics(
+        item,
+        hook=hook_final,
+        headline=headline_final,
+        body=body_final,
+        cta=cta_final,
+    )
+
+    review_source = "local_only"
+    ai_reason = ""
+    ai_candidate, ai_reason = _review_editorial_with_ai(
+        item,
+        hook=hook_final,
+        headline=headline_final,
+        body=body_final,
+        cta=cta_final,
+    )
+    if ai_candidate:
+        hook_final = ai_candidate["hook"]
+        headline_final = ai_candidate["headline"]
+        body_final = ai_candidate["body"]
+        cta_final = ai_candidate["cta"]
+        review_source = "ai_review"
+
+    local_ok_after, local_reasons_after = _validate_editorial_semantics(
+        item,
+        hook=hook_final,
+        headline=headline_final,
+        body=body_final,
+        cta=cta_final,
+    )
+
+    if not local_ok_after:
+        review_source = "fallback_rewrite"
+        hook_final, headline_final, body_final, cta_final = _coerce_editorial_fields(
+            item,
+            hook=_build_v5_fallback_hook(item),
+            headline=_build_v5_fallback_headline(item),
+            body=_build_v5_fallback_body(item),
+            cta=_get_random_cta(item.title, headline=item.title),
+        )
+        local_ok_after, local_reasons_after = _validate_editorial_semantics(
+            item,
+            hook=hook_final,
+            headline=headline_final,
+            body=body_final,
+            cta=cta_final,
+        )
+
+    review = {
+        "review_source": review_source,
+        "ai_reason": ai_reason,
+        "local_ok_before": local_ok_before,
+        "local_reasons_before": local_reasons_before,
+        "local_ok_after": local_ok_after,
+        "local_reasons_after": local_reasons_after,
+    }
+    return {
+        "hook": hook_final,
+        "headline": headline_final,
+        "body": body_final,
+        "cta": cta_final,
+    }, review
 
 
 def _extract_v5_lines(raw: str) -> list[str]:
@@ -1789,6 +2257,7 @@ def _render_short(
     cta_text: str = "INSCREVA-SE",
     logo_path: Path | None = None,
     duration_s: float = 5.0,
+    layout_plan: dict[str, Any] | None = None,
 ) -> None:
     ff = ensure_ffmpeg("tools")
     hook_font = _ffmpeg_escape(_select_hook_font())
@@ -1818,61 +2287,19 @@ def _render_short(
         )
 
     tarja_text = _build_tarja_text(body_clean)
-    hook_lines = textwrap.wrap(hook_clean.upper(), width=30, break_long_words=False, break_on_hyphens=False)[:2]
-    tarja_lines = textwrap.wrap(tarja_text.upper(), width=27, break_long_words=False, break_on_hyphens=False)[:4]
-    if not hook_lines:
-        hook_seed = _clean_text(headline_clean or body_clean or "noticia em destaque")
-        hook_lines = textwrap.wrap(_fit_hook_to_overlay(hook_seed.upper(), max_chars=24, max_lines=3, min_words=3), width=30, break_long_words=False, break_on_hyphens=False)[:2] or ["NOTICIA EM DESTAQUE"]
-    if not tarja_lines:
-        tarja_seed = _clean_text(body_clean or headline_clean or "noticia em atualizacao")
-        tarja_lines = textwrap.wrap(tarja_seed.upper(), width=27, break_long_words=False, break_on_hyphens=False)[:4] or ["NOTICIA EM ATUALIZACAO"]
-
-    TOP_PANEL_Y = 0
-    TOP_PANEL_H = 610
-    HOOK_AREA_Y = 450
-    HOOK_AREA_H = 170
-    BOTTOM_PANEL_Y = 1290
-    BOTTOM_PANEL_H = 300
-    LOGO_Y = 120
-    BODY_LEFT_X = 56
-
-    hook_size, hook_step, hook_start_y = _fit_lines_in_bar(
-        bar_y=HOOK_AREA_Y,
-        bar_h=HOOK_AREA_H,
-        line_count=len(hook_lines),
-        target_font=92,
-        min_font=54,
-        gap=8,
-        inner_padding=18,
+    resolved_layout = _resolve_overlay_layout_plan(
+        layout_plan,
+        hook_text=hook_clean,
+        body_text=tarja_text,
     )
-    hook_size = _fit_font_to_width(
-        hook_lines,
-        target_font=hook_size,
-        min_font=54,
-        max_text_width_px=920,
-    )
-    hook_step = hook_size + 8
-    hook_block_h = (hook_size * max(1, len(hook_lines))) + (8 * max(0, len(hook_lines) - 1))
-    hook_start_y = HOOK_AREA_Y + max(0, (HOOK_AREA_H - hook_block_h) // 2)
-
-    tarja_size, tarja_step, tarja_start_y = _fit_lines_in_bar(
-        bar_y=BOTTOM_PANEL_Y,
-        bar_h=BOTTOM_PANEL_H,
-        line_count=max(1, len(tarja_lines)),
-        target_font=56,
-        min_font=34,
-        gap=6,
-        inner_padding=22,
-    )
-    tarja_size = _fit_font_to_width(
-        tarja_lines,
-        target_font=tarja_size,
-        min_font=34,
-        max_text_width_px=940,
-    )
-    tarja_step = tarja_size + 6
-    tarja_block_h = (tarja_size * max(1, len(tarja_lines))) + (6 * max(0, len(tarja_lines) - 1))
-    tarja_start_y = BOTTOM_PANEL_Y + max(0, (BOTTOM_PANEL_H - tarja_block_h) // 2)
+    hook_lines = resolved_layout["hook_lines"]
+    tarja_lines = resolved_layout["tarja_lines"]
+    hook_size = resolved_layout["hook_font_size"]
+    hook_step = resolved_layout["hook_line_step"]
+    hook_start_y = resolved_layout["hook_start_y"]
+    tarja_size = resolved_layout["tarja_font_size"]
+    tarja_step = resolved_layout["tarja_line_step"]
+    tarja_start_y = resolved_layout["tarja_start_y"]
 
     text_layers = [
         f"drawbox=x=0:y={TOP_PANEL_Y}:w=1080:h={TOP_PANEL_H}:color=black@1.0:t=fill",
@@ -2021,6 +2448,7 @@ def _render_short_video(
     cta_text: str = "INSCREVA-SE",
     logo_path: Path | None = None,
     duration_s: float = 20.0,
+    layout_plan: dict[str, Any] | None = None,
 ) -> None:
     """Renderiza um post de fofoca usando um vídeo como base ao invés de imagem estática.
     Corta o vídeo em `duration_s` segundos (default 20s).
@@ -2050,61 +2478,19 @@ def _render_short_video(
         )
 
     tarja_text = _build_tarja_text(body_clean)
-    hook_lines = textwrap.wrap(hook_clean.upper(), width=30, break_long_words=False, break_on_hyphens=False)[:2]
-    tarja_lines = textwrap.wrap(tarja_text.upper(), width=27, break_long_words=False, break_on_hyphens=False)[:4]
-    if not hook_lines:
-        hook_seed = _clean_text(headline_clean or body_clean or "noticia em destaque")
-        hook_lines = textwrap.wrap(_fit_hook_to_overlay(hook_seed.upper(), max_chars=24, max_lines=3, min_words=3), width=30, break_long_words=False, break_on_hyphens=False)[:2] or ["NOTICIA EM DESTAQUE"]
-    if not tarja_lines:
-        tarja_seed = _clean_text(body_clean or headline_clean or "noticia em atualizacao")
-        tarja_lines = textwrap.wrap(tarja_seed.upper(), width=27, break_long_words=False, break_on_hyphens=False)[:4] or ["NOTICIA EM ATUALIZACAO"]
-
-    TOP_PANEL_Y = 0
-    TOP_PANEL_H = 610
-    HOOK_AREA_Y = 450
-    HOOK_AREA_H = 170
-    BOTTOM_PANEL_Y = 1290
-    BOTTOM_PANEL_H = 300
-    LOGO_Y = 120
-    BODY_LEFT_X = 56
-
-    hook_size, hook_step, hook_start_y = _fit_lines_in_bar(
-        bar_y=HOOK_AREA_Y,
-        bar_h=HOOK_AREA_H,
-        line_count=len(hook_lines),
-        target_font=92,
-        min_font=54,
-        gap=8,
-        inner_padding=18,
+    resolved_layout = _resolve_overlay_layout_plan(
+        layout_plan,
+        hook_text=hook_clean,
+        body_text=tarja_text,
     )
-    hook_size = _fit_font_to_width(
-        hook_lines,
-        target_font=hook_size,
-        min_font=54,
-        max_text_width_px=920,
-    )
-    hook_step = hook_size + 8
-    hook_block_h = (hook_size * max(1, len(hook_lines))) + (8 * max(0, len(hook_lines) - 1))
-    hook_start_y = HOOK_AREA_Y + max(0, (HOOK_AREA_H - hook_block_h) // 2)
-
-    tarja_size, tarja_step, tarja_start_y = _fit_lines_in_bar(
-        bar_y=BOTTOM_PANEL_Y,
-        bar_h=BOTTOM_PANEL_H,
-        line_count=max(1, len(tarja_lines)),
-        target_font=56,
-        min_font=34,
-        gap=6,
-        inner_padding=22,
-    )
-    tarja_size = _fit_font_to_width(
-        tarja_lines,
-        target_font=tarja_size,
-        min_font=34,
-        max_text_width_px=940,
-    )
-    tarja_step = tarja_size + 6
-    tarja_block_h = (tarja_size * max(1, len(tarja_lines))) + (6 * max(0, len(tarja_lines) - 1))
-    tarja_start_y = BOTTOM_PANEL_Y + max(0, (BOTTOM_PANEL_H - tarja_block_h) // 2)
+    hook_lines = resolved_layout["hook_lines"]
+    tarja_lines = resolved_layout["tarja_lines"]
+    hook_size = resolved_layout["hook_font_size"]
+    hook_step = resolved_layout["hook_line_step"]
+    hook_start_y = resolved_layout["hook_start_y"]
+    tarja_size = resolved_layout["tarja_font_size"]
+    tarja_step = resolved_layout["tarja_line_step"]
+    tarja_start_y = resolved_layout["tarja_start_y"]
 
     text_filters = [
         f"drawbox=x=0:y={TOP_PANEL_Y}:w=1080:h={TOP_PANEL_H}:color=black@1.0:t=fill",
@@ -2215,7 +2601,7 @@ def build_editorial_pack_for_item(
     item: NewsItem,
     *,
     hook_history_path: Path | None = None,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     """Build V5 editorial lines (hook/headline/body/description/cta) for a NewsItem.
 
     This is shared across scheduler and Telegram video flows to keep copy quality consistent.
@@ -2307,7 +2693,7 @@ def build_editorial_pack_for_item(
     if _is_probably_bad_hook(hook_clean):
         hook_clean = _build_v5_fallback_hook(item)
     hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
-    hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
+    hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=HOOK_WRAP_WIDTH, max_lines=HOOK_MAX_LINES, min_words=5)
     if _is_overgeneric_hook(hook_clean):
         ai_retry = _generate_contextual_hook_with_ai(item, recent_hooks, fallback=hook_clean)
         if ai_retry:
@@ -2316,7 +2702,7 @@ def build_editorial_pack_for_item(
         hook_clean = _build_v5_fallback_hook(item)
     hook_clean = _trim_trailing_connectors(hook_clean)
     hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
-    hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
+    hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=HOOK_WRAP_WIDTH, max_lines=HOOK_MAX_LINES, min_words=5)
 
     headline_text_clean = re.sub(r"#\w+", "", headline_core).strip()
     headline_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,;:?!-]", "", headline_text_clean)
@@ -2335,7 +2721,12 @@ def build_editorial_pack_for_item(
     if _is_hook_inconsistent_with_story(hook_clean, headline, body_text_clean):
         hook_clean = _build_v5_fallback_hook(item)
         hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
-        hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
+        hook_clean = _fit_hook_to_overlay(
+            hook_clean,
+            max_chars=HOOK_WRAP_WIDTH,
+            max_lines=HOOK_MAX_LINES,
+            min_words=5,
+        )
 
     description_text_clean = re.sub(r"#\w+", "", description_text).strip()
     description_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,!?]", "", description_text_clean)
@@ -2348,6 +2739,25 @@ def build_editorial_pack_for_item(
         cta_text = _sanitize_cta_text(ai_cta.upper())
     else:
         cta_text = _sanitize_cta_text(_get_random_cta(item.title, headline=item.title))
+
+    reviewed_fields, review_info = _run_editorial_review_gate(
+        item,
+        hook=hook_clean,
+        headline=headline,
+        body=body_text_clean,
+        cta=cta_text,
+    )
+    hook_clean = reviewed_fields["hook"]
+    headline = reviewed_fields["headline"]
+    body_text_clean = reviewed_fields["body"]
+    cta_text = reviewed_fields["cta"]
+
+    review_passed = bool(review_info.get("local_ok_after"))
+    if not review_passed:
+        raise RuntimeError(
+            f"Revisao editorial reprovada para '{item.title}': {review_info.get('local_reasons_after')}"
+        )
+    layout_plan = _plan_overlay_layout(hook_clean, body_text_clean)
 
     if hook_history_path is not None:
         _save_hook_to_history(hook_history_path, hook_clean, title=item.title, source=item.source)
@@ -2362,6 +2772,8 @@ def build_editorial_pack_for_item(
         "description_line_2": desc_line_2,
         "cta": cta_text,
         "hashtags": hashtags,
+        "layout_plan": layout_plan,
+        "review": review_info,
     }
 
 
@@ -2376,134 +2788,28 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         image_path = _download_image(item.image_url, post_dir / "news_image")
         # Padrao VN: sem moldura decorativa, mantendo look limpo preto + logo + texto.
         render_image_path = image_path
+        editorial_pack = build_editorial_pack_for_item(item, hook_history_path=hook_history_path)
+        hook_clean = editorial_pack["hook"]
+        headline = editorial_pack["headline"]
+        body_text_clean = editorial_pack["body"]
+        description_text_clean = editorial_pack["description"]
+        description_multiline = editorial_pack["description_multiline"]
+        desc_line_1 = editorial_pack["description_line_1"]
+        desc_line_2 = editorial_pack["description_line_2"]
+        cta_text = editorial_pack["cta"]
+        hashtags = editorial_pack["hashtags"]
+        review_info = editorial_pack.get("review", {})
+        raw_layout = editorial_pack.get("layout_plan")
+        layout_plan = raw_layout if isinstance(raw_layout, dict) else _plan_overlay_layout(hook_clean, body_text_clean)
 
-        # ── Parse da IA: formato V5 (hook / headline / body / descricao) ──
-        raw_script = _summarize_news_text(item)
-        all_lines = [ln.rstrip() for ln in raw_script.splitlines()]
+        hook_lines = layout_plan.get("hook_lines")
+        if isinstance(hook_lines, list):
+            hook_wrapped = "\n".join(_sanitize_overlay_text(str(ln)).upper() for ln in hook_lines if _clean_text(str(ln)))
+        else:
+            hook_wrapped = _wrap_for_overlay(hook_clean, max_chars=HOOK_WRAP_WIDTH, max_lines=HOOK_MAX_LINES, upper=True)
 
-        # Separa hashtags residuais (caso a IA insira mesmo assim)
-        hashtags = " ".join([ln.lower() for ln in all_lines if ln.strip().startswith("#")])
-
-        # Limpa: remove hashtags, labels, linhas vazias e separadores
-        content_lines: list[str] = []
-        parsed_fields: dict[str, str] = {}
-        for ln in all_lines:
-            stripped = ln.strip()
-            if not stripped:
-                continue
-            if stripped.startswith("#"):
-                continue
-            if re.match(r"^-{2,}$", stripped):
-                continue
-            if re.match(r"^(variante|variation|vers[ãa]o|version|op[çc][ãa]o|option)\s*\d*\s*[:\-–—]*\s*", stripped, flags=re.I):
-                continue
-            labeled = re.match(
-                r"^(gancho|hook|headline|titulo|title|corpo|body|tarja|descricao|descrição|description|cta)\s*[:\-–—=]\s*(.+)$",
-                stripped,
-                flags=re.I,
-            )
-            if labeled:
-                key = labeled.group(1).lower()
-                value = labeled.group(2).strip()
-                if key in {"gancho", "hook"}:
-                    parsed_fields["hook"] = value
-                elif key in {"headline", "titulo", "title"}:
-                    parsed_fields["headline"] = value
-                elif key in {"corpo", "body", "tarja"}:
-                    parsed_fields["body"] = value
-                elif key in {"descricao", "descrição", "description"}:
-                    parsed_fields["description"] = value
-                elif key == "cta":
-                    parsed_fields["cta"] = value
-                continue
-
-            cleaned = re.sub(r"^(linha|line)\s*\d*\s*[:\-–—=]\s*", "", stripped, flags=re.I).strip()
-            if cleaned:
-                content_lines.append(cleaned)
-
-        ai_cta = parsed_fields.get("cta", "")
-        hook = parsed_fields.get("hook", "")
-        headline_core = parsed_fields.get("headline", "")
-        body = parsed_fields.get("body", "")
-        description_text = parsed_fields.get("description", "")
-
-        if not hook and content_lines:
-            hook = content_lines[0]
-        if not headline_core and len(content_lines) > 1:
-            headline_core = content_lines[1]
-        if not body and len(content_lines) > 2:
-            body = content_lines[2]
-        if not description_text and len(content_lines) > 3:
-            description_text = content_lines[3]
-        if not ai_cta and len(content_lines) > 4:
-            ai_cta = content_lines[4]
-
-        if not hook:
-            hook = _build_v5_fallback_hook(item)
-        if not headline_core:
-            headline_core = _build_v5_fallback_headline(item)
-        if not body:
-            body = _build_v5_fallback_body(item)
-        if not description_text:
-            description_text = f"{_clean_text(item.title)}. A web reagiu e as opinioes ficaram divididas."
-
-        # ── Limpeza leve (sem truncamento agressivo) ──
-        # Remove hashtags residuais e caracteres problemáticos, preserva pontuação
-        hook_clean = re.sub(r'#\w+', '', hook).strip()
-        hook_clean = re.sub(r"[^\w\s\u00C0-\u00FF?!]", '', hook_clean)
-        hook_clean = re.sub(r'\s+', ' ', hook_clean).strip()
-        recent_hooks = _load_recent_hook_history(hook_history_path, window=HOOK_HISTORY_WINDOW)
-
-        ai_hook = _generate_contextual_hook_with_ai(item, recent_hooks, fallback=hook_clean)
-        if ai_hook:
-            hook_clean = ai_hook
-
-        if _is_probably_bad_hook(hook_clean):
-            hook_clean = _build_v5_fallback_hook(item)
-        hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
-        # Encaixa no overlay sem cortar palavras finais.
-        hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
-        if _is_overgeneric_hook(hook_clean):
-            ai_retry = _generate_contextual_hook_with_ai(item, recent_hooks, fallback=hook_clean)
-            if ai_retry:
-                hook_clean = ai_retry
-        if _is_probably_bad_hook(hook_clean):
-            hook_clean = _build_v5_fallback_hook(item)
-        hook_clean = _trim_trailing_connectors(hook_clean)
-        hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
-        hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
-        headline_text_clean = re.sub(r'#\w+', '', headline_core).strip()
-        headline_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,;:?!-]", "", headline_text_clean)
-        headline_text_clean = re.sub(r"\s+", " ", headline_text_clean).strip()
-        headline = _enforce_editorial_headline(headline_text_clean, item.title)
-        headline = _ensure_contextual_headline_line(headline, item)
-
-        body_text_clean = re.sub(r'#\w+', '', body).strip()
-        body_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,;:?!-]", "", body_text_clean)
-        body_text_clean = re.sub(r"\s+", " ", body_text_clean).strip()
-        body_text_clean = _ensure_contextual_body_line(body_text_clean, item)
-        body_text_clean = _rewrite_overlay_body_if_needed(body_text_clean, item=item)
-        body_text_clean = _build_tarja_text(body_text_clean, item=item)
-        if _looks_incomplete_pt_line(body_text_clean):
-            body_text_clean = _build_tarja_text(_build_v5_fallback_body(item), item=item)
-        if _is_hook_inconsistent_with_story(hook_clean, headline, body_text_clean):
-            hook_clean = _build_v5_fallback_hook(item)
-            hook_clean = _smart_truncate_hook(hook_clean, max_words=10)
-            hook_clean = _fit_hook_to_overlay(hook_clean, max_chars=24, max_lines=3, min_words=5)
-
-        description_text_clean = re.sub(r'#\w+', '', description_text).strip()
-        description_text_clean = re.sub(r"[^\w\s\u00C0-\u00FF.,!?]", "", description_text_clean)
-        description_text_clean = re.sub(r"\s+", " ", description_text_clean).strip()
-        desc_line_1, desc_line_2 = _build_editorial_description(description_text_clean, item)
-        description_text_clean = f"{desc_line_1} {desc_line_2}".strip()
-        description_multiline = f"{desc_line_1}\n{desc_line_2}"
-
-        # Hook: 24 chars por linha, máximo 3 linhas (evita cortar contexto no topo)
-        hook_wrapped = _wrap_for_overlay(hook_clean, max_chars=24, max_lines=3, upper=True)
-        
         hook_file = post_dir / "hook.txt"
         hook_file.write_text(_sanitize_overlay_text(hook_wrapped) + "\n", encoding="utf-8")
-        _save_hook_to_history(hook_history_path, hook_clean, title=item.title, source=item.source)
 
         summary_file = post_dir / "summary.txt"
         summary_file.write_text(_sanitize_overlay_text(body_text_clean) + "\n", encoding="utf-8")
@@ -2512,7 +2818,6 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         headline_file.write_text(_sanitize_overlay_text(headline) + "\n", encoding="utf-8")
         image_duration_s = 11.0
 
-        # Keep source metadata for traceability and later automation.
         metadata = {
             "generated_at_utc": datetime.now(timezone.utc).isoformat(),
             "source": item.source,
@@ -2529,11 +2834,12 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             "headline": headline,
             "body": body_text_clean,
             "description_overlay": description_text_clean,
+            "cta": cta_text,
+            "review_stage": review_info,
+            "layout_plan": layout_plan,
         }
         (post_dir / "news.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-        # Caption com hashtags (para redes sociais)
-        # Usa descrição interpretativa fora do vídeo + hashtags separadas no final
         (post_dir / "caption.txt").write_text(
             f"{hook_clean}\n{description_multiline}\n\n{hashtags}\n\nFonte: {item.source.upper()}\nLink: {item.link}\n",
             encoding="utf-8",
@@ -2542,15 +2848,6 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
         slug = _make_slug(item.title)
         output_video = post_dir / "output" / f"gossip_{slug}.mp4"
 
-        # ── CTA: Prefere CTA da IA (linha 5), fallback para CTA temático ──
-        # A IA agora gera CTAs emocionais como "COMENTA O QUE ACHOU!", "CURTE SE GOSTA DE EMOCAO NO BBB"
-        if _is_valid_ai_cta(ai_cta):
-            # Usa o CTA gerado pela IA (já otimizado para o tema)
-            cta_text = _sanitize_cta_text(ai_cta.upper())
-        else:
-            # Fallback: CTA temático baseado no conteúdo da notícia
-            cta_text = _sanitize_cta_text(_get_random_cta(item.title, headline=item.title))
-        
         logo_path = None
         if args.logo:
             logo_path = Path(args.logo).expanduser().resolve()
@@ -2575,6 +2872,7 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             cta_text=cta_text,
             logo_path=logo_path,
             duration_s=image_duration_s,
+            layout_plan=layout_plan,
         )
 
         artifact_payload = {
@@ -2590,6 +2888,8 @@ def create_post_for_item(item: NewsItem, args: argparse.Namespace) -> bool:
             "description_line_1": desc_line_1,
             "description_line_2": desc_line_2,
             "cta": cta_text,
+            "review_stage": review_info,
+            "layout_plan": layout_plan,
         }
         artifact_json = output_video.with_suffix(".json")
         artifact_json.write_text(json.dumps(artifact_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
