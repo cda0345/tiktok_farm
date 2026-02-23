@@ -7,6 +7,8 @@ from scripts.create_gossip_post import (
     BODY_MAX_LINES,
     HOOK_MAX_LINES,
     NewsItem,
+    _build_subtle_parallax_blur_graph,
+    _build_subtle_image_zoom_filters,
     build_editorial_pack_for_item,
     _is_valid_ai_cta,
     _plan_overlay_layout,
@@ -54,6 +56,36 @@ class EditorialReviewTests(unittest.TestCase):
         self.assertLessEqual(len(layout["tarja_lines"]), BODY_MAX_LINES)
         self.assertGreater(layout["hook_font_size"], 0)
         self.assertGreater(layout["tarja_font_size"], 0)
+
+    def test_overlay_layout_plan_preserves_full_body_text(self):
+        body = (
+            "Durante a temporada nos EUA, Virginia e Vini Jr. agendam jantar com Kim Kardashian e "
+            "ampliam conexoes no circuito internacional."
+        )
+        layout = _plan_overlay_layout("VIRGINIA E VINI JR JANTAM COM KIM", body)
+
+        rendered_body = " ".join(" ".join(layout["tarja_lines"]).split())
+        self.assertEqual(rendered_body, " ".join(body.upper().split()))
+
+    def test_subtle_image_filters_have_motion_without_geometric_zoom(self):
+        filters = _build_subtle_image_zoom_filters(11.0, fps=30)
+        joined = ",".join(filters)
+
+        self.assertNotIn("zoompan=", joined)
+        self.assertNotIn("crop=", joined)
+        self.assertIn("eq=brightness='", joined)
+        self.assertIn("sin(2*PI*t/", joined)
+        self.assertIn("eval=frame", joined)
+
+    def test_parallax_blur_graph_moves_only_background(self):
+        graph = _build_subtle_parallax_blur_graph()
+
+        self.assertIn("split=2[fgsrc][bgsrc]", graph)
+        self.assertIn("boxblur=32:12", graph)
+        self.assertIn("overlay=0:0:format=auto", graph)
+        self.assertIn("x='trunc((in_w-1080)/2+26*sin(2*PI*t/10.8))'", graph)
+        self.assertIn("y='trunc((in_h-1920)/2+16*sin(2*PI*t/13.2+0.7))'", graph)
+        self.assertNotIn("zoompan=", graph)
 
     @patch("scripts.create_gossip_post._review_editorial_with_ai", return_value=(None, "test_disabled"))
     @patch(

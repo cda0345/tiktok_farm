@@ -108,7 +108,16 @@ HOOK_HISTORY_MAX = 120
 HOOK_WRAP_WIDTH = 24
 HOOK_MAX_LINES = 2
 BODY_WRAP_WIDTH = 27
+BODY_WRAP_MAX_WIDTH = 40
 BODY_MAX_LINES = 4
+BODY_TARGET_FONT_SIZE = 56
+BODY_MIN_FONT_SIZE = 30
+BODY_LINE_GAP = 6
+BODY_INNER_PADDING = 22
+IMAGE_SUBTLE_BRIGHTNESS_GAIN = 0.012
+IMAGE_SUBTLE_SATURATION_GAIN = 0.040
+IMAGE_SUBTLE_CONTRAST_GAIN = 0.035
+IMAGE_SUBTLE_PULSE_SECONDS = 5.2
 
 TOP_PANEL_Y = 0
 TOP_PANEL_H = 610
@@ -1352,7 +1361,7 @@ def _build_v5_fallback_body(item: NewsItem) -> str:
     body = _build_dynamic_sentence_from_item(
         item,
         min_words=14,
-        max_words=24,
+        max_words=18,
         prefer_description=True,
     )
     return body.rstrip(".,;:!?")
@@ -1372,7 +1381,7 @@ def _ensure_contextual_body_line(body: str, item: NewsItem) -> str:
         return _build_v5_fallback_body(item)
     clean = _normalize_overlay_sentence(
         clean,
-        max_words=24,
+        max_words=18,
         min_words=14,
         fallback_tail=_strip_title_prefix(item.title),
     )
@@ -1414,7 +1423,7 @@ def _build_tarja_text(text: str, *, item: NewsItem | None = None) -> str:
         return ""
     clean = _normalize_overlay_sentence(
         clean,
-        max_words=24,
+        max_words=18,
         min_words=14,
         fallback_tail=_strip_title_prefix(item.title) if item else clean,
     )
@@ -1461,14 +1470,38 @@ def _fit_font_to_width(
     return max(min_font, min(target_font, width_cap))
 
 
-def _wrap_overlay_lines(text: str, *, width: int, max_lines: int, upper: bool = False) -> list[str]:
+def _wrap_overlay_lines(text: str, *, width: int, max_lines: int | None = None, upper: bool = False) -> list[str]:
     clean = _clean_text(text)
     if upper:
         clean = clean.upper()
     if not clean:
         return []
     wrapped = textwrap.wrap(clean, width=width, break_long_words=False, break_on_hyphens=False)
+    if max_lines is None:
+        return wrapped
     return wrapped[:max_lines]
+
+
+def _prepare_body_text_for_render(text: str) -> str:
+    """Prepare overlay body for rendering without applying word cuts."""
+    clean = _collapse_duplicate_tokens(" ".join((text or "").split()))
+    clean = _trim_trailing_connectors(clean)
+    return clean.strip(" ,;:")
+
+
+def _estimate_overlay_body_line_count(text: str) -> int:
+    clean = _clean_text(text)
+    if not clean:
+        return 0
+    best_count = 10**6
+    for width in range(BODY_WRAP_WIDTH, BODY_WRAP_MAX_WIDTH + 1):
+        lines = textwrap.wrap(clean, width=width, break_long_words=False, break_on_hyphens=False)
+        if not lines:
+            continue
+        best_count = min(best_count, len(lines))
+        if len(lines) <= BODY_MAX_LINES:
+            return len(lines)
+    return 0 if best_count == 10**6 else best_count
 
 
 def _plan_overlay_layout(hook_text: str, body_text: str) -> dict[str, Any]:
@@ -1479,12 +1512,26 @@ def _plan_overlay_layout(hook_text: str, body_text: str) -> dict[str, Any]:
         max_lines=HOOK_MAX_LINES,
         upper=True,
     ) or ["NOTICIA EM DESTAQUE"]
-    tarja_lines = _wrap_overlay_lines(
-        body_text,
-        width=BODY_WRAP_WIDTH,
-        max_lines=BODY_MAX_LINES,
-        upper=True,
-    ) or ["NOTICIA EM ATUALIZACAO"]
+    tarja_lines: list[str] = []
+    for width in range(BODY_WRAP_WIDTH, BODY_WRAP_MAX_WIDTH + 1):
+        candidate_lines = _wrap_overlay_lines(
+            body_text,
+            width=width,
+            max_lines=None,
+            upper=True,
+        )
+        if not candidate_lines:
+            continue
+        if (not tarja_lines) or (len(candidate_lines) < len(tarja_lines)):
+            tarja_lines = candidate_lines
+        if len(candidate_lines) <= BODY_MAX_LINES:
+            tarja_lines = candidate_lines
+            break
+    if not tarja_lines:
+        tarja_lines = ["NOTICIA EM ATUALIZACAO"]
+    elif len(tarja_lines) > BODY_MAX_LINES:
+        # Defensive fallback: this should be rare once prompt/review constraints are respected.
+        tarja_lines = tarja_lines[:BODY_MAX_LINES]
 
     hook_size, hook_step, hook_start_y = _fit_lines_in_bar(
         bar_y=HOOK_AREA_Y,
@@ -1509,19 +1556,19 @@ def _plan_overlay_layout(hook_text: str, body_text: str) -> dict[str, Any]:
         bar_y=BOTTOM_PANEL_Y,
         bar_h=BOTTOM_PANEL_H,
         line_count=max(1, len(tarja_lines)),
-        target_font=56,
-        min_font=34,
-        gap=6,
-        inner_padding=22,
+        target_font=BODY_TARGET_FONT_SIZE,
+        min_font=BODY_MIN_FONT_SIZE,
+        gap=BODY_LINE_GAP,
+        inner_padding=BODY_INNER_PADDING,
     )
     tarja_size = _fit_font_to_width(
         tarja_lines,
         target_font=tarja_size,
-        min_font=34,
+        min_font=BODY_MIN_FONT_SIZE,
         max_text_width_px=940,
     )
-    tarja_step = tarja_size + 6
-    tarja_block_h = (tarja_size * max(1, len(tarja_lines))) + (6 * max(0, len(tarja_lines) - 1))
+    tarja_step = tarja_size + BODY_LINE_GAP
+    tarja_block_h = (tarja_size * max(1, len(tarja_lines))) + (BODY_LINE_GAP * max(0, len(tarja_lines) - 1))
     tarja_start_y = BOTTOM_PANEL_Y + max(0, (BOTTOM_PANEL_H - tarja_block_h) // 2)
 
     return {
@@ -1556,19 +1603,70 @@ def _resolve_overlay_layout_plan(layout_plan: dict[str, Any] | None, *, hook_tex
             _sanitize_overlay_text(str(line))
             for line in (tarja_lines_raw if isinstance(tarja_lines_raw, list) else [])
             if _clean_text(str(line))
-        ][:BODY_MAX_LINES]
-        if hook_lines and tarja_lines:
+        ]
+        joined_tarja_lines = _clean_text(" ".join(tarja_lines)).upper()
+        expected_body_text = _clean_text(body_text).upper()
+        if hook_lines and tarja_lines and len(tarja_lines) <= BODY_MAX_LINES and joined_tarja_lines == expected_body_text:
             return {
                 "hook_lines": hook_lines,
                 "tarja_lines": tarja_lines,
                 "hook_font_size": _safe_int(layout_plan.get("hook_font_size"), 92),
                 "hook_line_step": _safe_int(layout_plan.get("hook_line_step"), 100),
                 "hook_start_y": _safe_int(layout_plan.get("hook_start_y"), HOOK_AREA_Y),
-                "tarja_font_size": _safe_int(layout_plan.get("tarja_font_size"), 56),
-                "tarja_line_step": _safe_int(layout_plan.get("tarja_line_step"), 62),
+                "tarja_font_size": _safe_int(layout_plan.get("tarja_font_size"), BODY_TARGET_FONT_SIZE),
+                "tarja_line_step": _safe_int(layout_plan.get("tarja_line_step"), BODY_TARGET_FONT_SIZE + BODY_LINE_GAP),
                 "tarja_start_y": _safe_int(layout_plan.get("tarja_start_y"), BOTTOM_PANEL_Y),
             }
     return _plan_overlay_layout(hook_text, body_text)
+
+
+def _build_subtle_image_zoom_filters(duration_s: float, *, fps: int = 30) -> list[str]:
+    """Return subtle non-spatial motion filters for static-image renders.
+
+    Motion comes from slow temporal light/color breathing, without geometric movement.
+    """
+    pulse_s = max(3.0, float(IMAGE_SUBTLE_PULSE_SECONDS))
+    brightness_expr = f"{IMAGE_SUBTLE_BRIGHTNESS_GAIN:.4f}*sin(2*PI*t/{pulse_s:.3f})"
+    saturation_expr = (
+        f"1+{IMAGE_SUBTLE_SATURATION_GAIN:.4f}*sin(2*PI*t/{pulse_s * 0.88:.3f}+0.7)"
+    )
+    contrast_expr = (
+        f"1+{IMAGE_SUBTLE_CONTRAST_GAIN:.4f}*sin(2*PI*t/{pulse_s * 1.15:.3f}+1.2)"
+    )
+    return [
+        (
+            "eq="
+            f"brightness='{brightness_expr}':"
+            f"saturation='{saturation_expr}':"
+            f"contrast='{contrast_expr}':"
+            "gamma=1.00:eval=frame"
+        ),
+        "unsharp=luma_msize_x=5:luma_msize_y=5:luma_amount=0.26",
+        "vignette=PI/7:eval=init",
+        "setsar=1",
+        "format=yuv420p",
+    ]
+
+
+def _build_subtle_parallax_blur_graph() -> str:
+    """Build a blur-background parallax base with fixed foreground image."""
+    return (
+        "[0:v]split=2[fgsrc][bgsrc];"
+        "[bgsrc]"
+        "scale=1160:2060:force_original_aspect_ratio=increase,"
+        "crop=1160:2060,"
+        "boxblur=32:12,"
+        "crop=1080:1920:"
+        "x='trunc((in_w-1080)/2+26*sin(2*PI*t/10.8))':"
+        "y='trunc((in_h-1920)/2+16*sin(2*PI*t/13.2+0.7))'"
+        "[bg];"
+        "[fgsrc]"
+        "scale=1080:1920:force_original_aspect_ratio=decrease,"
+        "format=rgba,"
+        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black@0.0"
+        "[fg];"
+        "[bg][fg]overlay=0:0:format=auto"
+    )
 
 
 SEMANTIC_STOPWORDS_PT = {
@@ -1666,10 +1764,13 @@ def _validate_editorial_semantics(item: NewsItem, *, hook: str, headline: str, b
         reasons.append("hook generico ou sem sentido")
 
     body_words = _count_words(body)
-    if body_words < 14 or body_words > 24:
-        reasons.append("body fora de 14-24 palavras")
+    if body_words < 14 or body_words > 18:
+        reasons.append("body fora de 14-18 palavras")
     if _looks_incomplete_pt_line(body):
         reasons.append("body com final incompleto")
+    overlay_line_count = _estimate_overlay_body_line_count(body)
+    if overlay_line_count > BODY_MAX_LINES:
+        reasons.append(f"body excede limite visual do overlay ({overlay_line_count} linhas)")
 
     if _is_hook_inconsistent_with_story(hook, headline, body):
         reasons.append("hook contradiz headline/body")
@@ -1740,7 +1841,8 @@ def _review_editorial_with_ai(
                 "Regras:\n"
                 "- hook: 5 a 10 palavras, frase completa, especifico da materia.\n"
                 "- headline: 9 a 16 palavras.\n"
-                "- body: 14 a 24 palavras, frase completa com contexto e consequencia.\n"
+                "- body: 14 a 18 palavras, frase completa com contexto e consequencia.\n"
+                "- body precisa caber no overlay sem corte de frase (ate 4 linhas visuais).\n"
                 "- cta: chamada imperativa curta, sem pergunta.\n"
                 "- Sem hashtags, sem emojis, sem texto fora do JSON."
             ),
@@ -1944,10 +2046,12 @@ def _validate_v5_lines(lines: list[str], *, is_pt: bool) -> tuple[bool, str]:
         return False, "headline fora de faixa de palavras"
 
     body_words = _count_words(body)
-    if body_words < 14 or body_words > 24:
+    if body_words < 14 or body_words > 18:
         return False, "body fora de faixa de palavras"
     if _looks_incomplete_pt_line(body):
         return False, "body com final incompleto"
+    if _estimate_overlay_body_line_count(body) > BODY_MAX_LINES:
+        return False, "body excede limite visual do overlay"
 
     if len(_split_sentences(description)) < 2:
         return False, "descricao sem duas frases"
@@ -1979,7 +2083,7 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "FORMATO OBRIGATORIO: exatamente 5 linhas em texto puro (sem bullets, sem labels):\n"
                     "Linha 1 = HOOK: pergunta OU afirmacao de impacto com 5 a 10 palavras, com nome e conflito.\n"
                     "Linha 2 = HEADLINE DE APOIO: 9 a 14 palavras explicando o que aconteceu.\n"
-                    "Linha 3 = BODY/TARJA: 14 a 22 palavras com contexto e consequencia clara do fato.\n"
+                    "Linha 3 = BODY/TARJA: 14 a 18 palavras com contexto e consequencia clara do fato.\n"
                     "Linha 4 = DESCRICAO: 2 frases curtas interpretativas (nao literal de portal).\n"
                     "Linha 5 = CTA: chamada de engajamento curta (imperativa, sem pergunta).\n\n"
                     "Regras:\n"
@@ -1991,6 +2095,7 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "- Linha 1 precisa ser frase fechada e autoexplicativa.\n"
                     "- Linha 3 precisa terminar em frase completa, nunca em conectivo.\n"
                     "- Nunca termine frases com: 'e isso', 'e agora', 'vai', 'com', ou gerundio sem complemento.\n"
+                    "- Linha 3 precisa caber no overlay sem corte de frase (ate 4 linhas visuais).\n"
                     "- Zero hashtags e zero emojis.\n"
                     "- Apenas o HOOK pode vir em caixa alta total.\n"
                     "- Varie o angulo narrativo entre: confronto, consequencia, estrategia, reacao publica, virada.\n"
@@ -2010,7 +2115,7 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "MANDATORY FORMAT: exactly 5 plain-text lines (no bullets, no labels):\n"
                     "Line 1 = HOOK: question OR impact statement in 5 to 10 words.\n"
                     "Line 2 = SUPPORT HEADLINE: 9 to 14 words explaining what happened.\n"
-                    "Line 3 = BODY/TAG BAR: 14 to 22 words with context and a clear consequence.\n"
+                    "Line 3 = BODY/TAG BAR: 14 to 18 words with context and a clear consequence.\n"
                     "Line 4 = DESCRIPTION: 2 short interpretive sentences (not literal portal text).\n"
                     "Line 5 = CTA: short imperative engagement call (not a question).\n\n"
                     "Rules:\n"
@@ -2020,6 +2125,7 @@ def _summarize_news_text(item: NewsItem) -> str:
                     "- Use standard language and complete sentences.\n"
                     "- Line 1 must be a closed and self-contained sentence.\n"
                     "- Never end Line 3 with dangling connectors or unfinished clauses.\n"
+                    "- Line 3 must fit the overlay without mid-sentence cuts (up to 4 visual lines).\n"
                     "- Avoid empty generic phrases like 'game changed' or 'internet divided'.\n"
                     "- Zero hashtags and zero emojis.\n"
                     "- Only HOOK may be fully uppercase.\n"
@@ -2286,7 +2392,7 @@ def _render_short(
             )
         )
 
-    tarja_text = _build_tarja_text(body_clean)
+    tarja_text = _prepare_body_text_for_render(body_clean)
     resolved_layout = _resolve_overlay_layout_plan(
         layout_plan,
         hook_text=hook_clean,
@@ -2301,17 +2407,14 @@ def _render_short(
     tarja_step = resolved_layout["tarja_line_step"]
     tarja_start_y = resolved_layout["tarja_start_y"]
 
-    text_layers = [
-        f"drawbox=x=0:y={TOP_PANEL_Y}:w=1080:h={TOP_PANEL_H}:color=black@1.0:t=fill",
-        f"drawbox=x=0:y={BOTTOM_PANEL_Y}:w=1080:h={BOTTOM_PANEL_H}:color=black@0.96:t=fill",
-    ]
+    text_layers: list[str] = []
     for i, line in enumerate(hook_lines):
         line_esc = _ffmpeg_escape_text(line)
         y_pos = hook_start_y + (i * hook_step)
         text_layers.append(
             f"drawtext=text='{line_esc}':fontfile='{hook_font}':fontcolor=white:"
-            f"fontsize={hook_size}:borderw=2:bordercolor=black@0.88:"
-            "shadowcolor=black@0.30:shadowx=0:shadowy=2:"
+            f"fontsize={hook_size}:borderw=4:bordercolor=black@0.98:"
+            "shadowcolor=black@0.72:shadowx=0:shadowy=3:"
             f"x=(w-tw)/2:y={y_pos}"
         )
 
@@ -2320,27 +2423,25 @@ def _render_short(
         y_pos = tarja_start_y + (i * tarja_step)
         text_layers.append(
             f"drawtext=text='{line_esc}':fontfile='{body_font}':fontcolor=white:"
-            f"fontsize={tarja_size}:borderw=1:bordercolor=black@0.82:shadowcolor=black@0.24:shadowx=0:shadowy=1:"
+            f"fontsize={tarja_size}:borderw=3:bordercolor=black@0.96:shadowcolor=black@0.68:shadowx=0:shadowy=2:"
             f"x={BODY_LEFT_X}:y={y_pos}"
         )
 
-    # Mantem enquadramento sem crop para respeitar o fit no template.
-    vf_layers = [
-        "scale=1080:1920:force_original_aspect_ratio=decrease",
-        "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=0x0B0B0B",
-        "setsar=1",
-        "format=yuv420p",
-        *text_layers,
-    ]
-    vf = ",".join(vf_layers)
+    base_motion_graph = ",".join(
+        [
+            _build_subtle_parallax_blur_graph(),
+            *_build_subtle_image_zoom_filters(duration_s, fps=30),
+            *text_layers,
+        ]
+    ) + "[post]"
 
     out_video.parent.mkdir(parents=True, exist_ok=True)
 
     if logo_path is not None and logo_path.exists():
         overlay_graph = (
-            f"[0:v]{vf}[bg];"
+            f"{base_motion_graph};"
             "[1:v]scale=300:-1:flags=lanczos[logo];"
-            f"[bg][logo]overlay=(W-w)/2:{LOGO_Y}[v]"
+            f"[post][logo]overlay=(W-w)/2:{LOGO_Y}[v]"
         )
 
         args = [
@@ -2407,10 +2508,10 @@ def _render_short(
             str(duration_s),
             "-i",
             "sine=frequency=247:sample_rate=44100",
-            "-vf",
-            vf,
+            "-filter_complex",
+            base_motion_graph,
             "-map",
-            "0:v:0",
+            "[post]",
             "-map",
             "1:a:0",
             "-r",
@@ -2477,7 +2578,7 @@ def _render_short_video(
             )
         )
 
-    tarja_text = _build_tarja_text(body_clean)
+    tarja_text = _prepare_body_text_for_render(body_clean)
     resolved_layout = _resolve_overlay_layout_plan(
         layout_plan,
         hook_text=hook_clean,
@@ -2492,17 +2593,14 @@ def _render_short_video(
     tarja_step = resolved_layout["tarja_line_step"]
     tarja_start_y = resolved_layout["tarja_start_y"]
 
-    text_filters = [
-        f"drawbox=x=0:y={TOP_PANEL_Y}:w=1080:h={TOP_PANEL_H}:color=black@1.0:t=fill",
-        f"drawbox=x=0:y={BOTTOM_PANEL_Y}:w=1080:h={BOTTOM_PANEL_H}:color=black@0.96:t=fill",
-    ]
+    text_filters: list[str] = []
     for i, line in enumerate(hook_lines):
         line_esc = _ffmpeg_escape_text(line)
         y_pos = hook_start_y + (i * hook_step)
         text_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{hook_font}':fontcolor=white:"
-            f"fontsize={hook_size}:borderw=2:bordercolor=black@0.88:"
-            "shadowcolor=black@0.30:shadowx=0:shadowy=2:"
+            f"fontsize={hook_size}:borderw=4:bordercolor=black@0.98:"
+            "shadowcolor=black@0.72:shadowx=0:shadowy=3:"
             f"x=(w-tw)/2:y={y_pos}"
         )
 
@@ -2511,7 +2609,7 @@ def _render_short_video(
         y_pos = tarja_start_y + (i * tarja_step)
         text_filters.append(
             f"drawtext=text='{line_esc}':fontfile='{body_font}':fontcolor=white:"
-            f"fontsize={tarja_size}:borderw=1:bordercolor=black@0.82:shadowcolor=black@0.24:shadowx=0:shadowy=1:"
+            f"fontsize={tarja_size}:borderw=3:bordercolor=black@0.96:shadowcolor=black@0.68:shadowx=0:shadowy=2:"
             f"x={BODY_LEFT_X}:y={y_pos}"
         )
 
